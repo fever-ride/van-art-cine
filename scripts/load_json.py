@@ -85,9 +85,9 @@ VALUES (%s,%s,%s)
 ON DUPLICATE KEY UPDATE address=VALUES(address)
 """,
 "film_ins": """
-INSERT INTO film (title, year, runtime_min, description, imdb_id, tmdb_id)
-VALUES (%s,%s,%s,%s,%s,%s)
-ON DUPLICATE KEY UPDATE runtime_min=VALUES(runtime_min), description=VALUES(description)
+INSERT INTO film (title, year, description, imdb_id, tmdb_id)
+VALUES (%s,%s,%s,%s,%s)
+ON DUPLICATE KEY UPDATE description=VALUES(description)
 """,
 "person_ins": """
 INSERT INTO person (name, imdb_id, tmdb_id)
@@ -98,8 +98,8 @@ ON DUPLICATE KEY UPDATE name=VALUES(name)
 INSERT IGNORE INTO film_person (film_id, person_id, role) VALUES (%s,%s,%s)
 """,
 "screening_ins": """
-INSERT INTO screening (film_id, venue_id, start_at_utc, end_at_utc, tz, source_url, notes, raw_date, raw_time)
-VALUES (%s,%s,%s,%s,'America/Vancouver',%s,%s,%s,%s)
+INSERT INTO screening (film_id, venue_id, start_at_utc, end_at_utc, runtime_min, tz, source_url, notes, raw_date, raw_time)
+VALUES (%s,%s,%s,%s,%s,'America/Vancouver',%s,%s,%s,%s)
 ON DUPLICATE KEY UPDATE source_url=VALUES(source_url), notes=VALUES(notes)
 """,
 "raw_import_ins": """
@@ -117,8 +117,8 @@ def ensure_cinema_and_venue(cur, cinema_name, venue_name, cinema_website=None, v
     vid = row[0]
     return cid, vid
 
-def ensure_film(cur, title, year, runtime_min, description=None, imdb=None, tmdb=None):
-    upsert(cur, SQL["film_ins"], (title, year, runtime_min, description, imdb, tmdb))
+def ensure_film(cur, title, year, description=None, imdb=None, tmdb=None):
+    upsert(cur, SQL["film_ins"], (title, year, description, imdb, tmdb))
     row = fetch_one(cur,
         "SELECT id FROM film WHERE normalized_title=LOWER(%s) AND (year <=> %s)",
         (norm_title(title), year))
@@ -181,14 +181,14 @@ def load_cinematheque(cur, path):
         title = r.get("title")
         year = parse_year(r.get("year"))
         runtime = parse_runtime_minutes(r.get("duration"))
-        film_id = ensure_film(cur, title, year, runtime, r.get("description"))
+        film_id = ensure_film(cur, title, year, r.get("description"))
         link_directors(cur, film_id, r.get("director"))
         for st in r.get("showtimes", []):
             dt_local = parse_dt_cinematheque(st.get("date",""), st.get("time",""))
             start_utc = to_utc(dt_local)
             end_utc = guess_end(start_utc, runtime)
             upsert(cur, SQL["screening_ins"], (
-                film_id, vid, start_utc, end_utc,
+                film_id, vid, start_utc, end_utc, runtime,
                 r.get("detail_url"), None, st.get("date"), st.get("time")
             ))
 
@@ -217,7 +217,7 @@ def load_viff(cur, path):
             start_utc = to_utc(dt_local)
             end_utc = guess_end(start_utc, runtime)
             upsert(cur, SQL["screening_ins"], (
-                film_id, venue_id, start_utc, end_utc,
+                film_id, venue_id, start_utc, end_utc, runtime,
                 r.get("detail_url"), None, st.get("date"), st.get("time")
             ))
 
@@ -240,25 +240,17 @@ def load_rio(cur, path):
             start_utc = to_utc(dt_local)
             end_utc = guess_end(start_utc, runtime)
             upsert(cur, SQL["screening_ins"], (
-                film_id, vid, start_utc, end_utc,
+                film_id, vid, start_utc, end_utc, runtime,
                 r.get("detail_url"), None, st.get("date"), st.get("time")
             ))
 
 # === MAIN ===
-def resolve_files(patterns):
-    files = []
-    for pat in patterns:
-        matched = sorted(glob.glob(os.path.join(DATA_DIR, pat)))
-        if matched:
-            files.append(matched[-1])  # pick the latest for each pattern
-    return files
-
 def main():
     # Allow passing file paths on CLI; otherwise use defaults
     if len(sys.argv) > 1:
         files = sys.argv[1:]
     else:
-        files = resolve_files(DEFAULT_FILES)
+        files = [os.path.join(DATA_DIR, f) for f in DEFAULT_FILES]
 
     if not files:
         print("No input JSON files found. Set DATA_DIR or pass files on CLI.")

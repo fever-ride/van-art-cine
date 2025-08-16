@@ -23,7 +23,6 @@ CREATE TABLE film (
                       id INT AUTO_INCREMENT PRIMARY KEY,
                       title VARCHAR(255) NOT NULL,
                       year SMALLINT,
-                      runtime_min SMALLINT,
                       description TEXT,
                       normalized_title VARCHAR(255) GENERATED ALWAYS AS (
                           TRIM(LOWER(REPLACE(REPLACE(title,'’','\''),'  ',' ')))
@@ -67,6 +66,7 @@ CREATE TABLE screening (
                            venue_id INT NOT NULL,
                            start_at_utc DATETIME NOT NULL,
                            end_at_utc   DATETIME NOT NULL,
+                           runtime_min SMALLINT,
                            tz VARCHAR(64) NOT NULL DEFAULT 'America/Vancouver',
                            source_url VARCHAR(512) NOT NULL,
                            notes VARCHAR(255),
