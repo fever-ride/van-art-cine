@@ -79,13 +79,21 @@ def scrape_cinematheque_listings():
 
                 for item_index, item in enumerate(program_items):
                     try:
-                        time_el = item.query_selector(".details span")
-                        title_el = item.query_selector(".programTitle")
+                        # Match only the time element
+                        time_el = item.query_selector(".details .time")
 
+                        if time_el:
+                            raw_time = time_el.inner_text().strip()
+                            classes = (time_el.get_attribute("class") or "").lower()
+                            suffix = " pm" if " pm" in f" {classes} " else (" am" if " am" in f" {classes} " else "")
+                            time_text = raw_time + suffix
+                        else:
+                            time_text = "No time"
+
+                        title_el = item.query_selector(".programTitle")
                         if not title_el:
                             continue
 
-                        time_text = time_el.inner_text().strip() if time_el else "No time"
                         title = title_el.inner_text().strip()
                         href = title_el.get_attribute("href")
 
@@ -274,10 +282,6 @@ def scrape_cinematheque_complete():
         with open(timestamped_filename, "w", encoding="utf-8") as f:
             json.dump(complete_events, f, ensure_ascii=False, indent=2)
 
-        # Save current version
-        with open("data/cinematheque_screenings.json", "w", encoding="utf-8") as f:
-            json.dump(complete_events, f, ensure_ascii=False, indent=2)
-
         print(f"\n{'='*50}")
         print(f"🎬 Cinematheque Scraping Complete! 🎬")
         print(f"Total unique events: {len(complete_events)}")
@@ -285,7 +289,6 @@ def scrape_cinematheque_complete():
         total_showtimes = sum(len(e.get('showtimes', [])) for e in complete_events)
         print(f"Total showtimes: {total_showtimes}")
         print(f"Saved to: {timestamped_filename}")
-        print(f"Also saved to: data/cinematheque_screenings.json")
 
         return complete_events
 

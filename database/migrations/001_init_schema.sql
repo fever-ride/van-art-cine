@@ -79,7 +79,7 @@ CREATE TABLE screening (
                            KEY idx_venue (venue_id),
                            FOREIGN KEY (film_id) REFERENCES film(id),
                            FOREIGN KEY (venue_id) REFERENCES venue(id),
-                           CONSTRAINT chk_screening_time CHECK (end_at_utc > start_at_utc)
+                           CONSTRAINT chk_screening_time CHECK (end_at_utc >= start_at_utc)
 );
 
 -- Raw payloads (keep history)
