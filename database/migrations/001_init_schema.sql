@@ -23,16 +23,25 @@ CREATE TABLE film (
                       id INT AUTO_INCREMENT PRIMARY KEY,
                       title VARCHAR(255) NOT NULL,
                       year SMALLINT,
+                      rated VARCHAR(16) NULL,
+                      genre VARCHAR(255) NULL,
+                      language VARCHAR(255) NULL,
+                      country VARCHAR(255) NULL,
+                      awards VARCHAR(255) NULL,
+                      rt_rating_pct TINYINT UNSIGNED NULL,
+                      imdb_rating DECIMAL(3,1) NULL,
+                      imdb_votes INT UNSIGNED NULL,
                       description TEXT,
                       normalized_title VARCHAR(255) GENERATED ALWAYS AS (
                           TRIM(LOWER(REPLACE(REPLACE(title,'’','\''),'  ',' ')))
                           ) STORED,
                       imdb_id VARCHAR(16),
                       tmdb_id INT,
-                      UNIQUE KEY uniq_imdb (imdb_id),
-                      UNIQUE KEY uniq_tmdb (tmdb_id),
                       UNIQUE KEY uniq_title_year (normalized_title, year),
-                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                      CONSTRAINT chk_rt_rating_pct CHECK (rt_rating_pct IS NULL OR (rt_rating_pct BETWEEN 0 AND 100)),
+                      CONSTRAINT chk_imdb_rating CHECK (imdb_rating IS NULL OR (imdb_rating >= 0.0 AND imdb_rating <= 10.0)),
+                      CONSTRAINT chk_imdb_votes CHECK (imdb_votes IS NULL OR imdb_votes >= 0)
 );
 
 CREATE TABLE person (
@@ -44,8 +53,6 @@ CREATE TABLE person (
                             TRIM(LOWER(REPLACE(REPLACE(name,'’','\''),'  ',' ')))
                             ) STORED,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE KEY uniq_imdb (imdb_id),
-                        UNIQUE KEY uniq_tmdb (tmdb_id),
                         UNIQUE KEY uniq_person_norm (normalized_name)
 );
 
@@ -53,7 +60,7 @@ CREATE TABLE film_person (
                              film_id INT NOT NULL,
                              person_id INT NOT NULL,
                              role ENUM('director','writer','cast','unknown') DEFAULT 'unknown',
-                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,   -- moved up
+                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                              PRIMARY KEY (film_id, person_id, role),
                              FOREIGN KEY (film_id) REFERENCES film(id),
                              FOREIGN KEY (person_id) REFERENCES person(id)
