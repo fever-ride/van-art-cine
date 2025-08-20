@@ -7,7 +7,7 @@ import re
 from typing import Optional, Dict, Any
 import requests
 import pymysql
-from db_helper import DB, conn_open, norm_title
+from db_helper import DB, conn_open, norm_title, remove_parentheses
 
 # ---------- Config ----------
 TMDB_API_KEY = "a9662f05cd1a209fef971e00ef7d6369"
@@ -47,7 +47,7 @@ def find_tmdb_and_imdb(title: str, year: Optional[int]) -> Optional[Dict[str, Op
     if key in CACHE:
         return CACHE[key]
 
-    params = {"query": title, "include_adult": False}
+    params = {"query": title, "include_adult": True}
     if year:
         params["year"] = year
 
@@ -60,7 +60,10 @@ def find_tmdb_and_imdb(title: str, year: Optional[int]) -> Optional[Dict[str, Op
         return result
 
     for result in data["results"]:
-        if norm_title(result.get("title")) == norm_title(title):
+        if (
+            norm_title(result.get("title")) == norm_title(title)
+            or norm_title(result.get("title")) == remove_parentheses(norm_title(title))
+        ):
             tmdb_id = result["id"]
             details = tmdb_get(f"movie/{tmdb_id}", {})
             backoff_sleep()

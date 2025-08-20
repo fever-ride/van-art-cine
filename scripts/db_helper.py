@@ -26,6 +26,23 @@ def strip_dir_prefix(name: str | None) -> str | None:
     if not name: return None
     return re.sub(r"^\s*dir\.?\s*", "", name, flags=re.I)
 
+def remove_parentheses(text: str) -> str:
+    """
+    Examples:
+    - "dirty money (4k restoration)" -> "dirty money"
+    - "The Movie (2023 (Director's Cut))" -> "The Movie"
+    - "Unclosed paren (something" -> "Unclosed paren"
+    - "Normal title" -> "Normal title"
+    """
+    result = text
+    while True:
+        new_result = re.sub(r'\([^()]*\)', '', result)
+        if new_result == result:
+            # Remove any unclosed parenthesis and following text
+            new_result = re.sub(r'\([^)]*$', '', result)
+            return norm_space(new_result)
+        result = new_result
+
 def fetch_all_films(conn):
     with conn.cursor(pymysql.cursors.DictCursor) as cursor:
         cursor.execute("SELECT * FROM film")
@@ -50,4 +67,3 @@ def upsert_film_person(conn, film_id, person_id, role):
             "REPLACE INTO film_person (film_id, person_id, role) VALUES (%s, %s, %s)",
             (film_id, person_id, role)
         )
-
