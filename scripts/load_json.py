@@ -3,16 +3,9 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import pymysql
 from dateutil import parser as dtparser
+from db_helper import DB, conn_open, norm_space, norm_title, strip_dir_prefix
 
 # === CONFIG ===
-DB = dict(
-    host="127.0.0.1",
-    user="vancine",
-    password="10045978",
-    database="vancine",
-    charset="utf8mb4",
-    autocommit=True,
-)
 DATA_DIR = "data/latest"
 LOCAL_TZ = ZoneInfo("America/Vancouver")
 UTC = ZoneInfo("UTC")
@@ -24,19 +17,6 @@ DEFAULT_FILES = [
 ]
 
 # === UTILITIES ===
-def norm_space(s: str) -> str:
-    return re.sub(r"\s+", " ", s.strip())
-
-def norm_title(t: str | None) -> str:
-    if not t: return ""
-    t = t.replace("’", "'")
-    return norm_space(t).lower()
-
-def strip_dir_prefix(name: str | None) -> str | None:
-    # "Dir. Spike Lee" -> "Spike Lee"
-    if not name: return None
-    return re.sub(r"^\s*dir\.?\s*", "", name, flags=re.I)
-
 def parse_runtime_minutes(s: str | int | None) -> int | None:
     # Accepts '111 mins', '98 min', '111', None
     if s is None: return None
@@ -63,8 +43,6 @@ def guess_end(start_utc: datetime, runtime_min: int | None) -> datetime:
     return start_utc + timedelta(minutes=minutes)
 
 # === DB HELPERS ===
-def conn_open():
-    return pymysql.connect(**DB)
 
 def upsert(cur, sql, params):
     cur.execute(sql, params)
