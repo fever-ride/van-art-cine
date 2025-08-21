@@ -100,11 +100,42 @@ def find_tmdb_and_imdb(title: str, year: Optional[int]) -> Optional[Dict[str, Op
     return out
 
 def update_film_ids(conn, film_id: int, imdb_id: Optional[str], tmdb_id: Optional[str]):
+    imdb_url = make_imdb_url(imdb_id)
     with conn.cursor() as cursor:
         cursor.execute(
-            "UPDATE film SET imdb_id=%s, tmdb_id=%s WHERE id=%s",
-            (imdb_id, tmdb_id, film_id)
+            "UPDATE film SET imdb_id=%s, tmdb_id=%s, imdb_url=%s WHERE id=%s",
+            (imdb_id, tmdb_id, imdb_url, film_id)
         )
+
+def make_imdb_url(imdb_id: Optional[str]) -> Optional[str]:
+    if not imdb_id:
+        return None
+    imdb_id = imdb_id.strip()
+    # basic sanity: tt + 7+ digits
+    if not re.match(r"^tt\d{7,}$", imdb_id):
+        return None
+    return f"https://www.imdb.com/title/{imdb_id}/"
+
+def backfill_imdb_urls(conn) -> int:
+    # fill imdb_url wherever imdb_id exists but imdb_url is missing/empty
+    with conn.cursor(pymysql.cursors.DictCursor) as cursor:
+        cursor.execute("""
+            SELECT id, imdb_id
+            FROM film
+            WHERE imdb_id IS NOT NULL
+              AND imdb_id <> ''
+              AND (imdb_url IS NULL OR imdb_url = '')
+        """)
+        rows = cursor.fetchall()
+
+    updated = 0
+    with conn.cursor() as cursor:
+        for row in rows:
+            url = make_imdb_url(row["imdb_id"])
+            if url:
+                cursor.execute("UPDATE film SET imdb_url=%s WHERE id=%s", (url, row["id"]))
+                updated += 1
+    return updated
 
 def main():
     conn = conn_open()
@@ -115,8 +146,17 @@ def main():
     updated, not_found = 0, 0
 
     for film in films:
+        # If already has both IDs, at least ensure imdb_url exists
         if film["imdb_id"] and film["tmdb_id"]:
-            continue  # already has both IDs
+            # quick fill for imdb_url in already-complete records
+            with conn.cursor() as cursor:
+                url = make_imdb_url(film["imdb_id"])
+                if url:
+                    cursor.execute(
+                        "UPDATE film SET imdb_url=COALESCE(imdb_url, %s) WHERE id=%s",
+                        (url, film["id"])
+                    )
+            continue
 
         ids = find_tmdb_and_imdb(film["title"], film["year"])
         if ids and (ids["imdb_id"] or ids["tmdb_id"]):
@@ -127,7 +167,10 @@ def main():
             print(f"Not found: {film['title']} ({film['year']})")
             not_found += 1
 
-    print(f"Done. Updated {updated}, Not found: {not_found}")
+    # Final pass to fill any remaining imdb_url gaps
+    filled = backfill_imdb_urls(conn)
+
+    print(f"Done. Updated IDs {updated}, Not found: {not_found}, IMDb URLs filled: {filled}")
     conn.commit()
     conn.close()
 
