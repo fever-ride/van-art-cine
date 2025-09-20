@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { fetchScreenings } from '../models/screenings.js';
+import { normalizeTz } from '../utils/validateTz.js';
 
 const router = Router();
 
@@ -23,10 +24,13 @@ router.get('/', async (req, res, next) => {
     const sort  = (req.query.sort  || 'time').toString();
     const order = (req.query.order || 'asc').toString();
 
+    const tz = normalizeTz(req.query.tz);
+
     const rows = await fetchScreenings({
       date, from, to,
       venueId, cinemaId, filmId,
-      q, sort, order, limit, offset
+      q, sort, order, limit, offset,
+      tz,
     });
 
     res.json({ total: rows.length, items: rows });

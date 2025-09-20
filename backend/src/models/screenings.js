@@ -1,4 +1,5 @@
 import { pool } from '../db.js';
+import { localDayToUtcRange, localRangeToUtc } from '../utils/time.js';
 
 /**
  * Build SQL + params for the screenings query.
@@ -13,6 +14,7 @@ export function buildScreeningsQuery(opts = {}) {
     order = 'ASC',
     limit = 50,
     offset = 0,
+    tz = 'America/Vancouver',
   } = opts;
 
   const sortMap = {
@@ -66,15 +68,16 @@ export function buildScreeningsQuery(opts = {}) {
 
   const params = [];
 
-  // Date filtering (UTC)
+  // Date filtering
   if (date) {
-    sql += ` AND s.start_at_utc >= ? AND s.start_at_utc < DATE_ADD(?, INTERVAL 1 DAY)`;
-    params.push(`${date} 00:00:00`, `${date} 00:00:00`);
+    const [utcStart, utcEnd] = localDayToUtcRange(date, tz);
+    if (utcStart) { sql += ' AND s.start_at_utc >= ?'; params.push(utcStart); }
+    if (utcEnd)   { sql += ' AND s.start_at_utc <  ?'; params.push(utcEnd); }
   } else {
-    if (from) { sql += ` AND s.start_at_utc >= ?`; params.push(`${from} 00:00:00`); }
-    else      { sql += ` AND s.start_at_utc >= UTC_TIMESTAMP()`; }
-
-    if (to)   { sql += ` AND s.start_at_utc < DATE_ADD(?, INTERVAL 1 DAY)`; params.push(`${to} 00:00:00`); }
+    const [utcRangeStart, utcRangeEnd] = localRangeToUtc(from, to, tz);
+    if (utcRangeStart) { sql += ' AND s.start_at_utc >= ?'; params.push(utcRangeStart); }
+    else               { sql += ' AND s.start_at_utc >= UTC_TIMESTAMP()'; }
+    if (utcRangeEnd)   { sql += ' AND s.start_at_utc <  ?'; params.push(utcRangeEnd); }
   }
 
   if (Number.isFinite(venueId))  { sql += ` AND v.id = ?`; params.push(venueId); }
@@ -95,7 +98,6 @@ export function buildScreeningsQuery(opts = {}) {
   return { sql, params };
 }
 
-/** High-level helper: runs the query and returns rows */
 export async function fetchScreenings(opts = {}) {
   const { sql, params } = buildScreeningsQuery(opts);
   const [rows] = await pool.query(sql, params);
