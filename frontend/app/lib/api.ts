@@ -1,10 +1,11 @@
-export type SortKey = 'time' | 'title' | 'imdb' | 'rt' | 'venue' | 'votes' | 'year';
+// Plan: Add 'time' to SortKey to filter by time in a day
+export type SortKey = 'date' | 'title' | 'imdb' | 'rt' | 'venue' | 'votes' | 'year';
 export type Order = 'asc' | 'desc';
 
 export interface Screening {
   id: number;
   title: string;
-  start_at_utc: string;         // ISO string
+  start_at_utc: string;  // ISO string
   end_at_utc?: string | null;
   runtime_min?: number | null;
   tz?: string | null;
@@ -15,11 +16,11 @@ export interface Screening {
   cinema_name: string;
 
   film_id: number;
-  imdb_id?: string | null;      // VARCHAR in DB
+  imdb_id?: string | null;  // VARCHAR in DB
   tmdb_id?: number | null;
   year?: number | null;
 
-  directors?: string | null;    // comma-separated for now
+  directors?: string | null;  // comma-separated for now
   description?: string | null;
   rated?: string | null;
   genre?: string | null;
@@ -52,6 +53,7 @@ export interface ScreeningsQuery {
   order?: Order;
   limit?: number;
   offset?: number;
+  tz?: string;
 }
 
 export async function getScreenings(params: ScreeningsQuery = {}): Promise<ScreeningsResponse> {

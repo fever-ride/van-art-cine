@@ -1,20 +1,22 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { getScreenings, type Screening, type SortKey, type Order } from './lib/api';
+import { getScreenings, type Screening, type ScreeningsQuery, type SortKey, type Order } from './lib/api';
 
 export default function Home() {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Vancouver';
+
   // --- UI state ---
-  const [mode, setMode]       = useState<'single'|'range'>('single'); // NEW
+  const [mode, setMode]       = useState<'single'|'range'>('single');
   const [date, setDate]       = useState<string>('');
-  const [from, setFrom]       = useState<string>('');                 // NEW
-  const [to, setTo]           = useState<string>('');                 // NEW
+  const [from, setFrom]       = useState<string>('');            
+  const [to, setTo]           = useState<string>('');  
 
   const [q, setQ]             = useState<string>('');
   const [cinemaId, setCinemaId] = useState<string>('');
   const [venueId, setVenueId]   = useState<string>('');
   const [filmId, setFilmId]     = useState<string>('');
-  const [sort, setSort]       = useState<SortKey>('time');
+  const [sort, setSort]       = useState<SortKey>('date');
   const [order, setOrder]     = useState<Order>('asc');
   const [limit]               = useState<number>(20);
   const [offset, setOffset]   = useState<number>(0);
@@ -38,13 +40,14 @@ export default function Home() {
 
     try {
       // Build params: send either `date` OR (`from`,`to`)
-      const params: any = {
+      const params: ScreeningsQuery = {
         q,
         cinema_id: numOrEmpty(cinemaId),
         venue_id:  numOrEmpty(venueId),
         film_id:   numOrEmpty(filmId),
         sort, order, limit,
         offset: nextOffset,
+        tz,
       };
 
       if (mode === 'single' && date) {
