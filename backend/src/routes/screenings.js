@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import { fetchScreenings } from '../models/screenings.js';
-import { normalizeTz } from '../utils/validateTz.js';
+// import { normalizeTz } from '../utils/validateTz.js';
 
 const router = Router();
+
+// Currently backend ignores tz; 
+// kept for possible future multi-timezone support.
+const DEFAULT_TZ = 'America/Vancouver';
 
 router.get('/', async (req, res, next) => {
   try {
@@ -24,7 +28,9 @@ router.get('/', async (req, res, next) => {
     const sort  = (req.query.sort  || 'time').toString();
     const order = (req.query.order || 'asc').toString();
 
-    const tz = normalizeTz(req.query.tz);
+    // Currently backend ignores tz; 
+    // kept for possible future multi-timezone support.
+    const tz = DEFAULT_TZ;
 
     const rows = await fetchScreenings({
       date, from, to,
