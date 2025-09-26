@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 from playwright.sync_api import sync_playwright, TimeoutError
 
+
 def scrape_cinematheque_listings():
     """Phase 1: Scrape all basic info from calendar page"""
     url = "https://thecinematheque.ca/films/calendar"
@@ -84,8 +85,10 @@ def scrape_cinematheque_listings():
 
                         if time_el:
                             raw_time = time_el.inner_text().strip()
-                            classes = (time_el.get_attribute("class") or "").lower()
-                            suffix = " pm" if " pm" in f" {classes} " else (" am" if " am" in f" {classes} " else "")
+                            classes = (time_el.get_attribute(
+                                "class") or "").lower()
+                            suffix = " pm" if " pm" in f" {classes} " else (
+                                " am" if " am" in f" {classes} " else "")
                             time_text = raw_time + suffix
                         else:
                             time_text = "No time"
@@ -129,13 +132,16 @@ def scrape_cinematheque_listings():
                             }
 
                         total_showtimes += 1
-                        print(f"    ✓ {item_index + 1}/{len(program_items)}: {title} at {time_text}")
+                        print(
+                            f"    ✓ {item_index + 1}/{len(program_items)}: {title} at {time_text}")
 
                     except Exception as e:
-                        print(f"    ✗ Error processing program {item_index + 1}: {e}")
+                        print(
+                            f"    ✗ Error processing program {item_index + 1}: {e}")
                         continue
 
-                print(f"  ✓ {date_str}: {len(program_items)} programs processed")
+                print(
+                    f"  ✓ {date_str}: {len(program_items)} programs processed")
 
             except Exception as e:
                 print(f"  ✗ Error processing day {day_index + 1}: {e}")
@@ -158,14 +164,15 @@ def scrape_cinematheque_listings():
 
         return results
 
+
 def scrape_cinematheque_details(events_data):
     """Phase 2: Scrape director, year, duration from individual event pages"""
     print(f"\n=== PHASE 2: Scraping Detail Pages ===")
 
     # Filter events that have valid detail URLs
     events_with_urls = [e for e in events_data if e.get("detail_url") and
-                       e["detail_url"] != "No detail url found" and
-                       e["detail_url"].startswith("http")]
+                        e["detail_url"] != "No detail url found" and
+                        e["detail_url"].startswith("http")]
 
     print(f"Processing {len(events_with_urls)} events with detail URLs...")
 
@@ -193,7 +200,8 @@ def scrape_cinematheque_details(events_data):
             detail_url = event["detail_url"]
 
             try:
-                print(f"    {i+1}/{len(events_with_urls)}: Getting details for '{event['title']}'")
+                print(
+                    f"    {i+1}/{len(events_with_urls)}: Getting details for '{event['title']}'")
 
                 page.goto(detail_url, timeout=30000)
 
@@ -234,14 +242,16 @@ def scrape_cinematheque_details(events_data):
                     event["duration"] = duration
 
                 except Exception as extraction_error:
-                    print(f"        ⚠ Error extracting details: {extraction_error}")
+                    print(
+                        f"        ⚠ Error extracting details: {extraction_error}")
                     # Simple fallback
                     event["director"] = "Error retrieving director"
                     event["year"] = "Error retrieving year"
                     event["duration"] = "Error retrieving duration"
 
             except Exception as e:
-                print(f"        ✗ Error getting details for {event['title']}: {e}")
+                print(
+                    f"        ✗ Error getting details for {event['title']}: {e}")
                 # Set fallback values
                 event["director"] = "Error retrieving director"
                 event["year"] = "Error retrieving year"
@@ -256,9 +266,11 @@ def scrape_cinematheque_details(events_data):
                 event["year"] = "No year found"
 
         browser.close()
-        print(f"\n✓ Phase 2 complete! Processed details for {len(events_with_urls)} events")
+        print(
+            f"\n✓ Phase 2 complete! Processed details for {len(events_with_urls)} events")
 
         return events_data
+
 
 def scrape_cinematheque_complete():
     """Complete Cinematheque scraping process: listings + details"""
@@ -285,8 +297,10 @@ def scrape_cinematheque_complete():
         print(f"\n{'='*50}")
         print(f"🎬 Cinematheque Scraping Complete! 🎬")
         print(f"Total unique events: {len(complete_events)}")
-        print(f"Events with detail URLs: {len([e for e in complete_events if e.get('detail_url', '').startswith('http')])}")
-        total_showtimes = sum(len(e.get('showtimes', [])) for e in complete_events)
+        print(
+            f"Events with detail URLs: {len([e for e in complete_events if e.get('detail_url', '').startswith('http')])}")
+        total_showtimes = sum(len(e.get('showtimes', []))
+                              for e in complete_events)
         print(f"Total showtimes: {total_showtimes}")
         print(f"Saved to: {timestamped_filename}")
 
@@ -298,6 +312,7 @@ def scrape_cinematheque_complete():
     except Exception as e:
         print(f"\nUnexpected error: {e}")
         return []
+
 
 if __name__ == "__main__":
     scrape_cinematheque_complete()
