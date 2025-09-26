@@ -31,8 +31,6 @@ export interface UpcomingScreening {
   start_at_utc: string;
   end_at_utc?: string | null;
   runtime_min?: number | null;
-  venue_id: number;
-  venue_name: string;
   cinema_id: number;
   cinema_name: string;
   source_url?: string | null;

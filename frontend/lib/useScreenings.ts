@@ -13,7 +13,6 @@ type UIState = {
   to: string;
   q: string;
   cinemaId: string;
-  venueId: string;
   filmId: string;
   sort: SortKey;
   order: Order;
@@ -27,7 +26,6 @@ const defaultUI: UIState = {
   to: '',
   q: '',
   cinemaId: '',
-  venueId: '',
   filmId: '',
   sort: 'date',
   order: 'asc',

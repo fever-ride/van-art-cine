@@ -11,7 +11,6 @@ type UI = {
   to: string;
   q: string;
   cinemaId: string;
-  venueId: string;
   filmId: string;
   sort: SortKey;
   order: Order;
@@ -102,13 +101,6 @@ export default function Filters({
           className="w-28 rounded-lg border border-gray-300 px-2 py-1 text-sm"
         />
         <input
-          placeholder="Venue ID"
-          value={ui.venueId}
-          onChange={(e) => setUI({ venueId: e.target.value })}
-          inputMode="numeric"
-          className="w-28 rounded-lg border border-gray-300 px-2 py-1 text-sm"
-        />
-        <input
           placeholder="Film ID"
           value={ui.filmId}
           onChange={(e) => setUI({ filmId: e.target.value })}
@@ -125,7 +117,6 @@ export default function Filters({
           <option value="title">Title</option>
           <option value="imdb">IMDb</option>
           <option value="rt">RottenTomatoes</option>
-          <option value="venue">Venue</option>
           <option value="votes">Votes</option>
           <option value="year">Year</option>
         </select>

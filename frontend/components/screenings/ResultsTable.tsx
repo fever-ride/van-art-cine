@@ -16,7 +16,7 @@ export default function ResultsTable({
         <tr className="border-b border-gray-200 bg-gray-50 text-left">
           <th className="px-3 py-2 font-medium">When</th>
           <th className="px-3 py-2 font-medium">Title</th>
-          <th className="px-3 py-2 font-medium">Venue</th>
+          <th className="px-3 py-2 font-medium">Cinema</th>
           <th className="px-3 py-2 text-right font-medium">IMDb</th>
           <th className="px-3 py-2 text-right font-medium">RT%</th>
           <th className="px-3 py-2 text-right font-medium">Runtime</th>
@@ -46,7 +46,7 @@ export default function ResultsTable({
                 <div className="text-xs text-gray-500">{s.directors}</div>
               )}
             </td>
-            <td className="px-3 py-2">{s.venue_name}</td>
+            <td className="px-3 py-2">{s.cinema_name}</td>
             <td className="px-3 py-2 text-right">{s.imdb_rating ?? '–'}</td>
             <td className="px-3 py-2 text-right">{s.rt_rating_pct ?? '–'}</td>
             <td className="px-3 py-2 text-right">{s.runtime_min ?? '–'}</td>

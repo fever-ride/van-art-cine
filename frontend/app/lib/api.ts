@@ -1,5 +1,5 @@
 // Plan: Add 'time' to SortKey to filter by time in a day
-export type SortKey = 'date' | 'title' | 'imdb' | 'rt' | 'venue' | 'votes' | 'year';
+export type SortKey = 'date' | 'title' | 'imdb' | 'rt' | 'votes' | 'year';
 export type Order = 'asc' | 'desc';
 
 export interface Screening {
@@ -10,8 +10,6 @@ export interface Screening {
   runtime_min?: number | null;
   tz?: string | null;
 
-  venue_id: number;
-  venue_name: string;
   cinema_id: number;
   cinema_name: string;
 
@@ -45,7 +43,6 @@ export interface ScreeningsQuery {
   date?: string;
   from?: string;
   to?: string;
-  venue_id?: number;
   cinema_id?: number;
   film_id?: number;
   q?: string;

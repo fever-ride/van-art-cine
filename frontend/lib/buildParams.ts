@@ -7,7 +7,6 @@ type UI = {
   to: string;
   q: string;
   cinemaId: string;
-  venueId: string;
   filmId: string;
   sort: SortKey;
   order: Order;
@@ -20,7 +19,6 @@ export function buildParams({ ui, tz, offset }: { ui: UI; tz: string; offset: nu
   const params: ScreeningsQuery = {
     q: ui.q,
     cinema_id: numOrEmpty(ui.cinemaId),
-    venue_id: numOrEmpty(ui.venueId),
     film_id: numOrEmpty(ui.filmId),
     sort: ui.sort,
     order: ui.order,

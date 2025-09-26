@@ -59,9 +59,9 @@ export default function FilmShowtimes({ upcoming }: Props) {
                 {fmt.format(new Date(s.start_at_utc))}
               </div>
 
-              {/* Venue & cinema */}
+              {/* Cinema */}
               <div className="text-gray-700">
-                {s.venue_name} · {s.cinema_name}
+                {s.cinema_name}
               </div>
 
               {/* Link (or fallback text) */}
