@@ -26,6 +26,8 @@ export function buildParams({ ui, tz, offset }: { ui: UI; tz: string; offset: nu
     order: ui.order,
     limit: ui.limit,
     offset,
+    // Currently backend ignores tz; 
+    // kept for possible future multi-timezone support.
     tz,
   };
 

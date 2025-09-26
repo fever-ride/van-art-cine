@@ -1,13 +1,14 @@
 'use client';
 
+import Link from 'next/link';
 import type { Screening } from '@/app/lib/api';
 
 export default function ResultsTable({
   items,
   fmt,
 }: {
-  items: Screening[];
-  fmt: Intl.DateTimeFormat;
+  readonly items: Screening[];
+  readonly fmt: Intl.DateTimeFormat;
 }) {
   return (
     <table className="w-full border-separate border-spacing-0 text-sm">
@@ -27,7 +28,19 @@ export default function ResultsTable({
             <td className="px-3 py-2">{fmt.format(new Date(s.start_at_utc))}</td>
             <td className="px-3 py-2">
               <div className="font-semibold">
-                {s.title} {s.year ? `(${s.year})` : ''}
+                {s.film_id ? (
+                  <Link
+                    href={`/films/${s.film_id}`}
+                    className="hover:underline"
+                    aria-label={`View details for ${s.title}`}
+                  >
+                    {s.title} {s.year ? `(${s.year})` : ''}
+                  </Link>
+                ) : (
+                  <>
+                    {s.title} {s.year ? `(${s.year})` : ''}
+                  </>
+                )}
               </div>
               {s.directors && (
                 <div className="text-xs text-gray-500">{s.directors}</div>
