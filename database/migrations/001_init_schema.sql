@@ -9,16 +9,6 @@ CREATE TABLE cinema (
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE venue (
-                       id INT AUTO_INCREMENT PRIMARY KEY,
-                       cinema_id INT NOT NULL,
-                       name VARCHAR(160) NOT NULL,
-                       address VARCHAR(300),
-                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                       UNIQUE KEY uniq_cinema_venue (cinema_id, name),
-                       FOREIGN KEY (cinema_id) REFERENCES cinema(id)
-);
-
 CREATE TABLE film (
                       id INT AUTO_INCREMENT PRIMARY KEY,
                       title VARCHAR(255) NOT NULL,
@@ -37,6 +27,7 @@ CREATE TABLE film (
                           ) STORED,
                       imdb_id VARCHAR(16),
                       tmdb_id INT,
+                      imdb_url VARCHAR(512) NULL,
                       UNIQUE KEY uniq_title_year (normalized_title, year),
                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                       CONSTRAINT chk_rt_rating_pct CHECK (rt_rating_pct IS NULL OR (rt_rating_pct BETWEEN 0 AND 100)),
@@ -70,7 +61,7 @@ CREATE TABLE film_person (
 CREATE TABLE screening (
                            id INT AUTO_INCREMENT PRIMARY KEY,
                            film_id INT NOT NULL,
-                           venue_id INT NOT NULL,
+                           cinema_id INT NOT NULL,
                            start_at_utc DATETIME NOT NULL,
                            end_at_utc   DATETIME NOT NULL,
                            runtime_min SMALLINT,
@@ -80,12 +71,12 @@ CREATE TABLE screening (
                            raw_date VARCHAR(80), raw_time VARCHAR(80),
                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                           UNIQUE KEY uniq_show (venue_id, film_id, start_at_utc),
+                           UNIQUE KEY uniq_show (cinema_id, film_id, start_at_utc),
                            KEY idx_when (start_at_utc),
                            KEY idx_film (film_id),
-                           KEY idx_venue (venue_id),
+                           KEY idx_cinema (cinema_id),
                            FOREIGN KEY (film_id) REFERENCES film(id),
-                           FOREIGN KEY (venue_id) REFERENCES venue(id),
+                           FOREIGN KEY (cinema_id) REFERENCES cinema(id),
                            CONSTRAINT chk_screening_time CHECK (end_at_utc >= start_at_utc)
 );
 
@@ -116,7 +107,7 @@ CREATE TABLE custom_event (
                               start_at_utc DATETIME NOT NULL,
                               end_at_utc   DATETIME NOT NULL,
                               tz VARCHAR(64) NOT NULL DEFAULT 'America/Vancouver',
-                              venue_text VARCHAR(255) NULL,
+                              cinema_text VARCHAR(255) NULL,
                               notes VARCHAR(255) NULL,
                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                               FOREIGN KEY (uid) REFERENCES app_user(uid),
