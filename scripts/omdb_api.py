@@ -6,6 +6,7 @@ from db_helper import DB, conn_open, norm_space, norm_title, strip_dir_prefix, f
 OMDB_API_KEY = "cf07f36c"
 OMDB_URL = "https://www.omdbapi.com/"
 
+
 def fetch_omdb_data(film):
     # Prefer IMDb ID (exact), fallback to title/year
     if film.get("imdb_id"):
@@ -25,6 +26,7 @@ def fetch_omdb_data(film):
         print(f"[OMDb] request failed: {e}")
         return None
 
+
 def parse_rt_percent(omdb: Dict[str, Any]) -> Optional[int]:
     for r in omdb.get("Ratings", []) or []:
         if r.get("Source") == "Rotten Tomatoes":
@@ -33,6 +35,7 @@ def parse_rt_percent(omdb: Dict[str, Any]) -> Optional[int]:
                 pct = int(m.group(1))
                 return pct if 0 <= pct <= 100 else None
     return None
+
 
 def parse_imdb_rating(omdb: Dict[str, Any]) -> Optional[float]:
     val = (omdb.get("imdbRating") or "").strip()
@@ -44,6 +47,7 @@ def parse_imdb_rating(omdb: Dict[str, Any]) -> Optional[float]:
             return None
     return None
 
+
 def parse_imdb_votes(omdb: Dict[str, Any]) -> Optional[int]:
     val = (omdb.get("imdbVotes") or "").replace(",", "").strip()
     if val and val != "N/A":
@@ -53,6 +57,7 @@ def parse_imdb_votes(omdb: Dict[str, Any]) -> Optional[int]:
         except ValueError:
             return None
     return None
+
 
 def update_film_omdb_fields(conn, film_id, omdb_data):
     rt_pct = parse_rt_percent(omdb_data)
@@ -87,6 +92,7 @@ def update_film_omdb_fields(conn, film_id, omdb_data):
             film_id
         ))
 
+
 def main():
     conn = conn_open()
     try:
@@ -96,7 +102,8 @@ def main():
         for film in films:
             omdb_data = fetch_omdb_data(film)
             if not omdb_data or omdb_data.get("Response") == "False":
-                print(f"[MISS] {film['title']} ({film.get('year') or ''})  imdb_id={film.get('imdb_id') or '-'}")
+                print(
+                    f"[MISS] {film['title']} ({film.get('year') or ''})  imdb_id={film.get('imdb_id') or '-'}")
                 not_found += 1
                 continue
 
@@ -121,12 +128,14 @@ def main():
                     if not name:
                         continue
                     person_id = upsert_person(conn, name)
-                    upsert_film_person(conn, film["id"], person_id, role.lower() if role != "Actors" else "cast")
+                    upsert_film_person(
+                        conn, film["id"], person_id, role.lower() if role != "Actors" else "cast")
 
         conn.commit()
         print(f"\nDone. OMDb updated: {found}  |  Not found: {not_found}")
     finally:
         conn.close()
+
 
 if __name__ == "__main__":
     main()
