@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import glob
+import hashlib
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import pymysql
@@ -24,7 +25,6 @@ DEFAULT_FILES = [
 
 
 def parse_runtime_minutes(s: str | int | None) -> int | None:
-    # Accepts '111 mins', '98 min', '111', None
     if s is None:
         return None
     if isinstance(s, int):
@@ -52,6 +52,25 @@ def to_utc(local_dt: datetime) -> datetime:
 def guess_end(start_utc: datetime, runtime_min: int | None) -> datetime:
     minutes = 0 if runtime_min is None else runtime_min
     return start_utc + timedelta(minutes=minutes)
+
+
+def stable_uid(cinema_id: int, film_id: int, start_at_utc: datetime) -> str:
+    key = f"{cinema_id}|{film_id}|{start_at_utc:%Y-%m-%d %H:%M:%S}"
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:32]
+
+
+def make_content_hash(film_id, cinema_id, start_utc, end_utc,
+                      runtime_min, tz, source_url, notes):
+    parts = [
+        str(film_id), str(cinema_id),
+        start_utc.strftime("%Y-%m-%d %H:%M:%S"),
+        end_utc.strftime("%Y-%m-%d %H:%M:%S"),
+        "" if runtime_min is None else str(runtime_min),
+        tz or "",
+        source_url or "",
+        notes or "",
+    ]
+    return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
 
 # === DB HELPERS ===
 
@@ -84,13 +103,17 @@ ON DUPLICATE KEY UPDATE name=VALUES(name)
     "film_person_ins": """
 INSERT IGNORE INTO film_person (film_id, person_id, role) VALUES (%s,%s,%s)
 """,
-    "screening_ins": """
-INSERT INTO screening (film_id, cinema_id, start_at_utc, end_at_utc, runtime_min, tz, source_url, notes, raw_date, raw_time)
-VALUES (%s,%s,%s,%s,%s,'America/Vancouver',%s,%s,%s,%s)
-ON DUPLICATE KEY UPDATE source_url=VALUES(source_url), notes=VALUES(notes)
+    # Insert into staging table, no ON DUPLICATE because we clear staging each run
+    "stg_screening_ins": """
+INSERT INTO stg_screening (
+    film_id, cinema_id, start_at_utc, end_at_utc, runtime_min, tz,
+    source, source_uid, source_url, notes, raw_date, raw_time,
+    content_hash, loaded_at_utc
+) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
 """,
     "raw_import_ins": """
-INSERT INTO raw_import (cinema_id, fetched_at, payload) VALUES (%s, NOW(), CAST(%s AS JSON))
+INSERT INTO raw_import (cinema_id, fetched_at, source, payload)
+VALUES (%s, NOW(), %s, CAST(%s AS JSON))
 """
 }
 
@@ -98,9 +121,7 @@ INSERT INTO raw_import (cinema_id, fetched_at, payload) VALUES (%s, NOW(), CAST(
 def ensure_cinema(cur, cinema_name, cinema_website=None):
     upsert(cur, SQL["cinema_ins"], (cinema_name, cinema_website, None))
     row = fetch_one(cur, "SELECT id FROM cinema WHERE name=%s", (cinema_name,))
-    cid = row[0]
-
-    return cid
+    return row[0]
 
 
 def ensure_film(cur, title, year, description=None, imdb=None, tmdb=None):
@@ -122,7 +143,6 @@ def link_directors(cur, film_id, director_field):
     if not director_field:
         return
     cleaned = strip_dir_prefix(director_field)
-    # split on ',', '&', '/', ' and '
     names = re.split(r",|&|/| and ", cleaned)
     for n in [norm_space(x) for x in names if norm_space(x)]:
         pid = ensure_person(cur, n)
@@ -130,26 +150,20 @@ def link_directors(cur, film_id, director_field):
 
 
 def normalize_ampm(s: str) -> str:
-    # "1:45 p.m." -> "1:45 pm"
     return s.replace("a.m.", "am").replace("p.m.", "pm").replace("A.M.", "am").replace("P.M.", "pm").strip()
 
-# === PARSERS FOR EACH SOURCE ===
+# === PARSERS ===
 
 
 def parse_dt_cinematheque(date_str: str, time_str: str) -> datetime:
     time_str = normalize_ampm(time_str)
     try:
-        # 2025-August-15 07:00 PM
-        dt_local = datetime.strptime(
-            f"{date_str} {time_str}", "%Y-%B-%d %I:%M %p")
+        return datetime.strptime(f"{date_str} {time_str}", "%Y-%B-%d %I:%M %p")
     except ValueError:
-        # fallback: dateutil parse
-        dt_local = dtparser.parse(f"{date_str} {time_str}")
-    return dt_local
+        return dtparser.parse(f"{date_str} {time_str}")
 
 
 def parse_dt_viff(date_str: str, time_str: str, year_hint: int | None) -> datetime:
-    # e.g., "Mon Aug 11" + "4:00 pm" (+ year)
     time_str = normalize_ampm(time_str)
     try:
         return datetime.strptime(f"{date_str} {year_hint} {time_str}", "%a %b %d %Y %I:%M %p")
@@ -158,100 +172,72 @@ def parse_dt_viff(date_str: str, time_str: str, year_hint: int | None) -> dateti
 
 
 def parse_dt_rio(date_str: str, time_str: str, year_hint: int | None) -> datetime:
-    # e.g., "Sunday July 27" + "1:45 p.m."
     time_str = normalize_ampm(time_str).replace(" ", "")
     try:
         return datetime.strptime(f"{date_str} {year_hint} {time_str}", "%A %B %d %Y %I:%M%p")
     except ValueError:
         return dtparser.parse(f"{date_str} {year_hint} {time_str}")
 
-# === LOADERS ===
+# === LOADERS (now insert into stg_screening) ===
+
+
+def load_source(cur, path, source_name, cinema_name, cinema_website, parse_dt_func, year_hint=None):
+    with open(path, "r", encoding="utf-8") as f:
+        rows = json.load(f)
+    cid = ensure_cinema(cur, cinema_name, cinema_website)
+    upsert(cur, SQL["raw_import_ins"], (cid, source_name,
+           json.dumps(rows, ensure_ascii=False)))
+
+    loaded_at_utc = datetime.now(UTC).replace(tzinfo=None)
+
+    # clear staging rows for this source before inserting new ones
+    cur.execute("DELETE FROM stg_screening WHERE source=%s", (source_name,))
+
+    for r in rows:
+        title = r.get("title")
+        year = parse_year(r.get("year"))
+        runtime = parse_runtime_minutes(r.get("duration"))
+        film_id = ensure_film(cur, title, year, r.get("description"))
+        link_directors(cur, film_id, r.get("director"))
+        for st in r.get("showtimes", []):
+            dt_local = parse_dt_func(st.get("date", ""), st.get("time", "")) if not year_hint else \
+                parse_dt_func(st.get("date", ""),
+                              st.get("time", ""), year_hint)
+            start_utc = to_utc(dt_local)
+            end_utc = guess_end(start_utc, runtime)
+            upstream_id = st.get("id") or r.get("id")
+            source_uid = upstream_id or stable_uid(cid, film_id, start_utc)
+            content_hash = make_content_hash(
+                film_id, cid, start_utc, end_utc, runtime,
+                "America/Vancouver", r.get("detail_url"), None
+            )
+            upsert(cur, SQL["stg_screening_ins"], (
+                film_id, cid, start_utc, end_utc, runtime,
+                "America/Vancouver", source_name, source_uid, r.get(
+                    "detail_url"),
+                None, st.get("date"), st.get("time"),
+                content_hash, loaded_at_utc
+            ))
 
 
 def load_cinematheque(cur, path):
-    cinema = "The Cinematheque"
-    with open(path, "r", encoding="utf-8") as f:
-        rows = json.load(f)
-    cid = ensure_cinema(
-        cur, cinema, "https://thecinematheque.ca")
-    upsert(cur, SQL["raw_import_ins"],
-           (cid, json.dumps(rows, ensure_ascii=False)))
-
-    for r in rows:
-        title = r.get("title")
-        year = parse_year(r.get("year"))
-        runtime = parse_runtime_minutes(r.get("duration"))
-        film_id = ensure_film(cur, title, year, r.get("description"))
-        link_directors(cur, film_id, r.get("director"))
-        for st in r.get("showtimes", []):
-            dt_local = parse_dt_cinematheque(
-                st.get("date", ""), st.get("time", ""))
-            start_utc = to_utc(dt_local)
-            end_utc = guess_end(start_utc, runtime)
-            upsert(cur, SQL["screening_ins"], (
-                film_id, cid, start_utc, end_utc, runtime,
-                r.get("detail_url"), None, st.get("date"), st.get("time")
-            ))
+    load_source(cur, path, "cinematheque", "The Cinematheque",
+                "https://thecinematheque.ca", parse_dt_cinematheque)
 
 
 def load_viff(cur, path):
-    cinema = "VIFF Centre"
-    with open(path, "r", encoding="utf-8") as f:
-        rows = json.load(f)
-    cid = ensure_cinema(
-        cur, cinema, "https://viff.org")
-    upsert(cur, SQL["raw_import_ins"],
-           (cid, json.dumps(rows, ensure_ascii=False)))
-
-    for r in rows:
-        title = r.get("title")
-        runtime = parse_runtime_minutes(r.get("duration"))
-        year = parse_year(r.get("year"))
-        film_id = ensure_film(cur, title, year, r.get("description"))
-        link_directors(cur, film_id, r.get("director"))
-        screening_year = datetime.now(LOCAL_TZ).year
-        for st in r.get("showtimes", []):
-            dt_local = parse_dt_viff(
-                st.get("date", ""), st.get("time", ""), screening_year)
-            start_utc = to_utc(dt_local)
-            end_utc = guess_end(start_utc, runtime)
-            upsert(cur, SQL["screening_ins"], (
-                film_id, cid, start_utc, end_utc, runtime,
-                r.get("detail_url"), None, st.get("date"), st.get("time")
-            ))
+    load_source(cur, path, "viff", "VIFF Centre", "https://viff.org",
+                parse_dt_viff, datetime.now(LOCAL_TZ).year)
 
 
 def load_rio(cur, path):
-    cinema = "Rio Theatre"
-    with open(path, "r", encoding="utf-8") as f:
-        rows = json.load(f)
-    cid = ensure_cinema(
-        cur, cinema, "https://riotheatre.ca")
-    upsert(cur, SQL["raw_import_ins"],
-           (cid, json.dumps(rows, ensure_ascii=False)))
-
-    for r in rows:
-        title = r.get("title")
-        runtime = parse_runtime_minutes(r.get("duration"))
-        year = parse_year(r.get("year"))
-        film_id = ensure_film(cur, title, year, r.get("description"))
-        link_directors(cur, film_id, r.get("director"))
-        screening_year = datetime.now(LOCAL_TZ).year
-        for st in r.get("showtimes", []):
-            dt_local = parse_dt_rio(
-                st.get("date", ""), st.get("time", ""), screening_year)
-            start_utc = to_utc(dt_local)
-            end_utc = guess_end(start_utc, runtime)
-            upsert(cur, SQL["screening_ins"], (
-                film_id, cid, start_utc, end_utc, runtime,
-                r.get("detail_url"), None, st.get("date"), st.get("time")
-            ))
+    load_source(cur, path, "rio", "Rio Theatre", "https://riotheatre.ca",
+                parse_dt_rio, datetime.now(LOCAL_TZ).year)
 
 # === MAIN ===
 
 
 def main():
-    # Allow passing file paths on CLI; otherwise use defaults
     if len(sys.argv) > 1:
         files = sys.argv[1:]
     else:
@@ -276,7 +262,7 @@ def main():
                     load_rio(cur, fp)
                 else:
                     print(f"Skipping unrecognized file: {fp}")
-        print("✅ Load complete.")
+        print("✅ Staging load complete. Run merge SQL to promote to live screening table.")
     finally:
         conn.close()
 
