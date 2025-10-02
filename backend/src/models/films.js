@@ -1,7 +1,5 @@
-// backend/src/models/films.js
 import { pool } from '../db.js';
 
-/** Fetch a single film’s core fields by numeric id. */
 export async function getFilmById(id) {
   const sql = `
     SELECT
@@ -16,7 +14,6 @@ export async function getFilmById(id) {
   return rows[0] || null;
 }
 
-/** Return role-grouped people arrays for a film. */
 export async function getFilmPeople(id) {
   const sql = `
     SELECT fp.role, p.name
@@ -41,7 +38,6 @@ export async function getFilmPeople(id) {
   return { directors, writers, cast };
 }
 
-/** Minimal upcoming screenings for a film (trimmed payload). */
 export async function getUpcomingForFilm(id, { limit = 200 } = {}) {
   const sql = `
     SELECT
@@ -50,16 +46,15 @@ export async function getUpcomingForFilm(id, { limit = 200 } = {}) {
       s.start_at_utc,
       s.end_at_utc,
       s.runtime_min,
-      v.id   AS venue_id,
-      v.name AS venue_name,
       c.id   AS cinema_id,
       c.name AS cinema_name,
       s.source_url
     FROM screening s
     JOIN film   f ON f.id = s.film_id
-    JOIN venue  v ON v.id = s.venue_id
-    JOIN cinema c ON c.id = v.cinema_id
-    WHERE s.film_id = ? AND s.start_at_utc >= UTC_TIMESTAMP()
+    JOIN cinema c ON c.id = s.cinema_id
+    WHERE s.film_id = ?
+      AND s.is_active = 1
+      AND s.start_at_utc >= UTC_TIMESTAMP()
     ORDER BY s.start_at_utc ASC
     LIMIT ?
   `;

@@ -14,7 +14,6 @@ router.get('/', async (req, res, next) => {
     const from = req.query.from?.trim();
     const to   = req.query.to?.trim();
 
-    const venueId  = req.query.venue_id  ? Number(req.query.venue_id)  : null;
     const cinemaId = req.query.cinema_id ? Number(req.query.cinema_id) : null;
     const filmId   = req.query.film_id   ? Number(req.query.film_id)   : null;
 
@@ -34,7 +33,7 @@ router.get('/', async (req, res, next) => {
 
     const rows = await fetchScreenings({
       date, from, to,
-      venueId, cinemaId, filmId,
+      cinemaId, filmId,
       q, sort, order, limit, offset,
       tz,
     });
