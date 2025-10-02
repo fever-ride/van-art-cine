@@ -5,6 +5,7 @@
 START TRANSACTION;
 
 -- 1. Record the start of this ingest run
+-- source incorrect, needs update
 INSERT INTO ops_ingest_run(source, started_at, status)
 VALUES ('viff', NOW(), 'running');
 SET @run_id = LAST_INSERT_ID();
