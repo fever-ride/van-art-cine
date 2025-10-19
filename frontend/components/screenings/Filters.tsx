@@ -1,6 +1,6 @@
 'use client';
 
-import type { SortKey, Order } from '@/app/lib/api';
+import type { SortKey, Order } from '@/app/lib/screenings';
 
 type Mode = 'single' | 'range';
 

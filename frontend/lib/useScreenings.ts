@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getScreenings, type Screening, type ScreeningsQuery, type SortKey, type Order } from '@/app/lib/api';
+import { getScreenings, type Screening, type ScreeningsQuery, type SortKey, type Order } from '@/app/lib/screenings';
 import { buildParams } from './buildParams';
 
 type Mode = 'single' | 'range';

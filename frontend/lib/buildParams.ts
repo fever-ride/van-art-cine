@@ -1,4 +1,4 @@
-import type { ScreeningsQuery, SortKey, Order } from '@/app/lib/api';
+import type { ScreeningsQuery, SortKey, Order } from '@/app/lib/screenings';
 
 type UI = {
   mode: 'single' | 'range';

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import type { Screening } from '@/app/lib/api';
+import type { Screening } from '@/app/lib/screenings';
 
 export default function ResultsTable({
   items,
