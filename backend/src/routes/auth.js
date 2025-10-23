@@ -12,9 +12,9 @@ import {
   registerValidator,
   loginValidator,
   refreshValidator,
-  handleValidationErrors,
 } from '../validators/authValidators.js';
 
+import { handleValidationErrors } from '../utils/validators.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 
 const router = Router();

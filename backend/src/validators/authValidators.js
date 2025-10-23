@@ -97,20 +97,3 @@ export const logoutValidator = [
       .isLength({ min: 20 }).withMessage('refresh_token cookie looks too short'),
   ], 'Provide refreshToken in body or refresh_token cookie'),
 ];
-
-/**
- * Centralized error surfacing
- */
-export function handleValidationErrors(req, res, next) {
-  const result = validationResult(req);
-  if (result.isEmpty()) return next();
-
-  return res.status(400).json({
-    error: 'VALIDATION_ERROR',
-    details: result.array().map(e => ({
-      field: e.param,
-      msg: e.msg,
-      location: e.location,
-    })),
-  });
-}

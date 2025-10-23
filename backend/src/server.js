@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import screenings from './routes/screenings.js';
 import films from './routes/films.js';
 import auth from './routes/auth.js';
+import watchlist from './routes/watchlist.js';
 
 const app = express();
 
@@ -60,6 +61,7 @@ app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', auth); 
 app.use('/api/screenings', screenings);
 app.use('/api/films', films);
+app.use('/api/watchlist', watchlist);
 
 /* -------- 404 -------- */
 app.use((req, res, next) => {
