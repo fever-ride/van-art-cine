@@ -3,6 +3,8 @@ import {
   addToWatchlistValidator,
   removeFromWatchlistValidator,
   listWatchlistValidator,
+  statusWatchlistValidator,
+  toggleWatchlistValidator,
 } from '../validators/watchlistValidators.js';
 import { handleValidationErrors } from '../utils/validators.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -35,6 +37,22 @@ router.get(
   listWatchlistValidator,
   handleValidationErrors,
   ctrl.listHandler
+);
+
+// Check status (is this screening saved?)
+router.get(
+  '/status',
+  statusWatchlistValidator,
+  handleValidationErrors,
+  ctrl.statusHandler
+);
+
+// Toggle save/remove
+router.post(
+  '/toggle',
+  toggleWatchlistValidator,
+  handleValidationErrors,
+  ctrl.toggleHandler
 );
 
 export default router;
