@@ -2,13 +2,18 @@
 
 import Link from 'next/link';
 import type { Screening } from '@/app/lib/screenings';
+import WatchlistButton from '@/components/watchlist/WatchlistButton';
 
 export default function ResultsTable({
   items,
   fmt,
+  savedIds,
+  onSavedChange,
 }: {
   readonly items: Screening[];
   readonly fmt: Intl.DateTimeFormat;
+  readonly savedIds?: Set<number>;
+  readonly onSavedChange?: (screeningId: number, saved: boolean) => void;
 }) {
   return (
     <table className="w-full border-separate border-spacing-0 text-sm">
@@ -20,6 +25,7 @@ export default function ResultsTable({
           <th className="px-3 py-2 text-right font-medium">IMDb</th>
           <th className="px-3 py-2 text-right font-medium">RT%</th>
           <th className="px-3 py-2 text-right font-medium">Runtime</th>
+          <th className="px-3 py-2 text-right font-medium">Watchlist</th>
         </tr>
       </thead>
       <tbody>
@@ -50,6 +56,14 @@ export default function ResultsTable({
             <td className="px-3 py-2 text-right">{s.imdb_rating ?? '–'}</td>
             <td className="px-3 py-2 text-right">{s.rt_rating_pct ?? '–'}</td>
             <td className="px-3 py-2 text-right">{s.runtime_min ?? '–'}</td>
+            <td className="px-3 py-2 text-right">
+              <WatchlistButton
+                screeningId={s.id}
+                initialSaved={savedIds?.has(s.id)}
+                onChange={(saved) => onSavedChange?.(s.id, saved)}
+                size="sm"
+              />
+            </td>
           </tr>
         ))}
       </tbody>
