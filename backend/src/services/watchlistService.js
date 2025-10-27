@@ -3,6 +3,8 @@ import {
   removeWatchlistScreening,
   isInWatchlist,
   listWatchlist,
+  addManyWatchlistScreenings,
+  countWatchlist,
 } from '../models/watchlistModel.js';
 
 class WatchlistError extends Error {
@@ -45,4 +47,14 @@ export async function toggle({ uid, screeningId }) {
     await addWatchlistScreening({ userUid: uid, screeningId });
     return { saved: true };
   }
+}
+
+export async function importMerge({ uid, screeningIds }) {
+  // de-dupe and keep only positive ints
+  const unique = Array.from(new Set(screeningIds.filter(n => Number.isInteger(n) && n > 0)));
+  if (unique.length === 0) return { imported: 0, totalSaved: await countWatchlist({ userUid: uid }) };
+
+  const { inserted } = await addManyWatchlistScreenings({ userUid: uid, screeningIds: unique });
+  const totalSaved = await countWatchlist({ userUid: uid });
+  return { imported: inserted, totalSaved };
 }

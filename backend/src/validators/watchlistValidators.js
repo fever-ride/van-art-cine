@@ -42,3 +42,14 @@ export const toggleWatchlistValidator = [
     .withMessage('screeningId must be a positive integer')
     .toInt(),
 ];
+
+// Import guest -> server: body { screeningIds: number[] }
+export const importWatchlistValidator = [
+  body('screeningIds')
+    .exists().withMessage('screeningIds is required')
+    .bail()
+    .isArray({ min: 1, max: 1000 }).withMessage('screeningIds must be a non-empty array (≤1000)'),
+  body('screeningIds.*')
+    .isInt({ min: 1 }).withMessage('screeningIds must contain positive integers')
+    .toInt(),
+];

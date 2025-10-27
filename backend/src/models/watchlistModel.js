@@ -50,3 +50,24 @@ export async function listWatchlist({ userUid, limit = 100, offset = 0 }) {
     const [rows] = await pool.query(sql, [userUid, limit, offset]);
     return rows;
 }
+
+export async function addManyWatchlistScreenings({ userUid, screeningIds }) {
+  if (!screeningIds?.length) return { inserted: 0 };
+  const placeholders = screeningIds.map(() => '(?, ?)').join(', ');
+  const params = screeningIds.flatMap(id => [userUid, id]);
+  const sql = `
+    INSERT IGNORE INTO watchlist_screening (user_uid, screening_id)
+    VALUES ${placeholders}
+  `;
+  const [r] = await pool.query(sql, params);
+  // affectedRows counts only new rows when using INSERT IGNORE
+  return { inserted: r.affectedRows || 0 };
+}
+
+export async function countWatchlist({ userUid }) {
+  const [rows] = await pool.query(
+    `SELECT COUNT(*) AS cnt FROM watchlist_screening WHERE user_uid = ?`,
+    [userUid]
+  );
+  return Number(rows[0]?.cnt || 0);
+}

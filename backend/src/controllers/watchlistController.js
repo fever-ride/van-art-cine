@@ -39,3 +39,14 @@ export async function toggleHandler(req, res, next) {
     return res.json({ saved });
   } catch (e) { return next(e); }
 }
+
+export async function importHandler(req, res, next) {
+  try {
+    const { screeningIds } = req.body; // already validated & toInt()’d
+    const { imported, totalSaved } = await svc.importMerge({
+      uid: req.user.uid,
+      screeningIds,
+    });
+    return res.json({ ok: true, imported, totalSaved });
+  } catch (e) { return next(e); }
+}

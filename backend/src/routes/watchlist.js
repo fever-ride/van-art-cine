@@ -5,6 +5,7 @@ import {
   listWatchlistValidator,
   statusWatchlistValidator,
   toggleWatchlistValidator,
+  importWatchlistValidator,
 } from '../validators/watchlistValidators.js';
 import { handleValidationErrors } from '../utils/validators.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -53,6 +54,14 @@ router.post(
   toggleWatchlistValidator,
   handleValidationErrors,
   ctrl.toggleHandler
+);
+
+// Merge guest localStorage IDs into server watchlist
+router.post(
+  '/import',
+  importWatchlistValidator,
+  handleValidationErrors,
+  ctrl.importHandler
 );
 
 export default router;
