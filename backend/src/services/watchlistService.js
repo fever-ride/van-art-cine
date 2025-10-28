@@ -30,7 +30,7 @@ export async function remove({ uid, screeningId }) {
 
 export async function list({ uid, limit, offset }) {
   const items = await listWatchlist({ userUid: uid, limit, offset });
-  return { items };
+  return items;
 }
 
 export async function status({ uid, screeningId }) {

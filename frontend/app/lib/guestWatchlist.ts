@@ -1,3 +1,5 @@
+import { apiImportWatchlist } from '@/app/lib/watchlist';
+
 /** Key used for guest watchlist in localStorage */
 export const GUEST_KEY = 'guest_watchlist';
 
@@ -41,4 +43,28 @@ export function toggleGuestSet(screeningId: number): Set<number> {
   else set.add(screeningId);
   saveGuestSet(set);
   return set;
+}
+
+/**
+ * Merge any guest-stored screenings into the authenticated user's watchlist.
+ * - If there is nothing to merge, it does nothing.
+ * - On success, it clears the guest list.
+ * - On failure, it leaves the guest list intact (so user can try again later).
+ */
+export async function mergeGuestToServer(): Promise<{ merged: number; total: number }> {
+  const set = getGuestSet();
+  const ids = Array.from(set);
+  if (ids.length === 0) return { merged: 0, total: 0 };
+
+  try {
+    const { inserted, total } = await apiImportWatchlist(ids);
+    clearGuestSet();
+    // Notify other tabs to update
+    window.dispatchEvent(new StorageEvent('storage', { key: GUEST_KEY, newValue: '[]' }));
+    return { merged: inserted, total };
+  } catch (e) {
+    // Keep guest list so user can retry later
+    console.warn('Merge guest watchlist failed:', e);
+    return { merged: 0, total: ids.length };
+  }
 }

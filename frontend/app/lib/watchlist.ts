@@ -49,8 +49,8 @@ async function fetchJSON<T>(input: RequestInfo, init?: RequestInit): Promise<T> 
   if (!res.ok) {
     const msg = data?.error || data?.message || `HTTP ${res.status}`;
     const err: any = new Error(msg);
-    err.status = res.status;          // <-- add this
-    err.response = { status: res.status, body: data }; // <-- optional
+    err.status = res.status;          // attach HTTP status so callers can handle specific codes (e.g. skip 401 for guests)
+    err.response = { status: res.status, body: data }; // include response body for debugging or detailed error display
     throw err;
   }
   return data as T;
@@ -119,4 +119,13 @@ export function formatLocal(dtUtcISO: string, opts: Intl.DateTimeFormatOptions =
   // reasonable default
   const base: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' };
   return new Intl.DateTimeFormat(undefined, { ...base, ...opts }).format(d);
+}
+
+/** Import a batch of screeningIds into the authenticated user's watchlist */
+export async function apiImportWatchlist(screeningIds: number[]): Promise<{ inserted: number; total: number }> {
+  return fetchJSON<{ inserted: number; total: number }>(`/api/watchlist/import`, {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ screeningIds }),
+  });
 }

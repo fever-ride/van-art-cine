@@ -20,10 +20,10 @@ export default function Home() {
     // then try server
     (async () => {
       try {
-        const res = await fetch('/api/watchlist?limit=1000', { credentials: 'include' });
+        const res = await fetch('/api/watchlist?limit=100', { credentials: 'include' });
         if (!res.ok) return; // likely 401 (guest) — keep guest state
         const data = await res.json();
-        const ids = new Set<number>((data.items ?? []).map((it: any) => it.screening_id));
+        const ids = new Set<number>(data.items.map((it: any) => Number(it.screening_id)));
         setSavedIds(ids);
       } catch {
         // network error — keep guest state
