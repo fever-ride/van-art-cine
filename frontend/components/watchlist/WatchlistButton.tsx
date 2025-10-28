@@ -2,37 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { apiToggleWatchlist } from '@/app/lib/watchlist';
+import { getGuestSet, saveGuestSet } from '@/app/lib/guestWatchlist';
 
 type Props = {
-  screeningId: number;
+  readonly screeningId: number;
   /** If the parent already knows saved/not-saved, pass it in */
-  initialSaved?: boolean;
+  readonly initialSaved?: boolean;
   /** Bubble the final saved state back to parent*/
-  onChange?: (saved: boolean) => void;
+  readonly onChange?: (saved: boolean) => void;
   /** Small stylistic knobs (optional) */
-  size?: 'sm' | 'md';
-  className?: string;
+  readonly size?: 'sm' | 'md';
+  readonly className?: string;
 };
-
-/* ---------- Guest-mode helpers (localStorage) ---------- */
-const GUEST_KEY = 'guest_watchlist'; // stores JSON array of screeningIds
-
-function getGuestSet(): Set<number> {
-  try {
-    const raw = localStorage.getItem(GUEST_KEY);
-    if (!raw) return new Set();
-    const arr = JSON.parse(raw) as number[];
-    return new Set(arr);
-  } catch {
-    return new Set();
-  }
-}
-
-function saveGuestSet(set: Set<number>) {
-  localStorage.setItem(GUEST_KEY, JSON.stringify(Array.from(set)));
-}
-
-/* ------------------------------------------------------- */
 
 export default function WatchlistButton({
   screeningId,

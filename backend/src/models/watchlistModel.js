@@ -30,25 +30,48 @@ export async function isInWatchlist({ userUid, screeningId }) {
   return rows.length > 0;
 }
 
-// List with some joined info for display
-export async function listWatchlist({ userUid, limit = 100, offset = 0 }) {
-    const sql = `
+export async function listWatchlist({ userUid, limit = 100, offset = 0, includePast = true }) {
+  const sql = `
     SELECT
       w.screening_id,
-      s.start_at_utc, s.end_at_utc, s.runtime_min, s.tz,
+
+      -- joined data (may be NULL if missing)
+      s.start_at_utc, s.end_at_utc, s.runtime_min, s.tz, s.is_active,
       f.id AS film_id, f.title, f.year, f.imdb_rating, f.rt_rating_pct,
       c.id AS cinema_id, c.name AS cinema_name,
-      s.source_url
+      s.source_url,
+
+      -- compute status
+      CASE
+        WHEN s.id IS NULL THEN 'missing'           -- screening record no longer exists
+        WHEN s.is_active = 0 THEN 'inactive'       -- exists but we marked it inactive
+        WHEN s.start_at_utc < UTC_TIMESTAMP() THEN 'past'
+        ELSE 'upcoming'
+      END AS status,
+
+      -- convenience boolean
+      (s.start_at_utc < UTC_TIMESTAMP()) AS is_past
     FROM watchlist_screening w
-    JOIN screening s ON s.id = w.screening_id AND s.is_active = 1
-    JOIN film f      ON f.id = s.film_id
-    JOIN cinema c    ON c.id = s.cinema_id
+    LEFT JOIN screening s ON s.id = w.screening_id
+    LEFT JOIN film f      ON f.id = s.film_id
+    LEFT JOIN cinema c    ON c.id = s.cinema_id
     WHERE w.user_uid = ?
-    ORDER BY s.start_at_utc ASC
+      ${includePast
+        ? '' 
+        : 'AND s.id IS NOT NULL AND s.is_active = 1 AND s.start_at_utc >= UTC_TIMESTAMP()'}
+    ORDER BY
+      -- upcoming first, then past, then inactive/missing, then by time
+      CASE
+        WHEN s.id IS NULL THEN 3
+        WHEN s.is_active = 0 THEN 2
+        WHEN s.start_at_utc < UTC_TIMESTAMP() THEN 1
+        ELSE 0
+      END,
+      s.start_at_utc ASC
     LIMIT ? OFFSET ?
   `;
-    const [rows] = await pool.query(sql, [userUid, limit, offset]);
-    return rows;
+  const [rows] = await pool.query(sql, [userUid, limit, offset]);
+  return rows;
 }
 
 export async function addManyWatchlistScreenings({ userUid, screeningIds }) {

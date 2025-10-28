@@ -4,24 +4,9 @@ import { useMemo, useState, useEffect } from 'react';
 import Filters from '@/components/screenings/Filters';
 import ResultsTable from '@/components/screenings/ResultsTable';
 import Pagination from '@/components/screenings/Pagination';
+import { GUEST_KEY, getGuestSet } from '@/app/lib/guestWatchlist';
 import { useScreenings } from '@/lib/useScreenings';
 
-/* -------- guest watchlist helpers (same key as button) -------- */
-const GUEST_KEY = 'guest_watchlist';
-function getGuestSet(): Set<number> {
-  try {
-    const raw = localStorage.getItem(GUEST_KEY);
-    if (!raw) return new Set();
-    const arr = JSON.parse(raw) as number[];
-    return new Set(arr);
-  } catch {
-    return new Set();
-  }
-}
-function saveGuestSet(set: Set<number>) {
-  localStorage.setItem(GUEST_KEY, JSON.stringify(Array.from(set)));
-}
-/* ---------------------------------------------------------------- */
 
 export default function Home() {
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());

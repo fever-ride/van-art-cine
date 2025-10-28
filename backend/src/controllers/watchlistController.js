@@ -2,8 +2,14 @@ import * as svc from '../services/watchlistService.js';
 
 export async function listHandler(req, res, next) {
   try {
-    const { limit = 100, offset = 0 } = req.query;
-    const { items } = await svc.list({ uid: req.user.uid, limit, offset });
+    const { limit = 100, offset = 0, includePast } = req.query;
+    const include = includePast === undefined ? true : includePast === 'true';
+    const items = await svc.list({
+      uid: req.user.uid,
+      limit: Number(limit),
+      offset: Number(offset),
+      includePast: include
+    });
     return res.json({ items });
   } catch (e) { return next(e); }
 }

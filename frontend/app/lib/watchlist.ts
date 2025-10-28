@@ -1,3 +1,5 @@
+export type WatchStatus = 'upcoming' | 'past' | 'inactive' | 'missing';
+
 export interface WatchlistItem {
   screening_id: number;
 
@@ -17,6 +19,9 @@ export interface WatchlistItem {
 
   // links
   source_url: string | null;
+
+  // status
+  status: WatchStatus;
 }
 
 export interface WatchlistListResponse {
@@ -52,10 +57,16 @@ async function fetchJSON<T>(input: RequestInfo, init?: RequestInit): Promise<T> 
 }
 
 /** List all saved screenings for current user (auth required). */
-export async function apiListWatchlist(opts?: { limit?: number; offset?: number }): Promise<WatchlistListResponse> {
+// API: now supports includePast
+export async function apiListWatchlist(opts?: {
+  limit?: number;
+  offset?: number;
+  includePast?: boolean;
+}): Promise<WatchlistListResponse> {
   const sp = new URLSearchParams();
   if (opts?.limit != null) sp.set('limit', String(opts.limit));
   if (opts?.offset != null) sp.set('offset', String(opts.offset));
+  if (opts?.includePast !== undefined) sp.set('includePast', String(opts.includePast));
   const qs = sp.toString();
   return fetchJSON<WatchlistListResponse>(`/api/watchlist${qs ? `?${qs}` : ''}`);
 }
