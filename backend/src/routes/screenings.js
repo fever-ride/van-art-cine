@@ -1,13 +1,14 @@
 import { Router } from 'express';
-import { fetchScreenings } from '../models/screenings.js';
+import { fetchScreenings, findByIds } from '../models/screenings.js';
 // import { normalizeTz } from '../utils/validateTz.js';
 
 const router = Router();
 
-// Currently backend ignores tz; 
+// Currently backend ignores tz;
 // kept for possible future multi-timezone support.
 const DEFAULT_TZ = 'America/Vancouver';
 
+/* -------- List/search screenings (existing) -------- */
 router.get('/', async (req, res, next) => {
   try {
     const date = req.query.date?.trim();
@@ -27,7 +28,7 @@ router.get('/', async (req, res, next) => {
     const sort  = (req.query.sort  || 'time').toString();
     const order = (req.query.order || 'asc').toString();
 
-    // Currently backend ignores tz; 
+    // Currently backend ignores tz;
     // kept for possible future multi-timezone support.
     const tz = DEFAULT_TZ;
 
@@ -39,6 +40,43 @@ router.get('/', async (req, res, next) => {
     });
 
     res.json({ total: rows.length, items: rows });
+  } catch (err) { next(err); }
+});
+
+/* -------- Bulk by IDs (new) --------
+   Body: { ids: number[] }
+   Returns: { items: Screening[] } in the same order as input IDs (unknown IDs omitted)
+*/
+router.post('/bulk', async (req, res, next) => {
+  try {
+    const raw = req.body?.ids;
+    if (!Array.isArray(raw)) {
+      return res.status(400).json({ error: 'ids must be an array' });
+    }
+
+    // to numbers, filter valid, de-dupe, cap size
+    const seen = new Set();
+    const ids = [];
+    for (const x of raw) {
+      const n = Number(x);
+      if (Number.isFinite(n) && n > 0 && !seen.has(n)) {
+        seen.add(n);
+        ids.push(n);
+      }
+      if (ids.length >= 500) break; // safety cap
+    }
+
+    if (ids.length === 0) {
+      return res.json({ items: [] });
+    }
+
+    const rows = await findByIds({ ids });
+
+    // preserve input order, skip missing
+    const byId = new Map(rows.map(r => [Number(r.id), r]));
+    const ordered = ids.map(id => byId.get(id)).filter(Boolean);
+
+    return res.json({ items: ordered });
   } catch (err) { next(err); }
 });
 

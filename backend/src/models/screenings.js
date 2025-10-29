@@ -99,3 +99,30 @@ export async function fetchScreenings(opts = {}) {
   const [rows] = await pool.query(sql, params);
   return rows;
 }
+
+export async function findByIds({ ids, includePast }) {
+  if (!ids?.length) return [];
+  const placeholders = ids.map(() => '?').join(',');
+  const sql = `
+    SELECT
+      s.id,
+      s.start_at_utc, s.end_at_utc, s.runtime_min, s.tz,
+      f.id AS film_id, f.title, f.year, f.imdb_rating, f.rt_rating_pct,
+      c.id AS cinema_id, c.name AS cinema_name,
+      s.source_url,
+      CASE
+        WHEN s.id IS NULL THEN 'missing'
+        WHEN s.is_active = 0 THEN 'inactive'
+        WHEN s.start_at_utc < UTC_TIMESTAMP() THEN 'past'
+        ELSE 'upcoming'
+      END AS status
+    FROM screening s
+    LEFT JOIN film f   ON f.id = s.film_id
+    LEFT JOIN cinema c ON c.id = s.cinema_id
+    WHERE s.id IN (${placeholders})
+    ${includePast ? '' : `AND s.is_active = 1 AND s.start_at_utc >= UTC_TIMESTAMP()`}
+    ORDER BY s.start_at_utc ASC
+  `;
+  const [rows] = await pool.query(sql, ids);
+  return rows;
+}
