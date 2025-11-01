@@ -1,20 +1,16 @@
 'use client';
 
-import type { SortKey, Order } from '@/app/lib/screenings';
+import * as React from 'react';
+import type { UIState, SetUI } from '@/lib/hooks/useScreeningsUI';
 
-type Mode = 'single' | 'range';
+type CinemaOption = { id: number; name: string };
 
-type UI = {
-  mode: Mode;
-  date: string;
-  from: string;
-  to: string;
-  q: string;
-  cinemaId: string;
-  filmId: string;
-  sort: SortKey;
-  order: Order;
-  limit: number;
+type Props = {
+  ui: UIState;
+  setUI: SetUI;
+  onApply: () => void;
+  loading?: boolean;
+  cinemaOptions?: CinemaOption[];
 };
 
 export default function Filters({
@@ -22,122 +18,160 @@ export default function Filters({
   setUI,
   onApply,
   loading,
-}: {
-  readonly ui: UI;
-  readonly setUI: (p: Partial<UI> | ((s: UI) => UI)) => void;
-  readonly onApply: () => void;
-  readonly loading: boolean;
-}) {
+  cinemaOptions = [], // <-- default to []
+}: Props) {
   return (
-    <section className="mb-4 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Mode toggle */}
-        <fieldset className="flex items-center gap-3">
-          <legend className="sr-only">Date Mode</legend>
-          <label className="inline-flex items-center gap-1 text-sm">
-            <input
-              type="radio"
-              name="mode"
-              value="single"
-              checked={ui.mode === 'single'}
-              onChange={() =>
-                setUI((s) => ({ ...s, mode: 'single', from: '', to: '' }))
-              }
-              className="h-4 w-4"
-            />Single day
-          </label>
-          <label className="inline-flex items-center gap-1 text-sm">
-            <input
-              type="radio"
-              name="mode"
-              value="range"
-              checked={ui.mode === 'range'}
-              onChange={() => setUI((s) => ({ ...s, mode: 'range', date: '' }))}
-              className="h-4 w-4"
-            />Range
-          </label>
-        </fieldset>
+    <form
+      className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onApply();
+      }}
+    >
+      {/* Search */}
+      <label className="flex flex-col gap-1">
+        <span className="text-xs font-medium text-gray-600">Search</span>
+        <input
+          type="text"
+          inputMode="search"
+          placeholder="Title, director…"
+          className="rounded-md border px-3 py-2 text-sm"
+          value={ui.q}
+          onChange={(e) => setUI({ q: e.target.value })}
+        />
+      </label>
 
-        {/* Date inputs */}
-        {ui.mode === 'single' ? (
+      {/* Cinema (derived dropdown) */}
+      <label className="flex flex-col gap-1">
+        <span className="text-xs font-medium text-gray-600">Cinema</span>
+        <select
+          className="rounded-md border px-3 py-2 text-sm"
+          value={ui.cinemaId}
+          onChange={(e) => setUI({ cinemaId: e.target.value })}
+        >
+          <option value="">All cinemas</option>
+          {cinemaOptions.map((c) => (
+            <option key={c.id} value={String(c.id)}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {/* Sort */}
+      <div className="flex items-end gap-2">
+        <label className="flex-1">
+          <span className="mb-1 block text-xs font-medium text-gray-600">Sort</span>
+          <select
+            className="w-full rounded-md border px-3 py-2 text-sm"
+            value={ui.sort}
+            onChange={(e) => setUI({ sort: e.target.value as UIState['sort'] })}
+          >
+            <option value="date">Date</option>
+            <option value="title">Title</option>
+            <option value="cinema">Cinema</option>
+            <option value="imdb">IMDb</option>
+            <option value="rt">RT%</option>
+          </select>
+        </label>
+
+        <label>
+          <span className="mb-1 block text-xs font-medium text-gray-600">Order</span>
+          <select
+            className="rounded-md border px-3 py-2 text-sm"
+            value={ui.order}
+            onChange={(e) => setUI({ order: e.target.value as UIState['order'] })}
+          >
+            <option value="asc">Asc</option>
+            <option value="desc">Desc</option>
+          </select>
+        </label>
+      </div>
+
+      {/* Date mode */}
+      <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
+        <div className="flex items-center gap-3">
+          <label className="inline-flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="mode"
+              checked={ui.mode === 'single'}
+              onChange={() => setUI({ mode: 'single' })}
+            />
+            Single date
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="mode"
+              checked={ui.mode === 'range'}
+              onChange={() => setUI({ mode: 'range' })}
+            />
+            Date range
+          </label>
+        </div>
+
+        {/* Single date */}
+        {ui.mode === 'single' && (
           <input
             type="date"
+            className="ml-4 rounded-md border px-3 py-2 text-sm"
             value={ui.date}
             onChange={(e) => setUI({ date: e.target.value })}
-            className="rounded-lg border border-gray-300 px-2 py-1 text-sm"
           />
-        ) : (
-          <div className="flex items-center gap-2">
+        )}
+
+        {/* Date range */}
+        {ui.mode === 'range' && (
+          <div className="ml-4 flex gap-2">
             <input
               type="date"
+              className="rounded-md border px-3 py-2 text-sm"
               value={ui.from}
               onChange={(e) => setUI({ from: e.target.value })}
-              placeholder="From"
-              className="rounded-lg border border-gray-300 px-2 py-1 text-sm"
             />
+            <span className="self-center text-sm text-gray-500">to</span>
             <input
               type="date"
+              className="rounded-md border px-3 py-2 text-sm"
               value={ui.to}
               onChange={(e) => setUI({ to: e.target.value })}
-              placeholder="To"
-              className="rounded-lg border border-gray-300 px-2 py-1 text-sm"
             />
           </div>
         )}
 
-        <input
-          placeholder="Search title…"
-          value={ui.q}
-          onChange={(e) => setUI({ q: e.target.value })}
-          className="min-w-[200px] flex-1 rounded-lg border border-gray-300 px-3 py-1 text-sm"
-        />
-
-        {/* Optional numeric IDs */}
-        <input
-          placeholder="Cinema ID"
-          value={ui.cinemaId}
-          onChange={(e) => setUI({ cinemaId: e.target.value })}
-          inputMode="numeric"
-          className="w-28 rounded-lg border border-gray-300 px-2 py-1 text-sm"
-        />
-        <input
-          placeholder="Film ID"
-          value={ui.filmId}
-          onChange={(e) => setUI({ filmId: e.target.value })}
-          inputMode="numeric"
-          className="w-28 rounded-lg border border-gray-300 px-2 py-1 text-sm"
-        />
-
-        <select
-          value={ui.sort}
-          onChange={(e) => setUI({ sort: e.target.value as SortKey })}
-          className="rounded-lg border border-gray-300 px-2 py-1 text-sm"
-        >
-          <option value="time">Time</option>
-          <option value="title">Title</option>
-          <option value="imdb">IMDb</option>
-          <option value="rt">RottenTomatoes</option>
-          <option value="votes">Votes</option>
-          <option value="year">Year</option>
-        </select>
-
-        <select
-          value={ui.order}
-          onChange={(e) => setUI({ order: e.target.value as any })}
-          className="rounded-lg border border-gray-300 px-2 py-1 text-sm"
-        >
-          <option value="asc">Asc</option>
-          <option value="desc">Desc</option>
-        </select>
-
-        <button
-          onClick={onApply}
-          disabled={loading}
-          className="rounded-lg bg-gray-900 px-3 py-1 text-sm font-medium text-white disabled:opacity-50"
-        >
-          Apply
-        </button>
+        {/* Actions */}
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+            onClick={() =>
+              setUI((s) => ({
+                ...s,
+                q: '',
+                cinemaId: '',
+                filmId: '',
+                date: '',
+                from: '',
+                to: '',
+                sort: 'date',
+                order: 'asc',
+                // keep limit as-is
+              }))
+            }
+            disabled={loading}
+          >
+            Reset
+          </button>
+          <button
+            type="submit"
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+            disabled={loading}
+          >
+            {loading ? 'Applying…' : 'Apply'}
+          </button>
+        </div>
       </div>
-    </section>
+    </form>
   );
 }

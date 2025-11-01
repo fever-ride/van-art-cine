@@ -43,8 +43,9 @@ export default function NavBar() {
       <nav className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-4">
           <Link href="/" className="font-semibold">VanCine</Link>
+          <Link href="/watchlist" className="text-sm text-gray-600 hover:underline">My Watchlist</Link>
           <Link href="/blog" className="text-sm text-gray-600 hover:underline">Blog</Link>
-          <Link href="/watchlist" className="text-sm text-gray-600 hover:underline">Watchlist</Link>
+          <Link href="/about" className="text-sm text-gray-600 hover:underline">About</Link>
           {/* 
           for future use
           <Link href="/films" className="text-sm text-gray-600 hover:underline">Films</Link>
