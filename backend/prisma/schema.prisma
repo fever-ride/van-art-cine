@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model app_user {
+  uid                 BigInt                @id @default(autoincrement()) @db.UnsignedBigInt
+  name                String                @db.VarChar(100)
+  email               String                @unique(map: "unique_email") @db.VarChar(255)
+  password_hash       String                @db.VarChar(255)
+  role                app_user_role         @default(user)
+  created_at          DateTime              @default(now()) @db.Timestamp(0)
+  custom_event        custom_event[]
+  refresh_token       refresh_token[]
+  user_schedule       user_schedule[]
+  watchlist_screening watchlist_screening[]
+}
+
+model cinema {
+  id            Int             @id @default(autoincrement())
+  name          String          @unique(map: "name") @db.VarChar(120)
+  website       String?         @db.VarChar(255)
+  address       String?         @db.VarChar(300)
+  created_at    DateTime?       @default(now()) @db.Timestamp(0)
+  raw_import    raw_import[]
+  screening     screening[]
+  stg_screening stg_screening[] @ignore
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model custom_event {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_uid   BigInt    @db.UnsignedBigInt
+  event_name String    @db.VarChar(255)
+  event_data Json?
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  app_user   app_user  @relation(fields: [user_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction, map: "custom_event_ibfk_1")
+
+  @@index([user_uid], map: "user_uid")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model film {
+  id               Int             @id @default(autoincrement())
+  title            String          @db.VarChar(255)
+  year             Int?            @db.SmallInt
+  rated            String?         @db.VarChar(16)
+  genre            String?         @db.VarChar(255)
+  language         String?         @db.VarChar(255)
+  country          String?         @db.VarChar(255)
+  awards           String?         @db.VarChar(255)
+  rt_rating_pct    Int?            @db.UnsignedTinyInt
+  imdb_rating      Decimal?        @db.Decimal(3, 1)
+  imdb_votes       Int?            @db.UnsignedInt
+  description      String?         @db.Text
+  normalized_title String?         @db.VarChar(255)
+  imdb_id          String?         @db.VarChar(16)
+  tmdb_id          Int?
+  imdb_url         String?         @db.VarChar(512)
+  created_at       DateTime?       @default(now()) @db.Timestamp(0)
+  film_person      film_person[]
+  screening        screening[]
+  stg_screening    stg_screening[] @ignore
+
+  @@unique([normalized_title, year], map: "uniq_title_year")
+}
+
+model film_person {
+  film_id    Int
+  person_id  Int
+  role       film_person_role @default(unknown)
+  created_at DateTime?        @default(now()) @db.Timestamp(0)
+  film       film             @relation(fields: [film_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "film_person_ibfk_1")
+  person     person           @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "film_person_ibfk_2")
+
+  @@id([film_id, person_id, role])
+  @@index([person_id], map: "person_id")
+}
+
+model ops_ingest_run {
+  id               BigInt                @id @default(autoincrement())
+  source           String                @db.VarChar(32)
+  started_at       DateTime              @db.DateTime(0)
+  finished_at      DateTime?             @db.DateTime(0)
+  rows_in          Int                   @default(0)
+  rows_inserted    Int                   @default(0)
+  rows_updated     Int                   @default(0)
+  rows_deactivated Int                   @default(0)
+  status           ops_ingest_run_status @default(running)
+  message          String?               @db.VarChar(500)
+  screening        screening[]
+
+  @@index([source, started_at], map: "idx_src_started")
+}
+
+model person {
+  id              Int           @id @default(autoincrement())
+  name            String        @db.VarChar(160)
+  imdb_id         String?       @db.VarChar(16)
+  tmdb_id         Int?
+  normalized_name String?       @unique(map: "uniq_person_norm") @db.VarChar(160)
+  created_at      DateTime?     @default(now()) @db.Timestamp(0)
+  film_person     film_person[]
+}
+
+model raw_import {
+  id             Int      @id @default(autoincrement())
+  cinema_id      Int
+  source         String   @db.VarChar(32)
+  fetched_at     DateTime @db.DateTime(0)
+  payload        Json
+  rows_processed Int?     @default(0)
+  cinema         cinema   @relation(fields: [cinema_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "raw_import_ibfk_1")
+
+  @@index([cinema_id], map: "idx_cinema")
+  @@index([cinema_id, fetched_at], map: "idx_cinema_fetched")
+  @@index([fetched_at], map: "idx_fetched")
+  @@index([source, fetched_at], map: "idx_src_fetched")
+}
+
+model refresh_token {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt    @db.UnsignedBigInt
+  token      String    @unique(map: "uq_refresh_token") @db.Char(64)
+  expires_at DateTime  @db.DateTime(0)
+  revoked_at DateTime? @db.DateTime(0)
+  user_agent String?   @db.VarChar(255)
+  ip         String?   @db.VarChar(64)
+  created_at DateTime  @default(now()) @db.Timestamp(0)
+  app_user   app_user  @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: NoAction, map: "fk_refresh_user")
+
+  @@index([user_id, revoked_at, expires_at], map: "idx_refresh_unrev_expires")
+  @@index([user_id], map: "idx_refresh_user")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model screening {
+  id                  Int                   @id @default(autoincrement())
+  film_id             Int
+  cinema_id           Int
+  start_at_utc        DateTime              @db.DateTime(0)
+  end_at_utc          DateTime              @db.DateTime(0)
+  runtime_min         Int?                  @db.SmallInt
+  tz                  String                @default("America/Vancouver") @db.VarChar(64)
+  source              String                @default("manual") @db.VarChar(32)
+  source_uid          String?               @db.VarChar(128)
+  source_url          String                @db.VarChar(512)
+  content_hash        String?               @db.Char(64)
+  loaded_at_utc       DateTime              @db.DateTime(0)
+  ingest_run_id       BigInt?
+  notes               String?               @db.VarChar(255)
+  raw_date            String?               @db.VarChar(80)
+  raw_time            String?               @db.VarChar(80)
+  is_active           Boolean               @default(true)
+  created_at          DateTime              @default(now()) @db.Timestamp(0)
+  updated_at          DateTime              @default(now()) @db.Timestamp(0)
+  ops_ingest_run      ops_ingest_run?       @relation(fields: [ingest_run_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_screening_ingest")
+  film                film                  @relation(fields: [film_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "screening_ibfk_1")
+  cinema              cinema                @relation(fields: [cinema_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "screening_ibfk_2")
+  watchlist_screening watchlist_screening[]
+
+  @@unique([cinema_id, film_id, start_at_utc], map: "uniq_show")
+  @@unique([source, source_uid], map: "uniq_src_uid")
+  @@index([ingest_run_id], map: "fk_screening_ingest")
+  @@index([is_active, source], map: "idx_active_src")
+  @@index([cinema_id], map: "idx_cinema")
+  @@index([film_id], map: "idx_film")
+  @@index([start_at_utc], map: "idx_when")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model stg_screening {
+  film_id       Int
+  cinema_id     Int
+  start_at_utc  DateTime  @db.DateTime(0)
+  end_at_utc    DateTime  @db.DateTime(0)
+  runtime_min   Int?      @db.SmallInt
+  tz            String    @default("America/Vancouver") @db.VarChar(64)
+  source        String    @db.VarChar(32)
+  source_uid    String    @db.VarChar(128)
+  source_url    String    @db.VarChar(512)
+  notes         String?   @db.VarChar(255)
+  raw_date      String?   @db.VarChar(80)
+  raw_time      String?   @db.VarChar(80)
+  content_hash  String    @db.Char(64)
+  loaded_at_utc DateTime  @db.DateTime(0)
+  loaded_at     DateTime? @default(now()) @db.Timestamp(0)
+  film          film      @relation(fields: [film_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "stg_screening_ibfk_1")
+  cinema        cinema    @relation(fields: [cinema_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "stg_screening_ibfk_2")
+
+  @@index([cinema_id], map: "cinema_id")
+  @@index([film_id], map: "film_id")
+  @@index([source, source_uid], map: "idx_stg_src_uid")
+  @@index([start_at_utc], map: "idx_stg_time")
+  @@ignore
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model user_schedule {
+  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_uid      BigInt    @db.UnsignedBigInt
+  schedule_data Json
+  created_at    DateTime? @default(now()) @db.Timestamp(0)
+  app_user      app_user  @relation(fields: [user_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction, map: "user_schedule_ibfk_1")
+
+  @@index([user_uid], map: "user_uid")
+}
+
+model watchlist_screening {
+  id           BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  user_uid     BigInt                     @db.UnsignedBigInt
+  screening_id Int
+  status       watchlist_screening_status @default(planned)
+  note         String?                    @db.VarChar(500)
+  created_at   DateTime                   @default(now()) @db.Timestamp(0)
+  updated_at   DateTime                   @default(now()) @db.Timestamp(0)
+  screening    screening                  @relation(fields: [screening_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_wl_screening")
+  app_user     app_user                   @relation(fields: [user_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction, map: "fk_wl_user")
+
+  @@unique([user_uid, screening_id], map: "uq_user_screening")
+  @@index([screening_id], map: "idx_screening")
+  @@index([user_uid], map: "idx_user")
+}
+
+enum film_person_role {
+  director
+  writer
+  cast
+  unknown
+}
+
+enum watchlist_screening_status {
+  planned
+  watched
+}
+
+enum app_user_role {
+  user
+  admin
+}
+
+enum ops_ingest_run_status {
+  running
+  success
+  error
+}
