@@ -1,5 +1,5 @@
 // Plan: Add 'time' to SortKey to filter by time in a day
-export type SortKey = 'date' | 'title' | 'imdb' | 'rt' | 'votes' | 'year';
+export type SortKey = 'time' | 'title' | 'imdb' | 'rt' | 'votes' | 'year';
 export type Order = 'asc' | 'desc';
 
 export interface Screening {
@@ -43,7 +43,7 @@ export interface ScreeningsQuery {
   date?: string;
   from?: string;
   to?: string;
-  cinema_id?: number;
+  cinema_ids?: number[];
   film_id?: number;
   q?: string;
   sort?: SortKey;
@@ -55,9 +55,18 @@ export interface ScreeningsQuery {
 
 export async function getScreenings(params: ScreeningsQuery = {}): Promise<ScreeningsResponse> {
   const sp = new URLSearchParams();
+  
   (Object.entries(params) as [keyof ScreeningsQuery, any][])
     .forEach(([k, v]) => {
-      if (v !== undefined && v !== null && String(v).trim() !== '') sp.set(String(k), String(v));
+      if (v === undefined || v === null) return;
+      
+      if (k === 'cinema_ids' && Array.isArray(v)) {
+        if (v.length > 0) {
+          sp.set('cinema_ids', v.join(','));
+        }
+      } else if (String(v).trim() !== '') {
+        sp.set(String(k), String(v));
+      }
     });
 
   const res = await fetch(`/api/screenings?${sp.toString()}`, { cache: 'no-store' });

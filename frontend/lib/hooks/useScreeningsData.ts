@@ -9,13 +9,14 @@ const numOrEmpty = (s: string) => (s.trim() === '' ? undefined : Number(s));
 function buildParams({ ui, tz, offset }: { ui: UIState; tz: string; offset: number }): ScreeningsQuery {
   const params: ScreeningsQuery = {
     q: ui.q,
-    cinema_id: numOrEmpty(ui.cinemaId),
+    cinema_ids: ui.cinemaIds && ui.cinemaIds.length > 0
+      ? ui.cinemaIds.map(Number) 
+      : undefined,
     film_id: numOrEmpty(ui.filmId),
     sort: ui.sort,
     order: ui.order,
     limit: ui.limit,
     offset,
-    // Currently backend ignores tz; kept for possible future multi-timezone support.
     tz,
   };
 

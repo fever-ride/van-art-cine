@@ -13,7 +13,7 @@ export type UIState = {
   from: string;
   to: string;
   q: string;
-  cinemaId: string;
+  cinemaIds: string[];
   filmId: string;
   sort: SortKey;
   order: Order;
@@ -28,9 +28,9 @@ const defaultUI: UIState = {
   from: '',
   to: '',
   q: '',
-  cinemaId: '',
+  cinemaIds: [],
   filmId: '',
-  sort: 'date',
+  sort: 'time',
   order: 'asc',
   limit: 20,
 };
