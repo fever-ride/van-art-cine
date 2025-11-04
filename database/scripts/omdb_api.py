@@ -1,9 +1,30 @@
+import os
+import sys
 import requests
 import re
+from pathlib import Path
 from typing import Optional, Dict, Any
+from dotenv import load_dotenv
 from db_helper import DB, conn_open, norm_space, norm_title, strip_dir_prefix, fetch_all_films, upsert_person, upsert_film_person
 
-OMDB_API_KEY = "cf07f36c"
+# Load environment variables from .env in database directory
+SCRIPT_DIR = Path(__file__).resolve().parent
+DB_DIR = SCRIPT_DIR.parent
+ENV_PATH = DB_DIR / '.env'
+
+if not ENV_PATH.exists():
+    print(f"Error: Configuration file not found: {ENV_PATH}", file=sys.stderr)
+    print("Please ensure .env file exists with OMDB_API_KEY setting.", file=sys.stderr)
+    sys.exit(1)
+
+load_dotenv(ENV_PATH)
+
+# Get API configuration from environment
+OMDB_API_KEY = os.getenv('OMDB_API_KEY')
+if not OMDB_API_KEY:
+    print("Error: OMDB_API_KEY not found in .env file", file=sys.stderr)
+    sys.exit(1)
+
 OMDB_URL = "https://www.omdbapi.com/"
 
 

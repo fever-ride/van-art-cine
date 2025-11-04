@@ -1,19 +1,61 @@
-import pymysql
+import os
 import re
+import sys
+from pathlib import Path
+import pymysql
+from dotenv import load_dotenv
 
-# === CONFIG ===
-DB = dict(
-    host="127.0.0.1",
-    user="vancine",
-    password="10045978",
-    database="vancine_test",
-    charset="utf8mb4",
-    autocommit=True,
-)
+# Find and load .env file from database directory
+SCRIPT_DIR = Path(__file__).resolve().parent
+DB_DIR = SCRIPT_DIR.parent
+ENV_PATH = DB_DIR / '.env'
+
+if not ENV_PATH.exists():
+    print(
+        f"Error: Database configuration file not found: {ENV_PATH}", file=sys.stderr)
+    print("Please ensure .env file exists with DB_* configuration.", file=sys.stderr)
+    sys.exit(1)
+
+# Load environment variables from .env
+load_dotenv(ENV_PATH)
+
+# Get database configuration from environment
+DB = {
+    'host': os.getenv('DB_HOST', '127.0.0.1'),
+    'port': int(os.getenv('DB_PORT', '3306')),
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASS'),
+    'database': os.getenv('DB_NAME'),
+    'charset': 'utf8mb4',
+    'autocommit': True,
+}
+
+# Validate required settings
+required = ['user', 'password', 'database']
+missing = [key for key in required if not DB.get(key)]
+if missing:
+    print(
+        f"Error: Missing required database settings: {', '.join(missing)}", file=sys.stderr)
+    print(f"Please check {ENV_PATH} configuration.", file=sys.stderr)
+    sys.exit(1)
 
 
 def conn_open():
-    return pymysql.connect(**DB)
+    """Open a new database connection using environment configuration.
+
+    Returns:
+        pymysql.Connection: Database connection object
+
+    Raises:
+        pymysql.Error: If connection fails
+    """
+    try:
+        return pymysql.connect(**DB)
+    except pymysql.Error as e:
+        print(f"Error: Failed to connect to database: {e}", file=sys.stderr)
+        print(
+            f"Please verify database settings in {ENV_PATH}", file=sys.stderr)
+        raise
 
 
 def norm_space(s: str) -> str:

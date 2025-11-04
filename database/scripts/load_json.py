@@ -1,13 +1,31 @@
 #!/usr/bin/env python3
 """
-load_json.py
-- Read scraped JSON files.
-- Normalize/resolve basic entities (cinema / film / person).
-- Insert rows into stg_screening (staging).
-- One source at a time; staging is cleared per source run.
+Load scraped movie screening data into the vancine database.
 
-Run:
-  python scripts/load_json.py [optional list of json files]
+This script processes JSON files containing movie screening information from various
+sources (Cinematheque, VIFF, Rio) and loads them into the vancine database. It:
+
+1. Reads JSON files from data/latest/ (or specified paths)
+2. Normalizes entity data (cinemas, films, people)
+3. Resolves entity references using normalized values
+4. Stages data in stg_screening table for validation
+5. Maintains data integrity through careful deduplication
+
+The staging process runs one source at a time, clearing previous staged data
+for that source before loading new data. This ensures clean, atomic updates
+and allows validation before merging to live tables.
+
+Usage:
+    python scripts/load_json.py [file1.json file2.json ...]
+    
+    If no files specified, processes default set:
+    - cinematheque_screenings_latest.json
+    - viff_screenings_latest.json 
+    - rio_screenings_latest.json
+
+Environment:
+    Requires database configuration in .env or environment variables
+    See database/README.md for configuration details
 """
 
 import json
@@ -28,10 +46,17 @@ from db_helper import DB, conn_open, norm_space, norm_title, strip_dir_prefix
 # =========================
 # Config
 # =========================
-DATA_DIR = "data/latest"
+
+# Determine project root and data directory paths
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+DATA_DIR = os.path.join(PROJECT_ROOT, "data", "latest")
+
+# Timezone configuration
 LOCAL_TZ = ZoneInfo("America/Vancouver")
 UTC = ZoneInfo("UTC")
 
+# Default input files (relative to DATA_DIR)
 DEFAULT_FILES = [
     "cinematheque_screenings_latest.json",
     "viff_screenings_latest.json",
@@ -135,14 +160,14 @@ VALUES (%s,%s,%s)
 ON DUPLICATE KEY UPDATE website=VALUES(website), address=VALUES(address)
 """,
     "film_ins": """
-INSERT INTO film (title, year, description, imdb_id, tmdb_id)
-VALUES (%s,%s,%s,%s,%s)
-ON DUPLICATE KEY UPDATE description=VALUES(description)
+INSERT INTO film (title, year, description, imdb_id, tmdb_id, normalized_title)
+VALUES (%s,%s,%s,%s,%s,%s)
+ON DUPLICATE KEY UPDATE description=VALUES(description), normalized_title=VALUES(normalized_title)
 """,
     "person_ins": """
-INSERT INTO person (name, imdb_id, tmdb_id)
-VALUES (%s,%s,%s)
-ON DUPLICATE KEY UPDATE name=VALUES(name)
+INSERT INTO person (name, imdb_id, tmdb_id, normalized_name)
+VALUES (%s,%s,%s,%s)
+ON DUPLICATE KEY UPDATE name=VALUES(name), normalized_name=VALUES(normalized_name)
 """,
     "film_person_ins": """
 INSERT IGNORE INTO film_person (film_id, person_id, role) VALUES (%s,%s,%s)
@@ -170,6 +195,19 @@ def upsert(cur, sql, params):
 
 
 def fetch_one(cur, sql, params):
+    """Execute a SQL query and return the first row.
+
+    Args:
+        cur: Database cursor
+        sql: SQL query string with %s placeholders
+        params: Tuple of parameter values to bind
+
+    Returns:
+        First row of results or None if no results
+
+    Raises:
+        Exception if query fails
+    """
     cur.execute(sql, params)
     return cur.fetchone()
 
@@ -181,22 +219,84 @@ def ensure_cinema(cur, cinema_name, cinema_website=None):
 
 
 def ensure_film(cur, title, year, description=None, imdb=None, tmdb=None):
-    upsert(cur, SQL["film_ins"], (title, year, description, imdb, tmdb))
+    """Find or create a film record, using normalized title for deduplication.
+
+    Args:
+        cur: Database cursor
+        title: Film title (original form)
+        year: Release year or None 
+        description: Optional film description
+        imdb: Optional IMDB ID
+        tmdb: Optional TMDB ID
+
+    Returns:
+        film_id: Primary key of found or created film record
+
+    Notes:
+        - Uses normalized_title for reliable duplicate detection
+        - Year can be NULL (using <=> operator in comparison)
+        - Updates description and normalized_title on duplicate key
+    """
+    # Normalize title for consistent lookup
+    normalized = norm_title(title)
+
+    # Try to find existing film by normalized title and year
     row = fetch_one(
         cur,
         "SELECT id FROM film WHERE normalized_title=LOWER(%s) AND (year <=> %s)",
-        (norm_title(title), year),
+        (normalized, year)
     )
-    return row[0]
+    if row:
+        return row[0]
+
+    # Insert new film record with normalized title
+    upsert(cur, SQL["film_ins"], (title, year,
+           description, imdb, tmdb, normalized))
+
+    # Retrieve the newly inserted film
+    row = fetch_one(
+        cur,
+        "SELECT id FROM film WHERE normalized_title=LOWER(%s) AND (year <=> %s)",
+        (normalized, year)
+    )
+    if row:
+        return row[0]
 
 
 def ensure_person(cur, name, imdb=None, tmdb=None):
-    upsert(cur, SQL["person_ins"], (name, imdb, tmdb))
+    """Find or create a person record, using normalized name for deduplication.
+
+    Args:
+        cur: Database cursor
+        name: Person's name
+        imdb: Optional IMDB ID
+        tmdb: Optional TMDB ID
+
+    Returns:
+        person_id: Primary key of found or created person record
+
+    Notes:
+        - Uses normalized_name for duplicate detection
+        - Falls back to normalized version of the name field
+        - Updates name on duplicate key
+    """
+    normalized = norm_title(name)
+    sql = "SELECT id FROM person WHERE normalized_name = %s"
+    row = fetch_one(cur, sql, (normalized,))
+    if row:
+        return row[0]
+
+    # Insert and try again
+    normalized = norm_title(name)
+    upsert(cur, SQL["person_ins"], (name, imdb, tmdb, normalized))
     row = fetch_one(
-        cur, "SELECT id FROM person WHERE normalized_name=LOWER(%s)", (norm_title(
-            name),)
-    )
-    return row[0]
+        cur, "SELECT id FROM person WHERE normalized_name = %s", (normalized,))
+    if row:
+        return row[0]
+
+    # If we get here, something is very wrong
+    raise RuntimeError(
+        f"Could not insert or find person: {name} (normalized: {normalized})")
 
 
 def link_directors(cur, film_id, director_field):
@@ -410,14 +510,30 @@ def load_rio(cur, path):
 # Main
 # =========================
 def main():
-    # Derive file list
-    files = sys.argv[1:] if len(sys.argv) > 1 else [
-        os.path.join(DATA_DIR, f) for f in DEFAULT_FILES]
-    if not files:
-        print("No input JSON files found. Set DATA_DIR or pass files on CLI.")
+    # Get list of files to process
+    if len(sys.argv) > 1:
+        # Use files specified on command line (convert to absolute paths)
+        files = [os.path.abspath(f) for f in sys.argv[1:]]
+    else:
+        # Use default files from data/latest/
+        files = [os.path.join(DATA_DIR, f) for f in DEFAULT_FILES]
+        if not os.path.isdir(DATA_DIR):
+            print(f"Error: Data directory not found: {DATA_DIR}")
+            print(
+                "Run this script from the project root or specify input files on command line.")
+            sys.exit(1)
+
+    # Validate files exist
+    missing = [f for f in files if not os.path.isfile(f)]
+    if missing:
+        print("Error: Some input files not found:")
+        for f in missing:
+            print(f"  {f}")
         sys.exit(1)
 
-    print("Loading files:", files)
+    print(f"Loading {len(files)} files:")
+    for f in files:
+        print(f"  {f}")
 
     conn = conn_open()
     try:

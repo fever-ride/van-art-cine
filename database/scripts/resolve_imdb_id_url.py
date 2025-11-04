@@ -5,20 +5,47 @@ import random
 import sys
 import re
 from typing import Optional, Dict, Any, List
+from pathlib import Path
 import requests
 import pymysql
+from dotenv import load_dotenv
 from db_helper import DB, conn_open, norm_title, remove_parentheses
 
 # ---------- Config ----------
-TMDB_API_KEY = "a9662f05cd1a209fef971e00ef7d6369"
+# Load environment variables from .env in database directory
+SCRIPT_DIR = Path(__file__).resolve().parent
+DB_DIR = SCRIPT_DIR.parent
+ENV_PATH = DB_DIR / '.env'
+
+if not ENV_PATH.exists():
+    print(f"Error: Configuration file not found: {ENV_PATH}", file=sys.stderr)
+    print("Please ensure .env file exists with TMDB_API_KEY setting.", file=sys.stderr)
+    sys.exit(1)
+
+load_dotenv(ENV_PATH)
+
+# Get API configuration from environment
+TMDB_API_KEY = os.getenv('TMDB_API_KEY')
+if not TMDB_API_KEY:
+    print("Error: TMDB_API_KEY not found in .env file", file=sys.stderr)
+    sys.exit(1)
+
 TMDB_BASE = "https://api.themoviedb.org/3"
-CACHE_PATH = os.path.join("data", "tmdb_cache.json")
-os.makedirs("data", exist_ok=True)
+
+# Determine project root directory (parent of database/)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+
+# Use absolute paths for cache file
+CACHE_PATH = os.path.join(PROJECT_ROOT, "data", "tmdb_cache.json")
+os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
 
 try:
     with open(CACHE_PATH, "r", encoding="utf-8") as f:
         CACHE = json.load(f)
-except Exception:
+except Exception as e:
+    print(
+        f"Note: Could not load cache from {CACHE_PATH}: {e}", file=sys.stderr)
     CACHE = {}
 
 
