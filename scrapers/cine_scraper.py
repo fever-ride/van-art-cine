@@ -6,7 +6,6 @@ import re
 from datetime import datetime
 from playwright.sync_api import sync_playwright, TimeoutError
 
-
 def scrape_cinematheque_listings():
     """Phase 1: Scrape all basic info from calendar page"""
     url = "https://thecinematheque.ca/films/calendar"

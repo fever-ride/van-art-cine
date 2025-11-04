@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 from playwright.sync_api import sync_playwright, TimeoutError
 
+
 def scrape_rio_listings():
     # Phase 1: Collect all basic event info from calendar (no clicking)
     url = "https://riotheatre.ca/calendar/"
@@ -54,21 +55,23 @@ def scrape_rio_listings():
         for day_index, day in enumerate(days):
             try:
                 date_el = (day.query_selector(".day__label--full-date")
-                          or day.query_selector(".day__label"))
+                           or day.query_selector(".day__label"))
                 if not date_el:
                     continue
 
                 date_str = date_el.inner_text().strip()
                 print(f"\n  Processing {date_str}...")
 
-                event_blocks = day.query_selector_all(".an-event__contained-event.an-event")
+                event_blocks = day.query_selector_all(
+                    ".an-event__contained-event.an-event")
                 if not event_blocks:
                     continue
 
                 for event_index, event_block in enumerate(event_blocks):
                     try:
                         time_el = event_block.query_selector(".an-event__time")
-                        title_el = event_block.query_selector(".an-event__title")
+                        title_el = event_block.query_selector(
+                            ".an-event__title")
 
                         if not title_el:
                             continue
@@ -95,10 +98,12 @@ def scrape_rio_listings():
                             }
 
                         total_showtimes += 1
-                        print(f"    ✓ {event_index + 1}/{len(event_blocks)}: {title} at {time_text}")
+                        print(
+                            f"    ✓ {event_index + 1}/{len(event_blocks)}: {title} at {time_text}")
 
                     except Exception as e:
-                        print(f"    ✗ Error processing event {event_index + 1}: {e}")
+                        print(
+                            f"    ✗ Error processing event {event_index + 1}: {e}")
                         continue
 
             except Exception as e:
@@ -119,6 +124,7 @@ def scrape_rio_listings():
         print("Saved basic listings to: data/rio_listings_only.json")
 
         return results
+
 
 def scrape_rio_details_by_clicking(events_data):
     # Phase 2: Click each unique event to get detail info
@@ -148,11 +154,13 @@ def scrape_rio_details_by_clicking(events_data):
 
         for event_index, event in enumerate(events_data):
             title = event["title"]
-            print(f"\n  {event_index + 1}/{len(events_data)}: Looking for '{title}'...")
+            print(
+                f"\n  {event_index + 1}/{len(events_data)}: Looking for '{title}'...")
 
             try:
                 # Find this specific event on the calendar by title text
-                event_elements = page.query_selector_all(".an-event__contained-event.an-event")
+                event_elements = page.query_selector_all(
+                    ".an-event__contained-event.an-event")
                 target_event = None
 
                 for el in event_elements:
@@ -203,21 +211,25 @@ def scrape_rio_details_by_clicking(events_data):
                             if year_candidate.isdigit() and len(year_candidate) == 4:
                                 year = year_candidate
                             else:
-                                print(f"    ⚠ Year validation failed: '{year_candidate}' is not a valid year")
+                                print(
+                                    f"    ⚠ Year validation failed: '{year_candidate}' is not a valid year")
 
                         # Extract duration (always last) with better validation
                         if len(parts) > 1:
                             duration_text = parts[-1]
                             # Look for duration with "minutes" or "mins" validation
-                            duration_match = re.search(r'(\d+)\s*(?:minutes?|mins?)', duration_text, re.IGNORECASE)
+                            duration_match = re.search(
+                                r'(\d+)\s*(?:minutes?|mins?)', duration_text, re.IGNORECASE)
                             if duration_match:
                                 duration_number = duration_match.group(1)
                                 if duration_number.isdigit():
                                     duration = f"{duration_number} mins"
                                 else:
-                                    print(f"    ⚠ Duration number validation failed: '{duration_number}' is not a valid number")
+                                    print(
+                                        f"    ⚠ Duration number validation failed: '{duration_number}' is not a valid number")
                             else:
-                                print(f"    ⚠ Duration format validation failed: '{duration_text}' doesn't contain 'minutes' or 'mins'")
+                                print(
+                                    f"    ⚠ Duration format validation failed: '{duration_text}' doesn't contain 'minutes' or 'mins'")
 
                         # Extract director using patterns directly on the byline string
                         # Pattern 1: Format with rating "Year | Rating | Countries | Director | Language | Duration"
@@ -226,23 +238,28 @@ def scrape_rio_details_by_clicking(events_data):
 
                         if match1:
                             director = match1.group(2).strip()
-                            print(f"    ✓ Pattern 1 - Found director: {director}")
+                            print(
+                                f"    ✓ Pattern 1 - Found director: {director}")
                         else:
                             # Pattern 2: Format without rating "Year | Countries | Director | Language | Duration"
                             pattern2 = r'(\d{4})\s*\|\s*[^|]+\s*\|\s*([^|]+?)\s*\|\s*[^|]*\|\s*(\d+)\s*minutes?'
-                            match2 = re.search(pattern2, detail_str, re.IGNORECASE)
+                            match2 = re.search(
+                                pattern2, detail_str, re.IGNORECASE)
 
                             if match2:
                                 director = match2.group(2).strip()
-                                print(f"    ✓ Pattern 2 - Found director: {director}")
+                                print(
+                                    f"    ✓ Pattern 2 - Found director: {director}")
                             else:
-                                print(f"    ⚠ Director extraction failed from byline")
+                                print(
+                                    f"    ⚠ Director extraction failed from byline")
 
                         # Summary of extraction results
                         if year != "No year found" and duration != "No duration found" and director != "No director found":
                             print(f"    ✓ Complete extraction successful")
                         else:
-                            print(f"    ⚠ Partial extraction: year={year}, duration={duration}, director={director}")
+                            print(
+                                f"    ⚠ Partial extraction: year={year}, duration={duration}, director={director}")
 
                     else:
                         print(f"    ⚠ No byline element found on detail page")
@@ -285,6 +302,7 @@ def scrape_rio_details_by_clicking(events_data):
         print(f"\n✓ Phase 2 complete!")
         return events_data
 
+
 def scrape_rio_complete():
     """Complete Rio Theatre scraping: collect listings, then get details"""
     try:
@@ -312,9 +330,11 @@ def scrape_rio_complete():
         print(f"\n{'='*50}")
         print(f"🎬 Rio Theatre Scraping Complete! 🎬")
         print(f"Total unique events: {len(complete_events)}")
-        successful_details = len([e for e in complete_events if e.get('director', '') not in ['To be scraped', 'Error retrieving director', 'Event not found on calendar']])
+        successful_details = len([e for e in complete_events if e.get('director', '') not in [
+                                 'To be scraped', 'Error retrieving director', 'Event not found on calendar']])
         print(f"Events with details: {successful_details}")
-        total_showtimes = sum(len(e.get('showtimes', [])) for e in complete_events)
+        total_showtimes = sum(len(e.get('showtimes', []))
+                              for e in complete_events)
         print(f"Total showtimes: {total_showtimes}")
         print(f"Saved to: {timestamped_filename}")
         print(f"Also saved to: data/rio_screenings.json")
@@ -327,6 +347,7 @@ def scrape_rio_complete():
     except Exception as e:
         print(f"\nUnexpected error: {e}")
         return []
+
 
 if __name__ == "__main__":
     scrape_rio_complete()
