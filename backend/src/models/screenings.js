@@ -1,57 +1,13 @@
 import { prisma } from '../lib/prismaClient.js';
 import { localDayToUtcRange, localRangeToUtc } from '../utils/time.js';
 
-/**
- * NOTE: We no longer build raw SQL. We keep the function so callers don't break,
- * but it now returns a summary of the effective Prisma filters (for debugging).
- */
-export function buildScreeningsQuery(opts = {}) {
-  const {
-    date, from, to,
-    cinemaId, filmId,
-    q,
-    sort = 'time',
-    order = 'ASC',
-    limit = 50,
-    offset = 0,
-    tz = 'America/Vancouver',
-  } = opts;
 
-  // Keep the same defaults so behavior matches your existing route.
-  const sortMap = {
-    time:  's.start_at_utc',
-    title: 'f.title',
-    imdb:  'COALESCE(f.imdb_rating, -1)',
-    rt:    'COALESCE(f.rt_rating_pct, -1)',
-    votes: 'COALESCE(f.imdb_votes, -1)',
-    year:  'COALESCE(f.year, 0)',
-  };
-  const safeOrder = (String(order).toLowerCase() === 'desc') ? 'DESC' : 'ASC';
-
-  // For compatibility we return a small object that mirrors the intent.
-  return {
-    sql: '[prisma]', // marker so callers know this is Prisma now
-    params: [],
-    opts: { date, from, to, cinemaId, filmId, q, sort, order: safeOrder, limit, offset, tz },
-  };
-}
-
-/**
- * Fetch screenings with the same filters and output columns as the old SQL.
- * Output rows shape:
- * {
- *   id, title, start_at_utc, end_at_utc, runtime_min, tz,
- *   cinema_id, cinema_name,
- *   film_id, imdb_id, tmdb_id, year,
- *   directors, description, rated, genre, language, country, awards,
- *   imdb_rating, rt_rating_pct, imdb_votes,
- *   source_url, imdb_url
- * }
- */
 export async function fetchScreenings(opts = {}) {
   const {
     date, from, to,
-    cinemaId, filmId,
+    cinemaId,      // keep
+    cinemaIds,     // added
+    filmId,
     q,
     sort = 'time',
     order = 'ASC',
@@ -62,7 +18,7 @@ export async function fetchScreenings(opts = {}) {
 
   const safeOrder = (String(order).toLowerCase() === 'desc') ? 'desc' : 'asc';
 
-  // --- Time window (UTC) logic, matching your SQL fallbacks ---
+  // --- Time window (UTC) logic ---
   let gte = null;
   let lt = null;
 
@@ -72,19 +28,26 @@ export async function fetchScreenings(opts = {}) {
     lt = utcEnd ?? null;
   } else {
     const [utcRangeStart, utcRangeEnd] = localRangeToUtc(from, to, tz);
-    gte = utcRangeStart ?? new Date(); // SQL default was UTC_TIMESTAMP() if from missing
+    gte = utcRangeStart ?? new Date();
     lt = utcRangeEnd ?? null;
   }
 
-  // --- Prisma where clause mirroring your SQL WHERE ---
+  // --- Prisma where clause ---
   const where = {
-    is_active: true, // was 1 in SQL
+    is_active: true,
     ...(gte || lt ? { start_at_utc: { ...(gte ? { gte } : {}), ...(lt ? { lt } : {}) } } : {}),
-    ...(Number.isFinite(cinemaId) ? { cinema_id: Number(cinemaId) } : {}),
-    ...(Number.isFinite(filmId)   ? { film_id: Number(filmId) }   : {}),
-    ...(q
-      ? { film: { normalized_title: { contains: q, mode: 'insensitive' } } }
-      : {}),
+    
+    ...((() => {
+      if (cinemaIds && Array.isArray(cinemaIds) && cinemaIds.length > 0) {
+        return { cinema_id: { in: cinemaIds.map(Number) } };
+      } else if (Number.isFinite(cinemaId)) {
+        return { cinema_id: Number(cinemaId) };
+      }
+      return {};
+    })()),
+    
+    ...(Number.isFinite(filmId) ? { film_id: Number(filmId) } : {}),
+    ...(q ? { film: { normalized_title: { contains: q } } } : {}),
   };
 
   // --- Include the relations we need to reproduce the SELECT/LEFT JOINs ---
@@ -124,33 +87,29 @@ export async function fetchScreenings(opts = {}) {
   };
 
   // --- Ordering & pagination ---
-  // DB can only natively order by a real column; the old SQL used COALESCE for nulls.
-  // Strategy:
-  //   - For sort 'time' and 'title', we can use DB orderBy.
-  //   - For imdb/rt/votes/year, fetch enough rows and sort in JS using the same fallback values.
-  let orderBy = undefined;
+  let orderBy;
   const sortKey = String(sort);
-  const isDbSortable =
-    sortKey === 'time' || sortKey === 'title';
 
   if (sortKey === 'time') {
     orderBy = [{ start_at_utc: safeOrder }];
   } else if (sortKey === 'title') {
-    // order by film.title
     orderBy = [{ film: { title: safeOrder } }];
+  } else if (sortKey === 'imdb') {
+    orderBy = [{ film: { imdb_rating: safeOrder } }];
+  } else if (sortKey === 'rt') {
+    orderBy = [{ film: { rt_rating_pct: safeOrder } }];
+  } else if (sortKey === 'votes') {
+    orderBy = [{ film: { imdb_votes: safeOrder } }];
+  } else if (sortKey === 'year') {
+    orderBy = [{ film: { year: safeOrder } }];
   }
-
-  // To preserve LIMIT/OFFSET semantics when we must sort in JS,
-  // we fetch (offset + limit) rows (capped) then slice.
-  const take = isDbSortable
-    ? Number(limit)
-    : Math.min(Number(offset) + Number(limit), 1000); // safety cap
 
   const rowsRaw = await prisma.screening.findMany({
     where,
     select: baseSelect,
-    ...(orderBy ? { orderBy } : {}),
-    ...(isDbSortable ? { skip: Number(offset), take } : { take }), // only skip when DB-ordered
+    orderBy,
+    skip: Number(offset),
+    take: Number(limit),
   });
 
   // Build directors string and flatten to the original SELECT shape
@@ -191,27 +150,6 @@ export async function fetchScreenings(opts = {}) {
       imdb_url: film.imdb_url ?? null,
     };
   });
-
-  // JS-side sorting for imdb / rt / votes / year with the same COALESCE defaults
-  if (!isDbSortable) {
-    const keyMap = {
-      imdb:  { key: 'imdb_rating',  fallback: -1 },
-      rt:    { key: 'rt_rating_pct', fallback: -1 },
-      votes: { key: 'imdb_votes',    fallback: -1 },
-      year:  { key: 'year',          fallback: 0  },
-    };
-    const { key, fallback } = keyMap[sortKey] ?? keyMap.imdb;
-
-    flattened.sort((a, b) => {
-      const av = a[key] ?? fallback;
-      const bv = b[key] ?? fallback;
-      if (av === bv) return 0;
-      return safeOrder === 'asc' ? (av - bv) : (bv - av);
-    });
-
-    // Apply offset/limit after JS sort
-    flattened = flattened.slice(Number(offset), Number(offset) + Number(limit));
-  }
 
   return flattened;
 }

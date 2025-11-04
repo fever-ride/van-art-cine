@@ -15,8 +15,21 @@ router.get('/', async (req, res, next) => {
     const from = req.query.from?.trim();
     const to   = req.query.to?.trim();
 
+    let cinemaIds = null;
+    const cinemaIdsParam = req.query.cinema_ids;
+    if (cinemaIdsParam) {
+      cinemaIds = cinemaIdsParam
+        .split(',')
+        .map(id => Number(id.trim()))
+        .filter(n => Number.isFinite(n) && n > 0);
+      
+      if (cinemaIds.length === 0) cinemaIds = null;
+    }
+
+    // still support the old cinema_id
     const cinemaId = req.query.cinema_id ? Number(req.query.cinema_id) : null;
-    const filmId   = req.query.film_id   ? Number(req.query.film_id)   : null;
+    
+    const filmId = req.query.film_id ? Number(req.query.film_id) : null;
 
     const q = (req.query.q || '').toString().trim().toLowerCase();
 
@@ -28,13 +41,13 @@ router.get('/', async (req, res, next) => {
     const sort  = (req.query.sort  || 'time').toString();
     const order = (req.query.order || 'asc').toString();
 
-    // Currently backend ignores tz;
-    // kept for possible future multi-timezone support.
     const tz = DEFAULT_TZ;
 
     const rows = await fetchScreenings({
       date, from, to,
-      cinemaId, filmId,
+      cinemaIds,  // array
+      cinemaId,   // old param
+      filmId,
       q, sort, order, limit, offset,
       tz,
     });
