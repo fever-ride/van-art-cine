@@ -28,7 +28,7 @@ model cinema {
   created_at    DateTime?       @default(now()) @db.Timestamp(0)
   raw_import    raw_import[]
   screening     screening[]
-  stg_screening stg_screening[] @ignore
+  stg_screening stg_screening[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -64,7 +64,7 @@ model film {
   created_at       DateTime?       @default(now()) @db.Timestamp(0)
   film_person      film_person[]
   screening        screening[]
-  stg_screening    stg_screening[] @ignore
+  stg_screening    stg_screening[]
 
   @@unique([normalized_title, year], map: "uniq_title_year")
 }
@@ -83,7 +83,6 @@ model film_person {
 
 model ops_ingest_run {
   id               BigInt                @id @default(autoincrement())
-  source           String                @db.VarChar(32)
   started_at       DateTime              @db.DateTime(0)
   finished_at      DateTime?             @db.DateTime(0)
   rows_in          Int                   @default(0)
@@ -94,7 +93,7 @@ model ops_ingest_run {
   message          String?               @db.VarChar(500)
   screening        screening[]
 
-  @@index([source, started_at], map: "idx_src_started")
+  @@index([started_at], map: "idx_started")
 }
 
 model person {
@@ -173,7 +172,7 @@ model screening {
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// Staging now has a proper PK
 model stg_screening {
   film_id       Int
   cinema_id     Int
@@ -190,14 +189,14 @@ model stg_screening {
   content_hash  String    @db.Char(64)
   loaded_at_utc DateTime  @db.DateTime(0)
   loaded_at     DateTime? @default(now()) @db.Timestamp(0)
-  film          film      @relation(fields: [film_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "stg_screening_ibfk_1")
-  cinema        cinema    @relation(fields: [cinema_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "stg_screening_ibfk_2")
+  film          film      @relation(fields: [film_id], references: [id], map: "stg_screening_ibfk_1")
+  cinema        cinema    @relation(fields: [cinema_id], references: [id], map: "stg_screening_ibfk_2")
 
+  @@id([source, source_uid])                    // <— PRIMARY KEY
   @@index([cinema_id], map: "cinema_id")
   @@index([film_id], map: "film_id")
-  @@index([source, source_uid], map: "idx_stg_src_uid")
   @@index([start_at_utc], map: "idx_stg_time")
-  @@ignore
+  @@index([source, source_uid], map: "idx_stg_src_uid")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
