@@ -101,7 +101,7 @@ model person {
   name            String        @db.VarChar(160)
   imdb_id         String?       @db.VarChar(16)
   tmdb_id         Int?
-  normalized_name String?       @unique(map: "uniq_person_norm") @db.VarChar(160)
+  normalized_name String        @unique(map: "uniq_person_norm") @db.VarChar(160)
   created_at      DateTime?     @default(now()) @db.Timestamp(0)
   film_person     film_person[]
 }
