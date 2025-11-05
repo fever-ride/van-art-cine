@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 from playwright.sync_api import sync_playwright, TimeoutError
 
+
 def scrape_cinematheque_listings():
     """Phase 1: Scrape all basic info from calendar page"""
     url = "https://thecinematheque.ca/films/calendar"
@@ -17,7 +18,6 @@ def scrape_cinematheque_listings():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
-        # Set realistic browser headers
         page.set_extra_http_headers({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -31,9 +31,7 @@ def scrape_cinematheque_listings():
         try:
             print(f"Loading: {url}")
             page.goto(url, timeout=60000)
-
             time.sleep(random.uniform(2.0, 4.0))
-
             page.wait_for_selector("#eventCalendar li", timeout=10000)
             print("✓ Calendar page loaded successfully")
 
@@ -46,7 +44,6 @@ def scrape_cinematheque_listings():
             browser.close()
             return []
 
-        # Track unique events
         unique_events = {}
         total_showtimes = 0
 
@@ -55,10 +52,9 @@ def scrape_cinematheque_listings():
 
         for day_index, day in enumerate(days):
             try:
-                # Get date parts
                 day_el = day.query_selector(".day")
                 if not day_el:
-                    continue  # skip empty days
+                    continue
 
                 dom = day_el.query_selector(".dom")
                 mon = day_el.query_selector(".mon")
@@ -69,7 +65,6 @@ def scrape_cinematheque_listings():
 
                 date_str = f"{year.inner_text().strip()}-{mon.inner_text().strip()}-{dom.inner_text().strip().zfill(2)}"
 
-                # Get programs for this day
                 program_items = day.query_selector_all(".programs li")
 
                 if not program_items:
@@ -79,8 +74,8 @@ def scrape_cinematheque_listings():
 
                 for item_index, item in enumerate(program_items):
                     try:
-                        # Match only the time element
                         time_el = item.query_selector(".details .time")
+                        time_text = None
 
                         if time_el:
                             raw_time = time_el.inner_text().strip()
@@ -89,8 +84,6 @@ def scrape_cinematheque_listings():
                             suffix = " pm" if " pm" in f" {classes} " else (
                                 " am" if " am" in f" {classes} " else "")
                             time_text = raw_time + suffix
-                        else:
-                            time_text = "No time"
 
                         title_el = item.query_selector(".programTitle")
                         if not title_el:
@@ -99,40 +92,35 @@ def scrape_cinematheque_listings():
                         title = title_el.inner_text().strip()
                         href = title_el.get_attribute("href")
 
-                        # Build full URL
+                        detail_url = None
                         if href:
                             if href.startswith("/"):
                                 detail_url = f"https://thecinematheque.ca{href}"
                             else:
                                 detail_url = href
-                        else:
-                            detail_url = "No detail url found"
 
-                        # Create showtime entry
                         showtime = {
                             "date": date_str,
                             "time": time_text,
                             "venue": "The Cinematheque"
                         }
 
-                        # Check if we already have this event title
                         if title in unique_events:
-                            # Add this showtime to existing event
                             unique_events[title]["showtimes"].append(showtime)
                         else:
-                            # Create new event entry (details will be filled in Phase 2)
+                            # Initialize all fields to null
                             unique_events[title] = {
                                 "title": title,
-                                "director": "To be scraped",
-                                "duration": "To be scraped",
+                                "director": None,
+                                "year": None,
+                                "duration": None,
                                 "detail_url": detail_url,
-                                "year": "To be scraped",
                                 "showtimes": [showtime]
                             }
 
                         total_showtimes += 1
                         print(
-                            f"    ✓ {item_index + 1}/{len(program_items)}: {title} at {time_text}")
+                            f"    ✓ {item_index + 1}/{len(program_items)}: {title} at {time_text or 'No time'}")
 
                     except Exception as e:
                         print(
@@ -146,12 +134,9 @@ def scrape_cinematheque_listings():
                 print(f"  ✗ Error processing day {day_index + 1}: {e}")
                 continue
 
-        # Convert to list
         results = list(unique_events.values())
-
         browser.close()
 
-        # Save Phase 1 results
         os.makedirs("data", exist_ok=True)
         with open("data/cinematheque_listings_only.json", "w", encoding="utf-8") as f:
             json.dump(results, f, ensure_ascii=False, indent=2)
@@ -168,27 +153,18 @@ def scrape_cinematheque_details(events_data):
     """Phase 2: Scrape director, year, duration from individual event pages"""
     print(f"\n=== PHASE 2: Scraping Detail Pages ===")
 
-    # Filter events that have valid detail URLs
-    events_with_urls = [e for e in events_data if e.get("detail_url") and
-                        e["detail_url"] != "No detail url found" and
-                        e["detail_url"].startswith("http")]
+    events_with_urls = [e for e in events_data if e.get("detail_url")]
 
     print(f"Processing {len(events_with_urls)} events with detail URLs...")
 
     if not events_with_urls:
         print("No events have detail URLs to process.")
-        # Set default values for events without URLs
-        for event in events_data:
-            event["director"] = "No director found"
-            event["duration"] = "No duration found"
-            event["year"] = "No year found"
         return events_data
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
-        # Same headers as phase 1
         page.set_extra_http_headers({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -203,66 +179,54 @@ def scrape_cinematheque_details(events_data):
                     f"    {i+1}/{len(events_with_urls)}: Getting details for '{event['title']}'")
 
                 page.goto(detail_url, timeout=30000)
-
                 time.sleep(random.uniform(1.5, 3.0))
-
-                # Extract details using specific CSS selectors (much cleaner!)
-                director = "No director found"
-                year = "No year found"
-                duration = "No duration found"
 
                 try:
                     director_el = page.query_selector(".filmDirector")
                     if director_el:
-                        director = director_el.inner_text().strip()
+                        director_text = director_el.inner_text().strip()
+                        if director_text:
+                            event["director"] = director_text
 
                     year_el = page.query_selector(".filmYear")
                     if year_el:
-                        year = year_el.inner_text().strip()
+                        year_text = year_el.inner_text().strip()
+                        if year_text:
+                            event["year"] = year_text
 
-                    # Duration is in .filmRuntime class
                     runtime_el = page.query_selector(".filmRuntime")
                     if runtime_el:
                         runtime_text = runtime_el.inner_text().strip()
-                        # Extract number from text like "143"
-                        if runtime_text.isdigit():
-                            duration = f"{runtime_text} mins"
-                        else:
-                            # Handle cases like "143 min" or other formats
-                            duration_match = re.search(r'(\d+)', runtime_text)
-                            if duration_match:
-                                duration = f"{duration_match.group(1)} mins"
+                        if runtime_text:
+                            if runtime_text.isdigit():
+                                event["duration"] = f"{runtime_text} mins"
+                            else:
+                                duration_match = re.search(
+                                    r'(\d+)', runtime_text)
+                                if duration_match:
+                                    event["duration"] = f"{duration_match.group(1)} mins"
 
-                    print(f"        ✓ Found: {director} ({year}) - {duration}")
+                    found_info = []
+                    if event.get("director"):
+                        found_info.append(f"Director: {event['director']}")
+                    if event.get("year"):
+                        found_info.append(f"Year: {event['year']}")
+                    if event.get("duration"):
+                        found_info.append(f"Duration: {event['duration']}")
 
-                    # Update the event data with extracted info
-                    event["director"] = director
-                    event["year"] = year
-                    event["duration"] = duration
+                    if found_info:
+                        print(f"        ✓ Found: {', '.join(found_info)}")
+                    else:
+                        print(f"        ⚠ No details found on page")
 
                 except Exception as extraction_error:
                     print(
                         f"        ⚠ Error extracting details: {extraction_error}")
-                    # Simple fallback
-                    event["director"] = "Error retrieving director"
-                    event["year"] = "Error retrieving year"
-                    event["duration"] = "Error retrieving duration"
 
             except Exception as e:
                 print(
-                    f"        ✗ Error getting details for {event['title']}: {e}")
-                # Set fallback values
-                event["director"] = "Error retrieving director"
-                event["year"] = "Error retrieving year"
-                event["duration"] = "Error retrieving duration"
+                    f"        ✗ Error loading page for {event['title']}: {e}")
                 continue
-
-        # Set default values for events without detail URLs
-        for event in events_data:
-            if event not in events_with_urls:
-                event["director"] = "No director found"
-                event["duration"] = "No duration found"
-                event["year"] = "No year found"
 
         browser.close()
         print(
@@ -274,32 +238,35 @@ def scrape_cinematheque_details(events_data):
 def scrape_cinematheque_complete():
     """Complete Cinematheque scraping process: listings + details"""
     try:
-        # Phase 1: Get all listings (titles, showtimes, URLs)
         events = scrape_cinematheque_listings()
 
         if not events:
             print("No events found in Phase 1. Stopping.")
             return []
 
-        # Phase 2: Get details (director, year, duration from detail pages)
         complete_events = scrape_cinematheque_details(events)
 
-        # Save final results
         os.makedirs("data", exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        # Save timestamped version
         timestamped_filename = f"data/cinematheque_screenings_{timestamp}.json"
         with open(timestamped_filename, "w", encoding="utf-8") as f:
             json.dump(complete_events, f, ensure_ascii=False, indent=2)
 
+        events_with_director = len(
+            [e for e in complete_events if e.get("director")])
+        events_with_year = len([e for e in complete_events if e.get("year")])
+        events_with_duration = len(
+            [e for e in complete_events if e.get("duration")])
+        total_showtimes = sum(len(e.get('showtimes', []))
+                              for e in complete_events)
+
         print(f"\n{'='*50}")
         print(f"🎬 Cinematheque Scraping Complete! 🎬")
         print(f"Total unique events: {len(complete_events)}")
-        print(
-            f"Events with detail URLs: {len([e for e in complete_events if e.get('detail_url', '').startswith('http')])}")
-        total_showtimes = sum(len(e.get('showtimes', []))
-                              for e in complete_events)
+        print(f"Events with director: {events_with_director}")
+        print(f"Events with year: {events_with_year}")
+        print(f"Events with duration: {events_with_duration}")
         print(f"Total showtimes: {total_showtimes}")
         print(f"Saved to: {timestamped_filename}")
 

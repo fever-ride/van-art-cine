@@ -8,7 +8,6 @@ from playwright.sync_api import sync_playwright, TimeoutError
 
 
 def scrape_rio_listings():
-    # Phase 1: Collect all basic event info from calendar (no clicking)
     url = "https://riotheatre.ca/calendar/"
 
     print("=== PHASE 1: Scraping Rio Theatre Calendar ===")
@@ -18,7 +17,6 @@ def scrape_rio_listings():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
-        # Set realistic browser headers
         page.set_extra_http_headers({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -45,7 +43,6 @@ def scrape_rio_listings():
             browser.close()
             return []
 
-        # Collect all event info without clicking
         unique_events = {}
         total_showtimes = 0
 
@@ -76,7 +73,12 @@ def scrape_rio_listings():
                         if not title_el:
                             continue
 
-                        time_text = time_el.inner_text().strip() if time_el else "No time"
+                        time_text = None
+                        if time_el:
+                            time_text = time_el.inner_text().strip()
+                            if not time_text:
+                                time_text = None
+
                         title = title_el.inner_text().strip()
 
                         showtime = {
@@ -88,18 +90,19 @@ def scrape_rio_listings():
                         if title in unique_events:
                             unique_events[title]["showtimes"].append(showtime)
                         else:
+                            # Initialize all fields to null
                             unique_events[title] = {
                                 "title": title,
-                                "director": "To be scraped",
-                                "duration": "To be scraped",
-                                "detail_url": "To be scraped",
-                                "year": "To be scraped",
+                                "director": None,
+                                "year": None,
+                                "duration": None,
+                                "detail_url": None,
                                 "showtimes": [showtime]
                             }
 
                         total_showtimes += 1
                         print(
-                            f"    ✓ {event_index + 1}/{len(event_blocks)}: {title} at {time_text}")
+                            f"    ✓ {event_index + 1}/{len(event_blocks)}: {title} at {time_text or 'No time'}")
 
                     except Exception as e:
                         print(
@@ -113,7 +116,6 @@ def scrape_rio_listings():
         results = list(unique_events.values())
         browser.close()
 
-        # Save Phase 1 results
         os.makedirs("data", exist_ok=True)
         with open("data/rio_listings_only.json", "w", encoding="utf-8") as f:
             json.dump(results, f, ensure_ascii=False, indent=2)
@@ -127,7 +129,6 @@ def scrape_rio_listings():
 
 
 def scrape_rio_details_by_clicking(events_data):
-    # Phase 2: Click each unique event to get detail info
     url = "https://riotheatre.ca/calendar/"
 
     print(f"\n=== PHASE 2: Clicking Events for Details ===")
@@ -158,7 +159,6 @@ def scrape_rio_details_by_clicking(events_data):
                 f"\n  {event_index + 1}/{len(events_data)}: Looking for '{title}'...")
 
             try:
-                # Find this specific event on the calendar by title text
                 event_elements = page.query_selector_all(
                     ".an-event__contained-event.an-event")
                 target_event = None
@@ -171,95 +171,83 @@ def scrape_rio_details_by_clicking(events_data):
 
                 if not target_event:
                     print(f"    ✗ Could not find event '{title}' on calendar")
-                    event["director"] = "Event not found on calendar"
-                    event["duration"] = "Event not found on calendar"
-                    event["detail_url"] = "Event not found on calendar"
-                    event["year"] = "Event not found on calendar"
                     continue
 
                 print(f"    → Clicking '{title}'...")
-
-                # Click the event
                 target_event.click()
 
-                # Wait for navigation
                 page.wait_for_load_state("networkidle", timeout=15000)
                 time.sleep(random.uniform(1.5, 3.0))
 
                 # Get detail URL
                 detail_url = page.url
+                if detail_url and detail_url != url:
+                    event["detail_url"] = detail_url
 
-                # Initialize default values
-                director = "No director found"
-                year = "No year found"
-                duration = "No duration found"
-
-                # Extract all details from the byline element
+                # Extract details from byline
                 try:
                     detail_str_el = page.query_selector("h3.byline")
                     if detail_str_el:
                         detail_str = detail_str_el.inner_text().strip()
                         print(f"    Found byline: {detail_str}")
 
-                        parts = []
-                        for part in detail_str.split('|'):
-                            parts.append(part.strip())
+                        parts = [part.strip()
+                                 for part in detail_str.split('|')]
 
-                        # Extract year (always first)
+                        # Extract year (first part)
                         if len(parts) > 0:
                             year_candidate = parts[0]
                             if year_candidate.isdigit() and len(year_candidate) == 4:
-                                year = year_candidate
-                            else:
-                                print(
-                                    f"    ⚠ Year validation failed: '{year_candidate}' is not a valid year")
+                                event["year"] = year_candidate
 
-                        # Extract duration (always last) with better validation
+                        # Extract duration (last part)
                         if len(parts) > 1:
                             duration_text = parts[-1]
-                            # Look for duration with "minutes" or "mins" validation
                             duration_match = re.search(
                                 r'(\d+)\s*(?:minutes?|mins?)', duration_text, re.IGNORECASE)
                             if duration_match:
                                 duration_number = duration_match.group(1)
                                 if duration_number.isdigit():
-                                    duration = f"{duration_number} mins"
-                                else:
-                                    print(
-                                        f"    ⚠ Duration number validation failed: '{duration_number}' is not a valid number")
-                            else:
-                                print(
-                                    f"    ⚠ Duration format validation failed: '{duration_text}' doesn't contain 'minutes' or 'mins'")
+                                    event["duration"] = f"{duration_number} mins"
 
-                        # Extract director using patterns directly on the byline string
-                        # Pattern 1: Format with rating "Year | Rating | Countries | Director | Language | Duration"
+                        # Extract director
                         pattern1 = r'(\d{4})\s*\|\s*[^|]+\s*\|\s*[^|]+\s*\|\s*([^|]+?)\s*\|\s*[^|]*\|\s*(\d+)\s*minutes?'
                         match1 = re.search(pattern1, detail_str, re.IGNORECASE)
 
                         if match1:
-                            director = match1.group(2).strip()
-                            print(
-                                f"    ✓ Pattern 1 - Found director: {director}")
+                            director_text = match1.group(2).strip()
+                            if director_text:
+                                event["director"] = director_text
+                                print(
+                                    f"    ✓ Pattern 1 - Found director: {director_text}")
                         else:
-                            # Pattern 2: Format without rating "Year | Countries | Director | Language | Duration"
                             pattern2 = r'(\d{4})\s*\|\s*[^|]+\s*\|\s*([^|]+?)\s*\|\s*[^|]*\|\s*(\d+)\s*minutes?'
                             match2 = re.search(
                                 pattern2, detail_str, re.IGNORECASE)
 
                             if match2:
-                                director = match2.group(2).strip()
-                                print(
-                                    f"    ✓ Pattern 2 - Found director: {director}")
-                            else:
-                                print(
-                                    f"    ⚠ Director extraction failed from byline")
+                                director_text = match2.group(2).strip()
+                                if director_text:
+                                    event["director"] = director_text
+                                    print(
+                                        f"    ✓ Pattern 2 - Found director: {director_text}")
 
-                        # Summary of extraction results
-                        if year != "No year found" and duration != "No duration found" and director != "No director found":
-                            print(f"    ✓ Complete extraction successful")
-                        else:
+                        # Summary
+                        found_fields = []
+                        if event.get("year"):
+                            found_fields.append(f"year={event['year']}")
+                        if event.get("duration"):
+                            found_fields.append(
+                                f"duration={event['duration']}")
+                        if event.get("director"):
+                            found_fields.append(
+                                f"director={event['director']}")
+
+                        if found_fields:
                             print(
-                                f"    ⚠ Partial extraction: year={year}, duration={duration}, director={director}")
+                                f"    ✓ Extracted: {', '.join(found_fields)}")
+                        else:
+                            print(f"    ⚠ No details extracted from byline")
 
                     else:
                         print(f"    ⚠ No byline element found on detail page")
@@ -267,27 +255,13 @@ def scrape_rio_details_by_clicking(events_data):
                 except Exception as e:
                     print(f"    ⚠ Byline extraction failed: {e}")
 
-                # Update event data
-                event["director"] = director
-                event["year"] = year
-                event["duration"] = duration
-                event["detail_url"] = detail_url
-
-                print(f"    ✓ Final result: {director} ({year}) - {duration}")
-
-                # Navigate back to calendar
+                # Navigate back
                 page.go_back()
                 page.wait_for_selector(".an-event__title", timeout=10000)
                 time.sleep(random.uniform(1.0, 2.0))
 
             except Exception as e:
                 print(f"    ✗ Error processing '{title}': {e}")
-
-                # Set error values
-                event["director"] = "Error retrieving director"
-                event["year"] = "Error retrieving year"
-                event["duration"] = "Error retrieving duration"
-                event["detail_url"] = "Error retrieving URL"
 
                 # Try to get back to calendar
                 try:
@@ -306,17 +280,14 @@ def scrape_rio_details_by_clicking(events_data):
 def scrape_rio_complete():
     """Complete Rio Theatre scraping: collect listings, then get details"""
     try:
-        # Phase 1: Get all basic listings
         events = scrape_rio_listings()
 
         if not events:
             print("No events found in Phase 1. Stopping.")
             return []
 
-        # Phase 2: Click events for details
         complete_events = scrape_rio_details_by_clicking(events)
 
-        # Save final results
         os.makedirs("data", exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -327,14 +298,23 @@ def scrape_rio_complete():
         with open("data/rio_screenings.json", "w", encoding="utf-8") as f:
             json.dump(complete_events, f, ensure_ascii=False, indent=2)
 
+        events_with_director = len(
+            [e for e in complete_events if e.get("director")])
+        events_with_year = len([e for e in complete_events if e.get("year")])
+        events_with_duration = len(
+            [e for e in complete_events if e.get("duration")])
+        events_with_url = len(
+            [e for e in complete_events if e.get("detail_url")])
+        total_showtimes = sum(len(e.get('showtimes', []))
+                              for e in complete_events)
+
         print(f"\n{'='*50}")
         print(f"🎬 Rio Theatre Scraping Complete! 🎬")
         print(f"Total unique events: {len(complete_events)}")
-        successful_details = len([e for e in complete_events if e.get('director', '') not in [
-                                 'To be scraped', 'Error retrieving director', 'Event not found on calendar']])
-        print(f"Events with details: {successful_details}")
-        total_showtimes = sum(len(e.get('showtimes', []))
-                              for e in complete_events)
+        print(f"Events with director: {events_with_director}")
+        print(f"Events with year: {events_with_year}")
+        print(f"Events with duration: {events_with_duration}")
+        print(f"Events with detail URL: {events_with_url}")
         print(f"Total showtimes: {total_showtimes}")
         print(f"Saved to: {timestamped_filename}")
         print(f"Also saved to: data/rio_screenings.json")
