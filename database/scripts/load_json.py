@@ -40,7 +40,7 @@ from aliases import resolve_cinema_alias
 import pymysql
 from dateutil import parser as dtparser
 
-from db_helper import DB, conn_open, norm_space, norm_title, strip_dir_prefix
+from db_helper import DB, conn_open, norm_space, norm_title, strip_dir_prefix, normalize_person_name
 
 
 # =========================
@@ -264,37 +264,43 @@ def ensure_film(cur, title, year, description=None, imdb=None, tmdb=None):
 
 
 def ensure_person(cur, name, imdb=None, tmdb=None):
-    """Find or create a person record, using normalized name for deduplication.
+    """Find or create a person record, using normalized name for deduplication."""
 
-    Args:
-        cur: Database cursor
-        name: Person's name
-        imdb: Optional IMDB ID
-        tmdb: Optional TMDB ID
+    if not name or not name.strip():
+        raise ValueError("Person name cannot be empty")
 
-    Returns:
-        person_id: Primary key of found or created person record
+    normalized = normalize_person_name(name)
+    if not normalized:
+        raise ValueError(f"Cannot normalize person name: '{name}'")
 
-    Notes:
-        - Uses normalized_name for duplicate detection
-        - Falls back to normalized version of the name field
-        - Updates name on duplicate key
-    """
-    normalized = norm_title(name)
+    # Try to find by external IDs first
+    if imdb:
+        row = fetch_one(
+            cur, "SELECT id FROM person WHERE imdb_id = %s", (imdb,))
+        if row:
+            return row[0]
+
+    if tmdb:
+        row = fetch_one(
+            cur, "SELECT id FROM person WHERE tmdb_id = %s", (tmdb,))
+        if row:
+            return row[0]
+
+    # Try by normalized_name
     sql = "SELECT id FROM person WHERE normalized_name = %s"
     row = fetch_one(cur, sql, (normalized,))
     if row:
         return row[0]
 
-    # Insert and try again
-    normalized = norm_title(name)
+    # Insert new person
     upsert(cur, SQL["person_ins"], (name, imdb, tmdb, normalized))
+
+    # Retrieve the newly inserted person
     row = fetch_one(
         cur, "SELECT id FROM person WHERE normalized_name = %s", (normalized,))
     if row:
         return row[0]
 
-    # If we get here, something is very wrong
     raise RuntimeError(
         f"Could not insert or find person: {name} (normalized: {normalized})")
 
