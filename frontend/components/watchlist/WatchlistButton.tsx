@@ -82,14 +82,16 @@ export default function WatchlistButton({
       aria-pressed={saved}
       aria-label={label}
       className={[
-        'rounded-md border px-3 py-1 text-sm transition',
-        saved ? 'bg-green-50 border-green-300 text-green-700 hover:bg-green-100' : 'hover:bg-gray-50',
+        'rounded-xl font-medium transition-all duration-150',
+        'px-4 py-2 text-sm',
         pending ? 'opacity-60 cursor-not-allowed' : '',
-        size === 'md' ? 'px-4 py-2 text-base' : '',
+        saved
+          ? 'border border-dashed border-slate-300 text-slate-500 bg-slate-50 hover:bg-slate-100'
+          : 'bg-[#6d8fa6] text-white hover:bg-[#5b7c93]',
         className,
       ].join(' ')}
     >
-      {pending ? 'Working…' : label}
+      {pending ? 'Working…' : saved ? 'Added ✓' : 'Add to Watchlist'}
     </button>
   );
 }
