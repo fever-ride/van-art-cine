@@ -23,7 +23,6 @@ type WatchlistRow = {
 
   source_url?: string | null;
 
-  // unified status we render against
   status: 'upcoming' | 'past' | 'inactive' | 'missing';
 };
 
@@ -31,7 +30,7 @@ export default function WatchlistPage() {
   const [items, setItems] = useState<WatchlistRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [authed, setAuthed] = useState<boolean | null>(null); // null until known
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const [includePast, setIncludePast] = useState(true);
   const [guestCount, setGuestCount] = useState<number>(0);
 
@@ -53,16 +52,13 @@ export default function WatchlistPage() {
       setLoading(true);
       setErr(null);
 
-      // First, look at guest storage (used for banner + guest flow)
       const guestIds = Array.from(getGuestSet());
       setGuestCount(guestIds.length);
 
       try {
-        // Try the signed-in flow first
         const res = await fetch('/api/watchlist', { credentials: 'include' });
 
         if (res.status === 401) {
-          // Guest flow: hydrate IDs via bulk screenings endpoint
           setAuthed(false);
 
           if (guestIds.length === 0) {
@@ -79,14 +75,13 @@ export default function WatchlistPage() {
           });
 
           if (!bulkRes.ok) throw new Error(`HTTP ${bulkRes.status}`);
-          const bulkData = await bulkRes.json(); // { items: [...] }
+          const bulkData = await bulkRes.json();
 
           const now = Date.now();
           const byId = new Map<number, any>(
             (bulkData.items ?? []).map((s: any) => [Number(s.id), s])
           );
 
-          // Build rows ensuring every guest id appears (missing -> status 'missing')
           const rows: WatchlistRow[] = guestIds.map((id) => {
             const s = byId.get(id);
             if (!s) {
@@ -121,7 +116,6 @@ export default function WatchlistPage() {
 
               source_url: s.source_url ?? null,
 
-              // bulk endpoint won’t provide inactive/missing flags; compute basic status
               status: past ? 'past' : 'upcoming',
             };
           });
@@ -132,7 +126,7 @@ export default function WatchlistPage() {
         }
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json(); // { items: [...] } with status from backend
+        const data = await res.json();
         setAuthed(true);
         setItems(Array.isArray(data.items) ? data.items : []);
       } catch (e: any) {
@@ -146,7 +140,6 @@ export default function WatchlistPage() {
   }, []);
 
   function handleSavedChange(screeningId: number, saved: boolean) {
-    // If it was removed, prune from current table immediately
     if (!saved) {
       setItems((prev) => prev.filter((r) => r.screening_id !== screeningId));
     }
@@ -154,10 +147,10 @@ export default function WatchlistPage() {
 
   function StatusBadge({ status }: { status: WatchlistRow['status'] }) {
     const map: Record<WatchlistRow['status'], string> = {
-      upcoming: 'text-green-700 bg-green-50 border-green-200',
-      past: 'text-gray-700 bg-gray-50 border-gray-200',
-      inactive: 'text-amber-800 bg-amber-50 border-amber-200',
-      missing: 'text-red-700 bg-red-50 border-red-200',
+      upcoming: 'bg-green-50 text-green-700',
+      past: 'bg-gray-100 text-gray-700',
+      inactive: 'bg-amber-50 text-amber-800',
+      missing: 'bg-red-50 text-red-700',
     };
     const label: Record<WatchlistRow['status'], string> = {
       upcoming: 'Upcoming',
@@ -166,7 +159,9 @@ export default function WatchlistPage() {
       missing: 'Missing',
     };
     return (
-      <span className={`inline-block rounded-full border px-2 py-0.5 text-xs ${map[status]}`}>
+      <span
+        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] leading-5 font-semibold ${map[status]}`}
+      >
         {label[status]}
       </span>
     );
@@ -175,9 +170,9 @@ export default function WatchlistPage() {
   const rowsToShow = includePast ? items : items.filter((r) => r.status === 'upcoming');
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
+    <main className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">My Watchlist</h1>
+        <h1 className="text-[22px] font-semibold text-gray-900">My Watchlist</h1>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -193,7 +188,7 @@ export default function WatchlistPage() {
       {err && <p className="text-sm text-red-600">Error: {err}</p>}
 
       {authed === false && !loading && (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
           You’re not signed in. Your guest watchlist currently has{' '}
           <strong>{guestCount}</strong> item{guestCount === 1 ? '' : 's'} stored in this browser.
           <br />
@@ -209,25 +204,53 @@ export default function WatchlistPage() {
       )}
 
       {!loading && rowsToShow.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-md">
           <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50 text-left">
-                <th className="px-3 py-2 font-medium">When</th>
-                <th className="px-3 py-2 font-medium">Title</th>
-                <th className="px-3 py-2 font-medium">Cinema</th>
-                <th className="px-3 py-2 font-medium">Status</th>
-                <th className="px-3 py-2 text-right font-medium">Action</th>
+              <tr className="border-b border-gray-200 bg-[#FFF8E7] text-left">
+                <th className="w-44 px-3 py-2 font-medium text-gray-700">When</th>
+                <th className="px-3 py-2 font-medium text-gray-700">Title</th>
+                <th className="w-80 px-3 py-2 font-medium text-gray-700">Cinema</th>
+                <th className="w-32 px-3 py-2 font-medium text-gray-700">Status</th>
+                <th className="w-40 px-3 py-2 text-right font-medium text-gray-700">Action</th>
               </tr>
             </thead>
             <tbody>
               {rowsToShow.map((r) => (
-                <tr key={r.screening_id} className="border-b border-gray-100">
+                <tr
+                  key={r.screening_id}
+                  className="border-b border-gray-100 transition-colors hover:bg-[#FFF8E7]/40"
+                >
+                  {/* WHEN — compact 3-line stack */}
                   <td className="px-3 py-2">
-                    {r.start_at_utc ? fmt.format(new Date(r.start_at_utc)) : '—'}
+                    {r.start_at_utc ? (
+                      <div className="leading-5">
+                        <div className="text-[13px] text-gray-700">
+                          {new Intl.DateTimeFormat(undefined, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                          }).format(new Date(r.start_at_utc))}
+                        </div>
+                        <div className="text-[15px] font-semibold text-gray-900">
+                          {new Intl.DateTimeFormat(undefined, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true,
+                          }).format(new Date(r.start_at_utc))}
+                        </div>
+                        {typeof r.runtime_min === 'number' && (
+                          <div className="text-[12px] text-gray-500">{r.runtime_min} min</div>
+                        )}
+                      </div>
+                    ) : (
+                      '—'
+                    )}
                   </td>
+
+                  {/* TITLE */}
                   <td className="px-3 py-2">
-                    <div className="font-semibold">
+                    <div className="text-[15px] font-semibold text-gray-900">
                       {r.film_id ? (
                         <Link href={`/films/${r.film_id}`} className="hover:underline">
                           {r.title} {r.year ? `(${r.year})` : ''}
@@ -239,13 +262,21 @@ export default function WatchlistPage() {
                       )}
                     </div>
                     {typeof r.imdb_rating === 'number' && (
-                      <div className="text-xs text-gray-500">IMDb {r.imdb_rating.toFixed(1)}</div>
+                      <div className="mt-0.5 text-[12px] text-gray-500">
+                        IMDb {r.imdb_rating.toFixed(1)}
+                      </div>
                     )}
                   </td>
+
+                  {/* CINEMA */}
                   <td className="px-3 py-2">{r.cinema_name ?? '—'}</td>
+
+                  {/* STATUS */}
                   <td className="px-3 py-2">
                     <StatusBadge status={r.status} />
                   </td>
+
+                  {/* ACTION */}
                   <td className="px-3 py-2 text-right">
                     <WatchlistButton
                       screeningId={r.screening_id}

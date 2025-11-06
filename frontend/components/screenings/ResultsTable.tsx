@@ -62,7 +62,7 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
           return (
             <Fragment key={s.id}>
               {/* SUMMARY ROW */}
-              <tr className="border-b border-gray-200 align-top">
+              <tr className="border-b border-gray-200 align-middle">
                 {/* disclose */}
                 <td className="px-2 py-2">
                   <button
@@ -122,7 +122,7 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
                       {genres.map((g) => (
                         <span
                           key={g}
-                          className="inline-block rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-gray-800"
+                          className="inline-flex items-center rounded-full bg-[#E8EFF3] px-2.5 py-0.5 text-[12px] leading-5 font-semibold text-[#2B2B2B]"
                         >
                           {g}
                         </span>
@@ -135,7 +135,7 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
                 <td className="px-3 py-3 text-gray-900">{s.cinema_name}</td>
 
                 {/* watchlist action */}
-                <td className="px-3 py-3 text-right">
+                <td className="px-3 py-3 text-left">
                   <WatchlistButton
                     screeningId={s.id}
                     initialSaved={savedIds?.has(s.id)}
@@ -190,14 +190,22 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
                         {/* RIGHT: rating chips + link chips */}
                         <div className="grid gap-3">
                           <div className="flex flex-wrap gap-2">
-                            {typeof s.imdb_rating === 'number' && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-900">
-                                IMDb · {s.imdb_rating}
-                                {s.imdb_votes ? (
-                                  <span className="pl-0.5 text-gray-500">({s.imdb_votes})</span>
-                                ) : null}
-                              </span>
-                            )}
+                            {/* TODO: IMDb rating type problem */}
+                            {/* IMDb rating */}
+                            {(() => {
+                              const ratingStr = s.imdb_rating?.toString().trim() ?? '';
+                              const hasRating = ratingStr !== '';
+                              const ratingNum = Number(ratingStr);
+
+                              return hasRating && !isNaN(ratingNum) ? (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-900">
+                                  IMDb · {ratingNum.toFixed(1)}
+                                  {s.imdb_votes ? (
+                                    <span className="pl-0.5 text-gray-500">({s.imdb_votes})</span>
+                                  ) : null}
+                                </span>
+                              ) : null;
+                            })()}
                             {typeof s.rt_rating_pct === 'number' && (
                               <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-900">
                                 RT · {s.rt_rating_pct}%

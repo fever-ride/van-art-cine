@@ -22,7 +22,6 @@ export default function Filters({
   cinemaOptions = [],
   layout = 'inline',
 }: Props) {
-  
   const [localUI, setLocalUI] = React.useState<Omit<UIState, 'q'>>({
     cinemaIds: ui.cinemaIds,
     filmId: ui.filmId,
@@ -87,18 +86,23 @@ export default function Filters({
     onApply();
   };
 
+  // === THEMED CLASSES ===
   const container =
     layout === 'sidebar'
-      ? 'rounded-xl border border-gray-200 bg-white p-4 shadow-sm space-y-4'
-      : 'mb-4 grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-3';
+      ? 'space-y-4 rounded-2xl border border-[#E5E2D8] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.08)]'
+      : 'mb-4 grid grid-cols-1 gap-3 rounded-2xl border border-[#E5E2D8] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.08)] sm:grid-cols-2 lg:grid-cols-3';
 
-  const control = 'rounded-md border px-3 py-2 text-sm w-full';
+  const control =
+    'w-full rounded-[14px] border-[1.5px] border-[#D9D6CD] px-3 py-2.5 text-sm ' +
+    'focus:border-[#5C8EA7] focus:outline-none focus:ring-2 focus:ring-[#5C8EA7]/30';
+
+  const labelCls = 'text-[12px] font-semibold text-[#6C7E88]';
 
   return (
-    <div className={container}>  {/* 改成 div */}
+    <div className={container}>
       {/* Search */}
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-gray-600">Search</span>
+        <span className={labelCls}>Search</span>
         <input
           type="text"
           inputMode="search"
@@ -112,11 +116,11 @@ export default function Filters({
       {/* Cinemas */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-gray-600">Cinemas</span>
+          <span className={labelCls}>Cinemas</span>
           {localUI.cinemaIds.length > 0 && (
             <button
               type="button"
-              className="text-xs text-blue-600 hover:underline"
+              className="text-xs font-semibold text-[#5C8EA7] hover:underline"
               onClick={() => setLocalUI({ ...localUI, cinemaIds: [] })}
             >
               Clear ({localUI.cinemaIds.length})
@@ -124,18 +128,26 @@ export default function Filters({
           )}
         </div>
 
-        <div className="max-h-48 overflow-y-auto rounded-md border bg-white p-2">
+          <div
+            className="
+              max-h-[min(50vh,420px)]   /* flexible until 50vh or 420px, whichever is smaller */
+              overflow-y-auto overscroll-contain
+              rounded-[18px] border-[1.5px] border-[#D9D6CD] bg-white
+              p-3 pr-2                   /* give room so scrollbar doesn't cover text */
+              scroll-py-2
+            "
+          >
           {cinemaOptions.map((c) => {
             const idStr = String(c.id);
             const checked = localUI.cinemaIds.includes(idStr);
             return (
               <label
                 key={c.id}
-                className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 cursor-pointer rounded"
+                className="flex items-center gap-2 rounded px-2.5 py-2 hover:bg-gray-50 cursor-pointer"
               >
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded-[6px] border-[1.5px] border-[#CFCBC1] text-[#5C8EA7] focus:ring-2 focus:ring-[#5C8EA7]/30"
                   checked={checked}
                   onChange={(e) => {
                     if (e.target.checked) {
@@ -151,23 +163,25 @@ export default function Filters({
                     }
                   }}
                 />
-                <span className="text-sm">{c.name}</span>
+                <span className="text-sm text-[#2B2B2B]">{c.name}</span>
               </label>
             );
           })}
         </div>
 
-        <span className="text-xs text-gray-500">
+        <span className="text-[12px] text-[#6C7E88]">
           {localUI.cinemaIds.length === 0
             ? 'Showing all cinemas'
-            : `${localUI.cinemaIds.length} cinema${localUI.cinemaIds.length > 1 ? 's' : ''} selected`}
+            : `${localUI.cinemaIds.length} cinema${
+                localUI.cinemaIds.length > 1 ? 's' : ''
+              } selected`}
         </span>
       </div>
 
       {/* Sort & Order */}
       <div className={layout === 'sidebar' ? 'flex gap-2' : 'flex items-end gap-2'}>
         <label className="flex-1">
-          <span className="mb-1 block text-xs font-medium text-gray-600">Sort</span>
+          <span className={`${labelCls} mb-1 block`}>Sort</span>
           <select
             className={control}
             value={localUI.sort}
@@ -183,7 +197,7 @@ export default function Filters({
         </label>
 
         <label className="w-28">
-          <span className="mb-1 block text-xs font-medium text-gray-600">Order</span>
+          <span className={`${labelCls} mb-1 block`}>Order</span>
           <select
             className={control}
             value={localUI.order}
@@ -197,22 +211,26 @@ export default function Filters({
         </label>
       </div>
 
-      {/* date and date range */}
+      {/* Date / Range */}
       <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <label className="inline-flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-4">
+          <label className="inline-flex items-center gap-2 text-sm text-[#2B2B2B]">
             <input
               type="radio"
               name="mode"
+              className="h-4 w-4 appearance-none rounded-full border-[1.5px] border-[#CFCBC1]
+                         checked:border-[#5C8EA7] checked:shadow-[inset_0_0_0_4px_#5C8EA7] transition"
               checked={localUI.mode === 'single'}
               onChange={() => setLocalUI({ ...localUI, mode: 'single' })}
             />
             Single date
           </label>
-          <label className="inline-flex items-center gap-2 text-sm">
+          <label className="inline-flex items-center gap-2 text-sm text-[#2B2B2B]">
             <input
               type="radio"
               name="mode"
+              className="h-4 w-4 appearance-none rounded-full border-[1.5px] border-[#CFCBC1]
+                         checked:border-[#5C8EA7] checked:shadow-[inset_0_0_0_4px_#5C8EA7] transition"
               checked={localUI.mode === 'range'}
               onChange={() => setLocalUI({ ...localUI, mode: 'range' })}
             />
@@ -229,19 +247,18 @@ export default function Filters({
           />
         )}
 
-        {/* Date range */}
         {localUI.mode === 'range' && (
           <div className="mt-2 flex w-full flex-wrap items-center gap-2">
             <input
               type="date"
-              className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"
+              className={control}
               value={localUI.from}
               onChange={(e) => setLocalUI({ ...localUI, from: e.target.value })}
             />
-            <span className="text-sm text-gray-500">to</span>
+            <span className="text-sm text-[#6C7E88]">to</span>
             <input
               type="date"
-              className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"
+              className={control}
               value={localUI.to}
               onChange={(e) => setLocalUI({ ...localUI, to: e.target.value })}
             />
@@ -249,11 +266,12 @@ export default function Filters({
         )}
       </div>
 
-      {/* buttons */}
+      {/* Actions */}
       <div className={layout === 'sidebar' ? 'flex gap-2 pt-1' : 'ml-auto flex items-center gap-2'}>
         <button
           type="button"
-          className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+          className="rounded-[14px] border-[1.5px] border-[#D9D6CD] bg-white px-4 py-2 text-sm font-semibold
+                     text-[#2B2B2B] hover:bg-[#F4F8FB]"
           onClick={handleReset}
           disabled={loading}
         >
@@ -261,7 +279,8 @@ export default function Filters({
         </button>
         <button
           type="button"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
+          className="rounded-[14px] bg-[#5C8EA7] px-4 py-2 text-sm font-semibold text-white
+                     hover:bg-[#4A7A93] disabled:opacity-60"
           onClick={handleApply}
           disabled={loading}
         >

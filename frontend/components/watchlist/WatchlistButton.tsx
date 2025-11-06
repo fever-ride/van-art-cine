@@ -82,8 +82,9 @@ export default function WatchlistButton({
       aria-pressed={saved}
       aria-label={label}
       className={[
-        'rounded-xl font-medium transition-all duration-150',
+        'rounded-xl font-semibold transition-all duration-150',
         'px-4 py-2 text-sm',
+        'w-23',
         pending ? 'opacity-60 cursor-not-allowed' : '',
         saved
           ? 'border border-dashed border-slate-300 text-slate-500 bg-slate-50 hover:bg-slate-100'
