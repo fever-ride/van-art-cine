@@ -8,7 +8,7 @@ export default async function FilmPage({ params }: {params: Promise<{id: string}
   const {film, upcoming} = await getFilmDetail(Number(id));
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
+    <main className="mx-auto max-w-7xl px-4 py-8">
       <FilmHeader film={film} />
       <FilmMeta film={film} />
       <FilmShowtimes upcoming={upcoming} />

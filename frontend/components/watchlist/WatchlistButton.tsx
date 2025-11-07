@@ -8,7 +8,7 @@ type Props = {
   readonly screeningId: number;
   /** If the parent already knows saved/not-saved, pass it in */
   readonly initialSaved?: boolean;
-  /** Bubble the final saved state back to parent*/
+  /** Bubble the final saved state back to parent */
   readonly onChange?: (saved: boolean) => void;
   /** Small stylistic knobs (optional) */
   readonly size?: 'sm' | 'md';
@@ -33,21 +33,15 @@ export default function WatchlistButton({
   }, [initialSaved]);
 
   async function toggle() {
-    // Optimistic flip
     const optimistic = !saved;
     setSaved(optimistic);
     setPending(true);
 
     try {
-      // Try server first (signed-in flow). This will set/require cookies.
       const resp = await apiToggleWatchlist(screeningId);
-
-      // Server answered `{ saved: boolean }`
       setSaved(resp.saved);
       onChange?.(resp.saved);
     } catch (err: any) {
-      // If unauthorized (401), fall back to guest localStorage
-      // (Your fetchJSON likely throws with e.status; adjust if needed)
       const status = err?.status ?? err?.response?.status;
       if (status === 401) {
         const set = getGuestSet();
@@ -62,15 +56,18 @@ export default function WatchlistButton({
         }
         saveGuestSet(set);
       } else {
-        // Other errors: revert optimistic UI and surface a minimal hint
         setSaved(!optimistic);
         console.error('Toggle failed:', err);
-        // (Optional) show a toast/snackbar here
       }
     } finally {
       setPending(false);
     }
   }
+
+  const sizeClass: Record<NonNullable<Props['size']>, string> = {
+    sm: 'px-3 py-1.5 text-xs',
+    md: 'px-4 py-2 text-sm',
+  };
 
   const label = saved ? 'Saved — Remove' : 'Add to Watchlist';
 
@@ -82,9 +79,9 @@ export default function WatchlistButton({
       aria-pressed={saved}
       aria-label={label}
       className={[
-        'rounded-xl font-semibold transition-all duration-150',
-        'px-4 py-2 text-sm',
-        'w-23',
+        'rounded-xl font-semibold transition-all duration-150 whitespace-nowrap shrink-0',
+        sizeClass[size],
+        'min-w-[7.5rem]', // ensures stable width (~"Add to Watchlist" width)
         pending ? 'opacity-60 cursor-not-allowed' : '',
         saved
           ? 'border border-dashed border-slate-300 text-slate-500 bg-slate-50 hover:bg-slate-100'

@@ -29,40 +29,40 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
   };
 
   return (
-    <table className="w-full table-fixed border-separate border-spacing-0 text-[13px] leading-6">
+    <table className="w-full table-auto border-separate border-spacing-0 text-[13px] leading-6">
       <thead>
         <tr className="border-b border-gray-200 bg-[#FFF8E7] text-left">
-          <th className="w-12 px-2 py-3 w-[7%]" aria-label="expand column" />
-          <th className="px-3 py-3 font-semibold text-gray-500 tracking-wide text-[14px] uppercase w-[20%]">When</th>
-          <th className="px-3 py-3 font-semibold text-gray-500 tracking-wide text-[14px] uppercase w-[30%]">Title</th>
-          <th className="px-3 py-3 font-semibold text-gray-500 tracking-wide text-[14px] uppercase w-[26%]">Cinema</th>
-          <th className="px-3 py-3 font-semibold text-gray-500 tracking-wide text-[14px] uppercase w-[17%]">Watchlist</th>
+          <th className="w-12 px-2 py-3" aria-label="expand column" />
+          <th className="w-[12%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-gray-500">When</th>
+          <th className="w-[33%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-gray-500">Title</th>
+          <th className="w-[28%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-gray-500">Cinema</th>
+          <th className="w-[20%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-gray-500">Watchlist</th>
         </tr>
       </thead>
 
       <tbody>
         {items.map((s) => {
           const isOpen = open.has(s.id);
-          const whenFull = fmt.format(new Date(s.start_at_utc));
           const dt = new Date(s.start_at_utc);
+          const whenFull = fmt.format(dt);
           const dateStr = new Intl.DateTimeFormat('en-US', {
             month: 'short',
             day: 'numeric',
             weekday: 'short'
           }).format(dt);
-
           const timeStr = new Intl.DateTimeFormat('en-US', {
             hour: 'numeric',
             minute: '2-digit',
             hour12: true
           }).format(dt);
+
           const year = s.year ? ` (${s.year})` : '';
           const genres = toGenres(s);
 
           return (
             <Fragment key={s.id}>
               {/* SUMMARY ROW */}
-              <tr className="border-b border-gray-200 align-middle">
+              <tr className="align-middle border-b border-gray-200">
                 {/* disclose */}
                 <td className="px-2 py-2">
                   <button
@@ -89,7 +89,7 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
 
                 {/* when */}
                 <td className="px-3 py-3">
-                  <div className="flex flex-col items-start text-gray-900 leading-tight">
+                  <div className="flex flex-col items-start gap-0.5 leading-tight text-gray-900">
                     <div className="text-[14px] font-medium text-gray-600">{dateStr}</div>
                     <div className="text-[16px] font-semibold">{timeStr}</div>
                     {s.runtime_min != null && (
@@ -97,9 +97,10 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
                     )}
                   </div>
                 </td>
+
                 {/* title + meta + genre pills */}
                 <td className="px-3 py-3">
-                  <div className="text-[15px] font-semibold text-gray-900">
+                  <div className="text-[15px] font-semibold leading-6 text-gray-900">
                     {s.film_id ? (
                       <Link
                         href={`/films/${s.film_id}`}
@@ -118,11 +119,11 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
                   )}
 
                   {genres.length > 0 && (
-                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    <div className="mt-1 flex flex-wrap gap-1.5">
                       {genres.map((g) => (
                         <span
                           key={g}
-                          className="inline-flex items-center rounded-full bg-[#E8EFF3] px-2.5 py-0.5 text-[12px] leading-5 font-semibold text-[#2B2B2B]"
+                          className="inline-flex items-center rounded-full bg-[#E9EFF3] px-2.5 py-1 text-[12px] font-semibold text-[#2B2B2B]"
                         >
                           {g}
                         </span>
@@ -135,105 +136,107 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
                 <td className="px-3 py-3 text-gray-900">{s.cinema_name}</td>
 
                 {/* watchlist action */}
-                <td className="px-3 py-3 text-left">
-                  <WatchlistButton
-                    screeningId={s.id}
-                    initialSaved={savedIds?.has(s.id)}
-                    onChange={(saved) => onSavedChange?.(s.id, saved)}
-                    size="sm"
-                  />
+                <td className="px-3 py-3 text-center align-middle">
+                  <div className="inline-block min-w-[164px] mx-auto">
+                    <WatchlistButton
+                      screeningId={s.id}
+                      initialSaved={savedIds?.has(s.id)}
+                      onChange={(saved) => onSavedChange?.(s.id, saved)}
+                      size="sm"
+                    />
+                  </div>
                 </td>
               </tr>
 
-              {/* DETAILS ROW — bright, soft, no rigid headers */}
+              {/* DETAILS ROW — full-bleed cream strip (no inner rounded card) */}
               <tr id={`row-details-${s.id}`} className="border-b border-gray-200">
-                <td colSpan={5} className="px-3 pb-4 pt-0">
+                <td colSpan={5} className="p-0">
                   <div
                     className={[
-                      // surface
-                      'overflow-hidden rounded-xl border border-gray-200 bg-[#FFF8E7]',
-                      // animation
                       'transition-[max-height,opacity] duration-200 ease-out',
                       isOpen ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0'
                     ].join(' ')}
                   >
                     {isOpen && (
-                      <div className="grid gap-4 p-4 md:grid-cols-2">
-                        {/* LEFT: schedule + blurb */}
-                        <div className="grid gap-2 text-[13px]">
-                          <div className="flex gap-3">
-                            <span className="w-16 shrink-0 text-gray-500">Starts</span>
-                            <span className="text-gray-900">{whenFull}</span>
-                          </div>
-                          {s.end_at_utc && (
+                      <div className="bg-[#FFF8E7] px-4 py-4 md:px-6">
+                        <div className="grid gap-6 md:grid-cols-2 md:items-start">
+                          {/* LEFT: schedule + blurb */}
+                          <div className="grid gap-2 text-[13px]">
                             <div className="flex gap-3">
-                              <span className="w-16 shrink-0 text-gray-500">Ends</span>
-                              <span className="text-gray-900">
-                                {fmt.format(new Date(s.end_at_utc))}
-                              </span>
+                              <span className="w-16 shrink-0 text-gray-500">Starts</span>
+                              <span className="text-gray-900">{whenFull}</span>
                             </div>
-                          )}
-                          {s.runtime_min != null && (
-                            <div className="flex gap-3">
-                              <span className="w-16 shrink-0 text-gray-500">Runtime</span>
-                              <span className="text-gray-900">{s.runtime_min} min</span>
-                            </div>
-                          )}
 
-                          {s.description && (
-                            <p className="mt-2 text-[13px] text-gray-700">
-                              {s.description}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* RIGHT: rating chips + link chips */}
-                        <div className="grid gap-3">
-                          <div className="flex flex-wrap gap-2">
-                            {/* TODO: IMDb rating type problem */}
-                            {/* IMDb rating */}
-                            {(() => {
-                              const ratingStr = s.imdb_rating?.toString().trim() ?? '';
-                              const hasRating = ratingStr !== '';
-                              const ratingNum = Number(ratingStr);
-
-                              return hasRating && !isNaN(ratingNum) ? (
-                                <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-900">
-                                  IMDb · {ratingNum.toFixed(1)}
-                                  {s.imdb_votes ? (
-                                    <span className="pl-0.5 text-gray-500">({s.imdb_votes})</span>
-                                  ) : null}
+                            {s.end_at_utc && (
+                              <div className="flex gap-3">
+                                <span className="w-16 shrink-0 text-gray-500">Ends</span>
+                                <span className="text-gray-900">
+                                  {fmt.format(new Date(s.end_at_utc))}
                                 </span>
-                              ) : null;
-                            })()}
-                            {typeof s.rt_rating_pct === 'number' && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-900">
-                                RT · {s.rt_rating_pct}%
-                              </span>
+                              </div>
+                            )}
+
+                            {s.runtime_min != null && (
+                              <div className="flex gap-3">
+                                <span className="w-16 shrink-0 text-gray-500">Runtime</span>
+                                <span className="text-gray-900">{s.runtime_min} min</span>
+                              </div>
+                            )}
+
+                            {s.description && (
+                              <p className="mt-2 text-[13px] text-gray-700">{s.description}</p>
                             )}
                           </div>
 
-                          <div className="flex flex-wrap gap-2">
-                            {s.source_url && (
-                              <a
-                                href={s.source_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-[#5C8EA7] hover:bg-white/80"
-                              >
-                                Official / Source
-                              </a>
-                            )}
-                            {s.imdb_url && (
-                              <a
-                                href={s.imdb_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-[#5C8EA7] hover:bg-white/80"
-                              >
-                                IMDb
-                              </a>
-                            )}
+                          {/* RIGHT: ratings + links */}
+                          <div className="grid gap-3 md:justify-end">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {/* IMDb rating (handles string/number/empty) */}
+                              {(() => {
+                                const ratingStr = s.imdb_rating?.toString().trim() ?? '';
+                                const hasRating = ratingStr !== '';
+                                const ratingNum = Number(ratingStr);
+                                return hasRating && !isNaN(ratingNum) ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-900 ring-1 ring-gray-200">
+                                    IMDb · {ratingNum.toFixed(1)}
+                                    {s.imdb_votes ? (
+                                      <span className="pl-0.5 text-gray-500">
+                                        ({s.imdb_votes})
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                ) : null;
+                              })()}
+
+                              {typeof s.rt_rating_pct === 'number' && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-900 ring-1 ring-gray-200">
+                                  RT · {s.rt_rating_pct}%
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              {s.source_url && (
+                                <a
+                                  href={s.source_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-[#5C8EA7] transition-colors hover:bg-white/80"
+                                >
+                                  Official / Source
+                                </a>
+                              )}
+                              {s.imdb_url && (
+                                <a
+                                  href={s.imdb_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-[#5C8EA7] transition-colors hover:bg-white/80"
+                                >
+                                  IMDb
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
