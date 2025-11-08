@@ -1,137 +1,127 @@
 #!/usr/bin/env python3
 """
-Enrich person records with TMDB and IMDB IDs.
+Enrich person records with TMDB and IMDb IDs (PostgreSQL version).
 
 This script:
-1. Finds all persons without external IDs
-2. Searches TMDB API for each person
-3. Updates the database with found IDs
+1) Finds all persons without external IDs
+2) Searches TMDB API for each person
+3) Updates the database with found IDs
 
 Usage:
     python scripts/enrich_person_ids.py
 
 Environment:
-    Requires TMDB_API_KEY in .env file
+    Requires TMDB_API_KEY in database/.env
+    Requires DATABASE_URL in database/.env (used by db_helper.conn_open)
 """
 
 import os
 import sys
 import time
-import requests
 from pathlib import Path
 from typing import Optional, Dict
+
+import requests
 from dotenv import load_dotenv
+
 from db_helper import conn_open
 
-# Load environment
+# ---------- Environment ----------
 SCRIPT_DIR = Path(__file__).resolve().parent
 DB_DIR = SCRIPT_DIR.parent
-ENV_PATH = DB_DIR / '.env'
+ENV_PATH = DB_DIR / ".env"
 
 if not ENV_PATH.exists():
     print(f"Error: Configuration file not found: {ENV_PATH}", file=sys.stderr)
-    print("Please ensure .env file exists with TMDB_API_KEY setting.", file=sys.stderr)
+    print("Please ensure .env exists with TMDB_API_KEY and DATABASE_URL.", file=sys.stderr)
     sys.exit(1)
 
 load_dotenv(ENV_PATH)
 
-TMDB_API_KEY = os.getenv('TMDB_API_KEY')
+TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 if not TMDB_API_KEY:
-    print("Error: TMDB_API_KEY not found in .env file", file=sys.stderr)
+    print("Error: TMDB_API_KEY not found in .env", file=sys.stderr)
     sys.exit(1)
 
 TMDB_BASE = "https://api.themoviedb.org/3"
 
+# Use a single session for connection reuse + timeouts
+HTTP = requests.Session()
+HTTP.headers.update({"Accept": "application/json"})
 
-# ============ API Functions ============
 
-def search_tmdb_person(name: str) -> Optional[Dict]:
-    """
-    Search for a person on TMDB by name.
-    Returns the first (most popular) result or None.
-    """
-    params = {
-        "api_key": TMDB_API_KEY,
-        "query": name,
-    }
-
+# ---------- TMDB helpers ----------
+def _tmdb_get(path: str, params: Dict) -> Optional[Dict]:
+    p = dict(params or {})
+    p["api_key"] = TMDB_API_KEY
     try:
-        resp = requests.get(f"{TMDB_BASE}/search/person",
-                            params=params, timeout=10)
-        if resp.status_code == 200:
-            data = resp.json()
-            results = data.get("results", [])
-            return results[0] if results else None
-        print(f"TMDB API error {resp.status_code}", file=sys.stderr)
+        r = HTTP.get(f"{TMDB_BASE}/{path}", params=p, timeout=15)
+        if r.status_code == 200:
+            return r.json()
+        # Log non-200 but keep going
+        print(
+            f"TMDB error {r.status_code} for {path}: {r.text[:200]}", file=sys.stderr)
         return None
     except Exception as e:
-        print(f"TMDB person search failed for '{name}': {e}", file=sys.stderr)
+        print(f"TMDB request failed for {path}: {e}", file=sys.stderr)
         return None
+
+
+def search_tmdb_person(name: str) -> Optional[Dict]:
+    """Return top TMDB search result for a person, or None."""
+    data = _tmdb_get("search/person", {"query": name})
+    time.sleep(0.3)  # be polite to the API
+    if not data:
+        return None
+    results = data.get("results", [])
+    return results[0] if results else None
 
 
 def get_person_imdb_id_from_tmdb(tmdb_person_id: int) -> Optional[str]:
-    """Get IMDB ID from TMDB person's external IDs."""
-    params = {"api_key": TMDB_API_KEY}
-
-    try:
-        resp = requests.get(
-            f"{TMDB_BASE}/person/{tmdb_person_id}/external_ids",
-            params=params,
-            timeout=10
-        )
-        if resp.status_code == 200:
-            data = resp.json()
-            return data.get("imdb_id")
+    data = _tmdb_get(f"person/{tmdb_person_id}/external_ids", {})
+    time.sleep(0.3)
+    if not data:
         return None
-    except Exception as e:
-        print(
-            f"Failed to get IMDB ID for TMDB person {tmdb_person_id}: {e}", file=sys.stderr)
-        return None
+    return data.get("imdb_id")
 
 
 def enrich_person_ids(name: str) -> Dict[str, Optional[str]]:
     """
-    Get TMDB and IMDB IDs for a person by searching TMDB.
+    Get TMDB and IMDb IDs for a person by searching TMDB.
 
-    Returns: {"tmdb_id": "123", "imdb_id": "nm0000001"} or {"tmdb_id": None, "imdb_id": None}
+    Returns:
+      {"tmdb_id": "123", "imdb_id": "nm0000001"}  (values can be None)
     """
-    result = {"tmdb_id": None, "imdb_id": None}
+    out = {"tmdb_id": None, "imdb_id": None}
 
-    # Search TMDB for this person
     person = search_tmdb_person(name)
     if not person:
-        return result
+        return out
 
-    # Get TMDB ID
     tmdb_id = person.get("id")
     if tmdb_id:
-        result["tmdb_id"] = str(tmdb_id)
-
-        # Get IMDB ID from TMDB
-        time.sleep(0.3)  # Rate limiting
+        out["tmdb_id"] = str(tmdb_id)
         imdb_id = get_person_imdb_id_from_tmdb(tmdb_id)
         if imdb_id:
-            result["imdb_id"] = imdb_id
+            out["imdb_id"] = imdb_id
 
-    return result
+    return out
 
 
-# ============ Main Script ============
-
+# ---------- Main ----------
 def main():
     conn = conn_open()
-
     try:
-        # Get all persons without external IDs
-        with conn.cursor() as cursor:
-            cursor.execute("""
-                SELECT id, name 
-                FROM person 
-                WHERE (imdb_id IS NULL OR imdb_id = '') 
-                  AND (tmdb_id IS NULL OR tmdb_id = '')
+        # Fetch people without external IDs
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, name
+                FROM person
+                WHERE (imdb_id IS NULL OR imdb_id = '')
+                AND tmdb_id IS NULL
                 ORDER BY id
             """)
-            persons = cursor.fetchall()
+            persons = cur.fetchall()
 
         print(f"Found {len(persons)} persons without external IDs\n")
 
@@ -139,35 +129,31 @@ def main():
         not_found = 0
 
         for person_id, name in persons:
-            print(f"Searching for: {name} (ID: {person_id})")
+            print(f"Searching: {name} (id={person_id})")
 
-            # Search TMDB
             ids = enrich_person_ids(name)
 
             if ids.get("tmdb_id") or ids.get("imdb_id"):
-                # Update database
-                with conn.cursor() as cursor:
-                    cursor.execute(
-                        "UPDATE person SET imdb_id=%s, tmdb_id=%s WHERE id=%s",
-                        (ids.get("imdb_id"), ids.get("tmdb_id"), person_id)
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "UPDATE person SET imdb_id = %s, tmdb_id = %s WHERE id = %s",
+                        (ids.get("imdb_id"), ids.get("tmdb_id"), person_id),
                     )
-
                 print(
-                    f"  ✅ TMDB: {ids.get('tmdb_id')}, IMDB: {ids.get('imdb_id')}\n")
+                    f"  ✅ TMDB: {ids.get('tmdb_id')}, IMDb: {ids.get('imdb_id')}\n")
                 updated += 1
             else:
-                print(f"  ❌ Not found\n")
+                print("  ❌ Not found\n")
                 not_found += 1
 
-            # Rate limiting
+            # global throttle
             time.sleep(0.5)
 
         conn.commit()
-        print(f"\n{'='*50}")
-        print(f"Done!")
-        print(f"  Updated: {updated}")
+        print("=" * 50)
+        print("Done.")
+        print(f"  Updated:   {updated}")
         print(f"  Not found: {not_found}")
-
     finally:
         conn.close()
 

@@ -1,62 +1,35 @@
-#!/usr/bin/env python3
-"""
-Enrich film records with OMDb metadata (PostgreSQL version).
-
-- Fetches OMDb data by IMDb ID when available, otherwise by title/year
-- Updates film table fields (rated, genre, language, country, awards,
-  rt_rating_pct, imdb_rating, imdb_votes, description)
-- Inserts people (director/writer/cast) via upsert_person / upsert_film_person
-
-Env:
-  - OMDB_API_KEY in database/.env
-  - DATABASE_URL in database/.env (used by db_helper.conn_open)
-"""
-
 import os
 import sys
+import requests
 import re
 from pathlib import Path
 from typing import Optional, Dict, Any
-
-import requests
 from dotenv import load_dotenv
+from db_helper import DB, conn_open, norm_space, norm_title, strip_dir_prefix, fetch_all_films, upsert_person, upsert_film_person
 
-from db_helper import (
-    conn_open,
-    fetch_all_films,
-    upsert_person,
-    upsert_film_person,
-)
-
-# ---------- Environment ----------
+# Load environment variables from .env in database directory
 SCRIPT_DIR = Path(__file__).resolve().parent
 DB_DIR = SCRIPT_DIR.parent
-ENV_PATH = DB_DIR / ".env"
+ENV_PATH = DB_DIR / '.env'
 
 if not ENV_PATH.exists():
     print(f"Error: Configuration file not found: {ENV_PATH}", file=sys.stderr)
-    print("Please ensure .env file exists with OMDB_API_KEY and DATABASE_URL.", file=sys.stderr)
+    print("Please ensure .env file exists with OMDB_API_KEY setting.", file=sys.stderr)
     sys.exit(1)
 
 load_dotenv(ENV_PATH)
 
-OMDB_API_KEY = os.getenv("OMDB_API_KEY")
+# Get API configuration from environment
+OMDB_API_KEY = os.getenv('OMDB_API_KEY')
 if not OMDB_API_KEY:
     print("Error: OMDB_API_KEY not found in .env file", file=sys.stderr)
     sys.exit(1)
 
 OMDB_URL = "https://www.omdbapi.com/"
 
-HTTP = requests.Session()
-HTTP.headers.update({"Accept": "application/json"})
 
-
-# ---------- OMDb helpers ----------
-def fetch_omdb_data(film: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """
-    Prefer IMDb ID (exact), fallback to title/year.
-    Returns parsed JSON or None.
-    """
+def fetch_omdb_data(film):
+    # Prefer IMDb ID (exact), fallback to title/year
     if film.get("imdb_id"):
         params = {"apikey": OMDB_API_KEY, "i": film["imdb_id"]}
     else:
@@ -65,19 +38,18 @@ def fetch_omdb_data(film: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             params["y"] = film["year"]
 
     try:
-        resp = HTTP.get(OMDB_URL, params=params, timeout=15)
+        resp = requests.get(OMDB_URL, params=params, timeout=10)
         if resp.status_code == 200:
             return resp.json()
-        print(
-            f"[OMDb] HTTP {resp.status_code}: {resp.text[:200]}", file=sys.stderr)
+        print(f"[OMDb] HTTP {resp.status_code}: {resp.text}")
         return None
     except requests.RequestException as e:
-        print(f"[OMDb] request failed: {e}", file=sys.stderr)
+        print(f"[OMDb] request failed: {e}")
         return None
 
 
 def parse_rt_percent(omdb: Dict[str, Any]) -> Optional[int]:
-    for r in (omdb.get("Ratings") or []):
+    for r in omdb.get("Ratings", []) or []:
         if r.get("Source") == "Rotten Tomatoes":
             m = re.match(r"^(\d{1,3})%$", (r.get("Value") or "").strip())
             if m:
@@ -108,15 +80,14 @@ def parse_imdb_votes(omdb: Dict[str, Any]) -> Optional[int]:
     return None
 
 
-def update_film_omdb_fields(conn, film_id: int, omdb_data: Dict[str, Any]) -> None:
+def update_film_omdb_fields(conn, film_id, omdb_data):
     rt_pct = parse_rt_percent(omdb_data)
     imdb_rating = parse_imdb_rating(omdb_data)
     imdb_votes = parse_imdb_votes(omdb_data)
-    plot = omdb_data.get("Plot") or None  # store as description
+    plot = (omdb_data.get('Plot') or None)  # ← write to description
 
-    with conn.cursor() as cur:
-        cur.execute(
-            """
+    with conn.cursor() as cursor:
+        sql = '''
             UPDATE film SET
                 rated = %s,
                 genre = %s,
@@ -128,27 +99,24 @@ def update_film_omdb_fields(conn, film_id: int, omdb_data: Dict[str, Any]) -> No
                 imdb_votes = %s,
                 description = %s
             WHERE id = %s
-            """,
-            (
-                omdb_data.get("Rated") or None,
-                omdb_data.get("Genre") or None,
-                omdb_data.get("Language") or None,
-                omdb_data.get("Country") or None,
-                omdb_data.get("Awards") or None,
-                rt_pct,
-                imdb_rating,
-                imdb_votes,
-                plot,
-                film_id,
-            ),
-        )
+        '''
+        cursor.execute(sql, (
+            (omdb_data.get('Rated') or None),
+            (omdb_data.get('Genre') or None),
+            (omdb_data.get('Language') or None),
+            (omdb_data.get('Country') or None),
+            (omdb_data.get('Awards') or None),
+            rt_pct,
+            imdb_rating,
+            imdb_votes,
+            plot,
+            film_id
+        ))
 
 
-# ---------- Main ----------
 def main():
     conn = conn_open()
     try:
-        # returns list of dicts (id, title, year, imdb_id, tmdb_id)
         films = fetch_all_films(conn)
         found, not_found = 0, 0
 
@@ -174,7 +142,7 @@ def main():
                 f"IMDb={ir if ir is not None else '-'} ({iv if iv is not None else '-'})"
             )
 
-            # people: Director / Writer / Actors
+            # Handle persons (director, writer, cast)
             for role in ["Director", "Writer", "Actors"]:
                 names = (omdb_data.get(role) or "").split(",")
                 for name in (n.strip() for n in names):
@@ -182,11 +150,7 @@ def main():
                         continue
                     person_id = upsert_person(conn, name)
                     upsert_film_person(
-                        conn,
-                        film["id"],
-                        person_id,
-                        role.lower() if role != "Actors" else "cast",
-                    )
+                        conn, film["id"], person_id, role.lower() if role != "Actors" else "cast")
 
         conn.commit()
         print(f"\nDone. OMDb updated: {found}  |  Not found: {not_found}")

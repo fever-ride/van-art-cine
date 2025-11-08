@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-"""
-Backfill TMDB/IMDb IDs and IMDb URLs for films (PostgreSQL version).
-
-- Reads TMDB via API, caches results to data/tmdb_cache.json
-- Updates film.imdb_id, film.tmdb_id, film.imdb_url
-- Safe to run multiple times (idempotent with cache)
-"""
-
 import os
 import json
 import time
@@ -15,27 +6,26 @@ import sys
 import re
 from typing import Optional, Dict, Any, List
 from pathlib import Path
-
 import requests
+import pymysql
 from dotenv import load_dotenv
-from psycopg2.extras import RealDictCursor
-
-from db_helper import conn_open, norm_title, remove_parentheses
+from db_helper import DB, conn_open, norm_title, remove_parentheses
 
 # ---------- Config ----------
 # Load environment variables from .env in database directory
 SCRIPT_DIR = Path(__file__).resolve().parent
 DB_DIR = SCRIPT_DIR.parent
-ENV_PATH = DB_DIR / ".env"
+ENV_PATH = DB_DIR / '.env'
 
 if not ENV_PATH.exists():
     print(f"Error: Configuration file not found: {ENV_PATH}", file=sys.stderr)
-    print("Please ensure .env file exists with TMDB_API_KEY (and DATABASE_URL).", file=sys.stderr)
+    print("Please ensure .env file exists with TMDB_API_KEY setting.", file=sys.stderr)
     sys.exit(1)
 
 load_dotenv(ENV_PATH)
 
-TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+# Get API configuration from environment
+TMDB_API_KEY = os.getenv('TMDB_API_KEY')
 if not TMDB_API_KEY:
     print("Error: TMDB_API_KEY not found in .env file", file=sys.stderr)
     sys.exit(1)
@@ -43,9 +33,10 @@ if not TMDB_API_KEY:
 TMDB_BASE = "https://api.themoviedb.org/3"
 
 # Determine project root directory (parent of database/)
-PROJECT_ROOT = DB_DIR.parent
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 
-# Cache file
+# Use absolute paths for cache file
 CACHE_PATH = os.path.join(PROJECT_ROOT, "data", "tmdb_cache.json")
 os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
 
@@ -62,18 +53,18 @@ def save_cache():
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
         json.dump(CACHE, f, ensure_ascii=False, indent=2)
 
+# Randomized delay between API requests
 
-# Randomized delay between API requests to be polite to TMDB
+
 def backoff_sleep():
     time.sleep(random.uniform(0.35, 0.75))
 
 
 def tmdb_get(path: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     url = f"{TMDB_BASE}/{path}"
-    params = dict(params or {})
     params["api_key"] = TMDB_API_KEY
     try:
-        resp = requests.get(url, params=params, timeout=15)
+        resp = requests.get(url, params=params)
         if resp.status_code == 200:
             return resp.json()
         print(
@@ -146,6 +137,15 @@ def find_tmdb_and_imdb(title: str, year: Optional[int]) -> Optional[Dict[str, Op
     return out
 
 
+def update_film_ids(conn, film_id: int, imdb_id: Optional[str], tmdb_id: Optional[str]):
+    imdb_url = make_imdb_url(imdb_id)
+    with conn.cursor() as cursor:
+        cursor.execute(
+            "UPDATE film SET imdb_id=%s, tmdb_id=%s, imdb_url=%s WHERE id=%s",
+            (imdb_id, tmdb_id, imdb_url, film_id)
+        )
+
+
 def make_imdb_url(imdb_id: Optional[str]) -> Optional[str]:
     if not imdb_id:
         return None
@@ -156,27 +156,16 @@ def make_imdb_url(imdb_id: Optional[str]) -> Optional[str]:
     return f"https://www.imdb.com/title/{imdb_id}/"
 
 
-def update_film_ids(conn, film_id: int, imdb_id: Optional[str], tmdb_id: Optional[str]):
-    imdb_url = make_imdb_url(imdb_id)
-    with conn.cursor() as cursor:
-        cursor.execute(
-            "UPDATE film SET imdb_id = %s, tmdb_id = %s, imdb_url = %s WHERE id = %s",
-            (imdb_id, tmdb_id, imdb_url, film_id),
-        )
-
-
 def backfill_imdb_urls(conn) -> int:
-    """Fill imdb_url wherever imdb_id exists but imdb_url is missing/empty."""
-    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-        cursor.execute(
-            """
+    # fill imdb_url wherever imdb_id exists but imdb_url is missing/empty
+    with conn.cursor(pymysql.cursors.DictCursor) as cursor:
+        cursor.execute("""
             SELECT id, imdb_id
             FROM film
             WHERE imdb_id IS NOT NULL
               AND imdb_id <> ''
               AND (imdb_url IS NULL OR imdb_url = '')
-            """
-        )
+        """)
         rows = cursor.fetchall()
 
     updated = 0
@@ -185,54 +174,49 @@ def backfill_imdb_urls(conn) -> int:
             url = make_imdb_url(row["imdb_id"])
             if url:
                 cursor.execute(
-                    "UPDATE film SET imdb_url = %s WHERE id = %s", (url, row["id"]))
+                    "UPDATE film SET imdb_url=%s WHERE id=%s", (url, row["id"]))
                 updated += 1
     return updated
 
 
 def main():
     conn = conn_open()
-    try:
-        # Read films as dictionaries
-        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(
-                "SELECT id, title, year, imdb_id, tmdb_id FROM film")
-            films = cursor.fetchall()
+    with conn.cursor(pymysql.cursors.DictCursor) as cursor:
+        cursor.execute("SELECT id, title, year, imdb_id, tmdb_id FROM film")
+        films = cursor.fetchall()
 
-        updated, not_found = 0, 0
+    updated, not_found = 0, 0
 
-        for film in films:
-            # If already has both IDs, at least ensure imdb_url exists
-            if film["imdb_id"] and film["tmdb_id"]:
-                with conn.cursor() as cursor:
-                    url = make_imdb_url(film["imdb_id"])
-                    if url:
-                        cursor.execute(
-                            "UPDATE film SET imdb_url = COALESCE(imdb_url, %s) WHERE id = %s",
-                            (url, film["id"]),
-                        )
-                continue
+    for film in films:
+        # If already has both IDs, at least ensure imdb_url exists
+        if film["imdb_id"] and film["tmdb_id"]:
+            # quick fill for imdb_url in already-complete records
+            with conn.cursor() as cursor:
+                url = make_imdb_url(film["imdb_id"])
+                if url:
+                    cursor.execute(
+                        "UPDATE film SET imdb_url=COALESCE(imdb_url, %s) WHERE id=%s",
+                        (url, film["id"])
+                    )
+            continue
 
-            ids = find_tmdb_and_imdb(film["title"], film["year"])
-            if ids and (ids["imdb_id"] or ids["tmdb_id"]):
-                update_film_ids(conn, film["id"],
-                                ids["imdb_id"], ids["tmdb_id"])
-                print(
-                    f"Updated: {film['title']} ({film['year']}) → IMDb: {ids['imdb_id']}, TMDB: {ids['tmdb_id']}"
-                )
-                updated += 1
-            else:
-                print(f"Not found: {film['title']} ({film['year']})")
-                not_found += 1
+        ids = find_tmdb_and_imdb(film["title"], film["year"])
+        if ids and (ids["imdb_id"] or ids["tmdb_id"]):
+            update_film_ids(conn, film["id"], ids["imdb_id"], ids["tmdb_id"])
+            print(
+                f"Updated: {film['title']} ({film['year']}) → IMDb: {ids['imdb_id']}, TMDB: {ids['tmdb_id']}")
+            updated += 1
+        else:
+            print(f"Not found: {film['title']} ({film['year']})")
+            not_found += 1
 
-        # Final pass to fill any remaining imdb_url gaps
-        filled = backfill_imdb_urls(conn)
+    # Final pass to fill any remaining imdb_url gaps
+    filled = backfill_imdb_urls(conn)
 
-        print(
-            f"Done. Updated IDs: {updated}, Not found: {not_found}, IMDb URLs filled: {filled}")
-        conn.commit()
-    finally:
-        conn.close()
+    print(
+        f"Done. Updated IDs {updated}, Not found: {not_found}, IMDb URLs filled: {filled}")
+    conn.commit()
+    conn.close()
 
 
 if __name__ == "__main__":
