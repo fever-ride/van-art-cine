@@ -39,7 +39,7 @@ model custom_event {
   event_name String    @db.VarChar(255)
   event_data Json?
   created_at DateTime? @default(now()) @db.Timestamp(0)
-  app_user   app_user  @relation(fields: [user_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction, map: "custom_event_ibfk_1")
+  app_user   app_user  @relation(fields: [user_uid], references: [uid], onDelete: Cascade)
 
   @@index([user_uid])
 }
@@ -75,8 +75,8 @@ model film_person {
   person_id  Int
   role       film_person_role @default(unknown)
   created_at DateTime?        @default(now()) @db.Timestamp(0)
-  film       film             @relation(fields: [film_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "film_person_ibfk_1")
-  person     person           @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "film_person_ibfk_2")
+  film       film             @relation(fields: [film_id], references: [id])
+  person     person           @relation(fields: [person_id], references: [id])
 
   @@id([film_id, person_id, role])
   @@index([person_id])
@@ -114,7 +114,7 @@ model raw_import {
   fetched_at     DateTime @db.Timestamp(0)
   payload        Json
   rows_processed Int?     @default(0)
-  cinema         cinema   @relation(fields: [cinema_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "raw_import_ibfk_1")
+  cinema         cinema   @relation(fields: [cinema_id], references: [id])
 
   @@index([cinema_id])
   @@index([cinema_id, fetched_at])
@@ -131,7 +131,7 @@ model refresh_token {
   user_agent String?   @db.VarChar(255)
   ip         String?   @db.VarChar(64)
   created_at DateTime  @default(now()) @db.Timestamp(0)
-  app_user   app_user  @relation(fields: [user_id], references: [uid], onDelete: Cascade, onUpdate: NoAction, map: "fk_refresh_user")
+  app_user   app_user  @relation(fields: [user_id], references: [uid], onDelete: Cascade)
 
   @@index([user_id, revoked_at, expires_at])
   @@index([user_id])
@@ -158,9 +158,9 @@ model screening {
   is_active           Boolean               @default(true)
   created_at          DateTime              @default(now()) @db.Timestamp(0)
   updated_at          DateTime              @default(now()) @db.Timestamp(0)
-  ops_ingest_run      ops_ingest_run?       @relation(fields: [ingest_run_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_screening_ingest")
-  film                film                  @relation(fields: [film_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "screening_ibfk_1")
-  cinema              cinema                @relation(fields: [cinema_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "screening_ibfk_2")
+  ops_ingest_run      ops_ingest_run?       @relation(fields: [ingest_run_id], references: [id])
+  film                film                  @relation(fields: [film_id], references: [id])
+  cinema              cinema                @relation(fields: [cinema_id], references: [id])
   watchlist_screening watchlist_screening[]
 
   @@unique([cinema_id, film_id, start_at_utc])
@@ -190,8 +190,8 @@ model stg_screening {
   content_hash  String    @db.Char(64)
   loaded_at_utc DateTime  @db.Timestamp(0)
   loaded_at     DateTime? @default(now()) @db.Timestamp(0)
-  film          film      @relation(fields: [film_id], references: [id], map: "stg_screening_ibfk_1")
-  cinema        cinema    @relation(fields: [cinema_id], references: [id], map: "stg_screening_ibfk_2")
+  film          film      @relation(fields: [film_id], references: [id])
+  cinema        cinema    @relation(fields: [cinema_id], references: [id])
 
   @@id([source, source_uid]) 
   @@index([cinema_id])
@@ -206,7 +206,7 @@ model user_schedule {
   user_uid      BigInt    @db.BigInt
   schedule_data Json
   created_at    DateTime? @default(now()) @db.Timestamp(0)
-  app_user      app_user  @relation(fields: [user_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction, map: "user_schedule_ibfk_1")
+  app_user      app_user  @relation(fields: [user_uid], references: [uid], onDelete: Cascade)
 
   @@index([user_uid])
 }
@@ -219,8 +219,8 @@ model watchlist_screening {
   note         String?                    @db.VarChar(500)
   created_at   DateTime                   @default(now()) @db.Timestamp(0)
   updated_at   DateTime                   @default(now()) @db.Timestamp(0)
-  screening    screening                  @relation(fields: [screening_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_wl_screening")
-  app_user     app_user                   @relation(fields: [user_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction, map: "fk_wl_user")
+  screening    screening                  @relation(fields: [screening_id], references: [id], onDelete: Cascade)
+  app_user     app_user                   @relation(fields: [user_uid], references: [uid], onDelete: Cascade)
 
   @@unique([user_uid, screening_id])
   @@index([screening_id])
