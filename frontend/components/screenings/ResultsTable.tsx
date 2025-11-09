@@ -21,12 +21,32 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
       return next;
     });
 
-  const toGenres = (s: Screening): string[] => {
-    const anyGenres = (s as any).genres as string[] | undefined;
-    if (Array.isArray(anyGenres)) return anyGenres.filter(Boolean);
-    const g = (s as any).genre as string | undefined;
-    return g ? g.split(',').map(t => t.trim()).filter(Boolean) : [];
-  };
+  // Helper: type guard for string
+  function isNonEmptyString(x: unknown): x is string {
+    return typeof x === 'string' && x.trim() !== '';
+  }
+
+  // Read genres from either `genres: string[]` or `genre: string`
+  function toGenres(s: Screening): string[] {
+    // We only assert the *shape* we care about, without using `any`
+    const maybe = s as unknown as { genres?: unknown; genre?: unknown };
+
+    if (Array.isArray(maybe.genres)) {
+      return (maybe.genres as unknown[])
+        .filter(isNonEmptyString)
+        .map((t) => t.trim())
+        .filter(Boolean);
+    }
+
+    if (isNonEmptyString(maybe.genre)) {
+      return maybe.genre
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+    }
+
+    return [];
+  }
 
   return (
     <table className="w-full table-auto border-separate border-spacing-0 text-[13px] leading-6">

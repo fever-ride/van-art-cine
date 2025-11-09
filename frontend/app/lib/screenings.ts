@@ -55,19 +55,29 @@ export interface ScreeningsQuery {
 
 export async function getScreenings(params: ScreeningsQuery = {}): Promise<ScreeningsResponse> {
   const sp = new URLSearchParams();
-  
-  (Object.entries(params) as [keyof ScreeningsQuery, any][])
-    .forEach(([k, v]) => {
-      if (v === undefined || v === null) return;
-      
-      if (k === 'cinema_ids' && Array.isArray(v)) {
-        if (v.length > 0) {
-          sp.set('cinema_ids', v.join(','));
-        }
-      } else if (String(v).trim() !== '') {
-        sp.set(String(k), String(v));
-      }
-    });
+
+  // Iterate keys with proper typing
+  (Object.keys(params) as (keyof ScreeningsQuery)[]).forEach((k) => {
+    const v = params[k];
+
+    if (v === undefined || v === null) return;
+
+    if (k === 'cinema_ids' && Array.isArray(v)) {
+      if (v.length > 0) sp.set('cinema_ids', v.join(','));
+      return;
+    }
+
+    // Accept strings/numbers/booleans (others are handled above)
+    const asString =
+      typeof v === 'string' ? v :
+      typeof v === 'number' ? String(v) :
+      typeof v === 'boolean' ? String(v) :
+      undefined;
+
+    if (asString !== undefined && asString.trim() !== '') {
+      sp.set(String(k), asString);
+    }
+  });
 
   const res = await fetch(`/api/screenings?${sp.toString()}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`API ${res.status}`);

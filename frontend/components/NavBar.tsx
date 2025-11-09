@@ -64,12 +64,12 @@ export default function NavBar() {
           >
             My Watchlist
           </Link>
-          <Link
+          {/* <Link
             href="/blog"
             className={`${linkBase} ${isActive('/blog') ? 'bg-[#FFF8E7] text-gray-900' : 'hover:bg-[#F4F8FB]'}`}
           >
             Blog
-          </Link>
+          </Link>*/}
           <Link
             href="/about"
             className={`${linkBase} ${isActive('/about') ? 'bg-[#FFF8E7] text-gray-900' : 'hover:bg-[#F4F8FB]'}`}

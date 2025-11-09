@@ -5,6 +5,40 @@ import Link from 'next/link';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import { getGuestSet } from '@/app/lib/guestWatchlist';
 
+// Narrow unknown errors to something with a message
+function isErrorLike(x: unknown): x is { message: string } {
+  return (
+    typeof x === 'object' &&
+    x !== null &&
+    'message' in x &&
+    typeof (x as Record<string, unknown>).message === 'string'
+  );
+}
+
+// Shape of the /api/screenings/bulk response items (only fields we use)
+type BulkScreening = {
+  id: number | string;
+  start_at_utc?: string | null;
+  end_at_utc?: string | null;
+  runtime_min?: number | null;
+  tz?: string | null;
+
+  film_id?: number | null;
+  title?: string | null;
+  year?: number | null;
+  imdb_rating?: number | null;
+  rt_rating_pct?: number | null;
+
+  cinema_id?: number | null;
+  cinema_name?: string | null;
+
+  source_url?: string | null;
+};
+
+type BulkResponse = {
+  items?: BulkScreening[];
+};
+
 type WatchlistRow = {
   screening_id: number;
   start_at_utc: string | null;
@@ -78,8 +112,8 @@ export default function WatchlistPage() {
           const bulkData = await bulkRes.json();
 
           const now = Date.now();
-          const byId = new Map<number, any>(
-            (bulkData.items ?? []).map((s: any) => [Number(s.id), s])
+          const byId = new Map<number, BulkScreening>(
+            (bulkData.items ?? []).map((s: BulkScreening) => [Number(s.id), s])
           );
 
           const rows: WatchlistRow[] = guestIds.map((id) => {
@@ -129,8 +163,8 @@ export default function WatchlistPage() {
         const data = await res.json();
         setAuthed(true);
         setItems(Array.isArray(data.items) ? data.items : []);
-      } catch (e: any) {
-        setErr(e.message ?? 'Failed to load watchlist');
+      } catch (e: unknown) {
+        setErr(isErrorLike(e) ? e.message : 'Failed to load watchlist');
       } finally {
         setLoading(false);
       }

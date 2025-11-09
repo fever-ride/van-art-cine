@@ -15,6 +15,21 @@ type Props = {
   readonly className?: string;
 };
 
+function hasNumberStatus(x: unknown): x is { status: number } {
+  return typeof x === 'object' && x !== null && 'status' in x && typeof (x as Record<string, unknown>).status === 'number';
+}
+function hasResponseStatus(x: unknown): x is { response: { status: number } } {
+  return (
+    typeof x === 'object' &&
+    x !== null &&
+    'response' in x &&
+    typeof (x as Record<string, unknown>).response === 'object' &&
+    (x as { response: unknown }).response !== null &&
+    'status' in (x as { response: Record<string, unknown> }).response! &&
+    typeof (x as { response: { status: unknown } }).response.status === 'number'
+  );
+}
+
 export default function WatchlistButton({
   screeningId,
   initialSaved,
@@ -41,8 +56,9 @@ export default function WatchlistButton({
       const resp = await apiToggleWatchlist(screeningId);
       setSaved(resp.saved);
       onChange?.(resp.saved);
-    } catch (err: any) {
-      const status = err?.status ?? err?.response?.status;
+    } catch (err: unknown) {
+      const status = hasNumberStatus(err) ? err.status : hasResponseStatus(err) ? err.response.status : undefined;
+
       if (status === 401) {
         const set = getGuestSet();
         if (set.has(screeningId)) {

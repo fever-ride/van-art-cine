@@ -39,7 +39,7 @@ async function fetchJSON<T>(input: RequestInfo, init?: RequestInit): Promise<T> 
     ...init,
   });
 
-  let data: any = null;
+  let data: unknown = null;
   try {
     data = await res.json();
   } catch {
@@ -47,12 +47,24 @@ async function fetchJSON<T>(input: RequestInfo, init?: RequestInit): Promise<T> 
   }
 
   if (!res.ok) {
-    const msg = data?.error || data?.message || `HTTP ${res.status}`;
-    const err: any = new Error(msg);
-    err.status = res.status;          // attach HTTP status so callers can handle specific codes (e.g. skip 401 for guests)
-    err.response = { status: res.status, body: data }; // include response body for debugging or detailed error display
+    const body = typeof data === 'object' && data !== null 
+      ? data as Record<string, unknown> 
+      : {};
+    const msg =
+      (body.error as string) ||
+      (body.message as string) ||
+      `HTTP ${res.status}`;
+
+    const err = new Error(msg) as Error & {
+      status?: number;
+      response?: { status: number; body: unknown };
+    };
+
+    err.status = res.status;
+    err.response = { status: res.status, body: data };
     throw err;
   }
+
   return data as T;
 }
 

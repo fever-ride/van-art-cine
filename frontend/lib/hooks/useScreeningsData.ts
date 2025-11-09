@@ -4,14 +4,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { getScreenings, type Screening, type ScreeningsQuery } from '@/app/lib/screenings';
 import type { UIState } from '@/lib/hooks/useScreeningsUI';
 
-const numOrEmpty = (s: string) => (s.trim() === '' ? undefined : Number(s));
+const numOrEmpty = (s: string | undefined): number | undefined =>
+  s && s.trim() !== '' ? Number(s) : undefined;
 
 function buildParams({ ui, tz, offset }: { ui: UIState; tz: string; offset: number }): ScreeningsQuery {
   const params: ScreeningsQuery = {
     q: ui.q,
-    cinema_ids: ui.cinemaIds && ui.cinemaIds.length > 0
-      ? ui.cinemaIds.map(Number) 
-      : undefined,
+    cinema_ids: ui.cinemaIds && ui.cinemaIds.length > 0 ? ui.cinemaIds.map(Number) : undefined,
     film_id: numOrEmpty(ui.filmId),
     sort: ui.sort,
     order: ui.order,
@@ -30,7 +29,7 @@ function buildParams({ ui, tz, offset }: { ui: UIState; tz: string; offset: numb
   return params;
 }
 
-export function useScreeningsData(ui: any, offset: number = 0) {
+export function useScreeningsData(ui: UIState, offset = 0) {
   const [items, setItems] = useState<Screening[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,18 +39,19 @@ export function useScreeningsData(ui: any, offset: number = 0) {
       setLoading(true);
       setError(null);
 
+      // Basic date range guard (assumes ISO yyyy-mm-dd strings)
       if (ui.mode === 'range' && ui.from && ui.to && ui.from > ui.to) {
         setLoading(false);
         setError('"From" date must be before or equal to "To" date.');
         return;
       }
 
-        try {
-          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Vancouver';
-          const params = buildParams({ ui, tz, offset: nextOffset });
-          const data = await getScreenings(params);
-          setItems(data.items ?? []);
-        } catch (e: unknown) {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Vancouver';
+        const params = buildParams({ ui, tz, offset: nextOffset });
+        const data = await getScreenings(params);
+        setItems(data.items ?? []);
+      } catch (e: unknown) {
         setError(e instanceof Error ? e.message : String(e));
       } finally {
         setLoading(false);
@@ -64,13 +64,13 @@ export function useScreeningsData(ui: any, offset: number = 0) {
     void load(offset);
   }, [load, offset]);
 
-  const hasMore = items.length === ui.limit;
+  const hasMore = ui.limit != null && items.length === ui.limit;
 
   return {
     items,
     loading,
     error,
     hasMore,
-    reload: load
+    reload: load,
   };
 }

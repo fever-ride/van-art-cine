@@ -5,6 +5,15 @@ import { apiLogin } from '@/app/lib/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+function isErrorLike(x: unknown): x is { message: string } {
+  return (
+    typeof x === 'object' &&
+    x !== null &&
+    'message' in x &&
+    typeof (x as Record<string, unknown>).message === 'string'
+  );
+}
+
 export default function LoginPage() {
   const r = useRouter();
   const [email, setEmail] = useState('');
@@ -13,15 +22,21 @@ export default function LoginPage() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErr(null);
     setLoading(true);
     try {
       await apiLogin({ email, password });
       r.replace('/');
-    } catch (e: any) {
-      setErr(e?.message ?? 'Login failed');
+    } catch (err: unknown) {
+      if (isErrorLike(err)) {
+        setErr(err.message);
+      } else if (typeof err === 'string') {
+        setErr(err);
+      } else {
+        setErr('Login failed');
+      }
     } finally {
       setLoading(false);
     }

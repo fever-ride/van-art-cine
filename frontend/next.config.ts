@@ -1,14 +1,16 @@
-import type { NextConfig } from 'next'
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   async rewrites() {
+    const backend = process.env.NEXT_PUBLIC_BASE_URL;
+    if (!backend) return [];
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3000/api/:path*', // backend Express server
+        destination: `${backend}/api/:path*`,
       },
-    ]
+    ];
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;
