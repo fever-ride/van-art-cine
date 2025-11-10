@@ -6,27 +6,27 @@ export const metadata = {
 export default function AboutPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="mb-6 text-3xl font-semibold">About The Cinephile's Van</h1>
+      <h1 className="mb-6 text-3xl font-semibold">About The Cinephile&rsquo;s Van</h1>
 
       <section className="mb-8 space-y-3">
         <p className="text-gray-700">
-          The Cinephile's Van helps you keep up with Vancouver's independent cinemas: browse what's on,
+          The Cinephile&rsquo;s Van helps you keep up with Vancouver&rsquo;s independent cinemas: browse what&rsquo;s on,
           filter by what you care about, and plan your night out. Add screenings to a personal
-          watchlist, then come back when you're ready to go. 🎬
+          watchlist, then come back when you&rsquo;re ready to go. 🎬
         </p>
       </section>
 
       <section className="mb-8 space-y-3">
-        <h2 className="text-xl font-medium">Data & Attribution</h2>
+        <h2 className="text-xl font-medium">Data &amp; Attribution</h2>
         <p className="text-gray-700">
-          Screening times are collected from cinemas' public websites. Film details (years,
-          ratings, etc.) are enriched via third-party APIs (e.g., TMDB, OMDb). We're grateful to the
+          Screening times are collected from cinemas&rsquo; public websites. Film details (years,
+          ratings, etc.) are enriched via third-party APIs (e.g., TMDB, OMDb). We&rsquo;re grateful to the
           community that maintains these resources. All trademarks belong to their respective owners.
         </p>
       </section>
 
       <section className="mb-8 space-y-3">
-        <h2 className="text-xl font-medium">Tech stack</h2>
+        <h2 className="text-xl font-medium">Tech Stack</h2>
         <p className="text-gray-700">
           Next.js + React, Tailwind CSS, Node.js/Express API, Prisma ORM, and PostgreSQL.
         </p>
@@ -46,7 +46,7 @@ export default function AboutPage() {
       <section className="mb-8 space-y-3">
         <h2 className="text-xl font-medium">Actively Seeking Internships and Part-Time Projects.</h2>
         <p className="text-gray-700">
-          Hi, I'm Wendy! A film-loving CS student exploring whatever types of developer opportunities.<br />
+          Hi, I&rsquo;m Wendy! A film-loving CS student exploring whatever types of developer opportunities.<br />
           Connect with me on{" "}
           <a
             href="https://www.linkedin.com/in/wendi-zhong/"
