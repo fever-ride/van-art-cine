@@ -47,7 +47,8 @@ export function useScreeningsData(ui: UIState, offset = 0) {
       }
 
       try {
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Vancouver';
+        // Always use Vancouver time to ensure screening times reflect local cinema schedules
+        const tz = 'America/Vancouver';
         const params = buildParams({ ui, tz, offset: nextOffset });
         const data = await getScreenings(params);
         setItems(data.items ?? []);

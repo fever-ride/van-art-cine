@@ -25,8 +25,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <NavBar />            {/* new: top navigation */}
-        {children}            {/* your pages render below the nav */}
+        <NavBar />
+        {children}
       </body>
     </html>
   );

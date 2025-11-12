@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import { useState, useEffect } from 'react';
 import type { UIState, SetUI } from '@/lib/hooks/useScreeningsUI';
 
 type CinemaOption = { id: number; name: string };
@@ -11,7 +11,6 @@ type Props = {
   onApply: () => void;
   loading?: boolean;
   cinemaOptions?: CinemaOption[];
-  layout?: 'inline' | 'sidebar';
 };
 
 export default function Filters({
@@ -20,9 +19,8 @@ export default function Filters({
   onApply,
   loading,
   cinemaOptions = [],
-  layout = 'inline',
 }: Props) {
-  const [localUI, setLocalUI] = React.useState<Omit<UIState, 'q'>>({
+  const [localUI, setLocalUI] = useState<Omit<UIState, 'q'>>({
     cinemaIds: ui.cinemaIds,
     filmId: ui.filmId,
     date: ui.date,
@@ -34,7 +32,7 @@ export default function Filters({
     limit: ui.limit,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     setLocalUI({
       cinemaIds: ui.cinemaIds,
       filmId: ui.filmId,
@@ -87,16 +85,13 @@ export default function Filters({
   };
 
   // === THEMED CLASSES ===
-  const container =
-    layout === 'sidebar'
-      ? 'space-y-4 rounded-2xl border border-[#E5E2D8] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.08)]'
-      : 'mb-4 grid grid-cols-1 gap-3 rounded-2xl border border-[#E5E2D8] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.08)] sm:grid-cols-2 lg:grid-cols-3';
+  const container = 'space-y-4 rounded-2xl border border-border bg-surface p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)]'
 
   const control =
-    'w-full rounded-[14px] border-[1.5px] border-[#D9D6CD] px-3 py-2.5 text-sm ' +
-    'focus:border-[#5C8EA7] focus:outline-none focus:ring-2 focus:ring-[#5C8EA7]/30';
+    'w-full rounded-[12px] border-[1.5px] border-border px-3 py-2.5 text-sm ' +
+    'focus:border-border focus:outline-none focus:ring-1 focus:ring-accent/30';
 
-  const labelCls = 'text-[12px] font-semibold text-[#6C7E88]';
+  const labelCls = 'text-[12px] font-semibold text-accent';
 
   return (
     <div className={container}>
@@ -120,7 +115,7 @@ export default function Filters({
           {localUI.cinemaIds.length > 0 && (
             <button
               type="button"
-              className="text-xs font-semibold text-[#5C8EA7] hover:underline"
+              className="text-xs font-semibold text-accent hover:underline"
               onClick={() => setLocalUI({ ...localUI, cinemaIds: [] })}
             >
               Clear ({localUI.cinemaIds.length})
@@ -132,7 +127,7 @@ export default function Filters({
             className="
               max-h-[min(50vh,420px)]   /* flexible until 50vh or 420px, whichever is smaller */
               overflow-y-auto overscroll-contain
-              rounded-[18px] border-[1.5px] border-[#D9D6CD] bg-white
+              rounded-[14px] border-[1.5px] border-border bg-surface
               p-3 pr-2                   /* give room so scrollbar doesn't cover text */
               scroll-py-2
             "
@@ -143,11 +138,11 @@ export default function Filters({
             return (
               <label
                 key={c.id}
-                className="flex items-center gap-2 rounded px-2.5 py-2 hover:bg-gray-50 cursor-pointer"
+                className="flex items-center gap-2 rounded px-1 py-2 hover:bg-gray-50 cursor-pointer"
               >
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded-[6px] border-[1.5px] border-[#CFCBC1] text-[#5C8EA7] focus:ring-2 focus:ring-[#5C8EA7]/30"
+                  className="h-3 w-3 rounded-[4px] border-[0.5px] border-border text-accent focus:ring-1 focus:ring-accent/30"
                   checked={checked}
                   onChange={(e) => {
                     if (e.target.checked) {
@@ -163,13 +158,13 @@ export default function Filters({
                     }
                   }}
                 />
-                <span className="text-sm text-[#2B2B2B]">{c.name}</span>
+                <span className="text-xs text-[#2B2B2B]">{c.name}</span>
               </label>
             );
           })}
         </div>
 
-        <span className="text-[12px] text-[#6C7E88]">
+        <span className="text-xs text-muted">
           {localUI.cinemaIds.length === 0
             ? 'Showing all cinemas'
             : `${localUI.cinemaIds.length} cinema${
@@ -179,7 +174,7 @@ export default function Filters({
       </div>
 
       {/* Sort & Order */}
-      <div className={layout === 'sidebar' ? 'flex gap-2' : 'flex items-end gap-2'}>
+      <div className="flex gap-2">
         <label className="flex-1">
           <span className={`${labelCls} mb-1 block`}>Sort</span>
           <select
@@ -189,14 +184,14 @@ export default function Filters({
               setLocalUI({ ...localUI, sort: e.target.value as UIState['sort'] })
             }
           >
-            <option value="time">Time</option>
-            <option value="title">Title</option>
-            <option value="imdb">IMDb</option>
-            <option value="rt">RT%</option>
+            <option value="time">Screening Time</option>
+            <option value="title">Film Title</option>
+            <option value="imdb">IMDb Ratings</option>
+            <option value="rt">Rotten Tomato %</option>
           </select>
         </label>
 
-        <label className="w-28">
+        <label className="w-18">
           <span className={`${labelCls} mb-1 block`}>Order</span>
           <select
             className={control}
@@ -214,23 +209,23 @@ export default function Filters({
       {/* Date / Range */}
       <div className="space-y-2">
         <div className="flex items-center gap-4">
-          <label className="inline-flex items-center gap-2 text-sm text-[#2B2B2B]">
+          <label className="inline-flex items-center gap-2 text-sm text-primary">
             <input
               type="radio"
               name="mode"
-              className="h-4 w-4 appearance-none rounded-full border-[1.5px] border-[#CFCBC1]
-                         checked:border-[#5C8EA7] checked:shadow-[inset_0_0_0_4px_#5C8EA7] transition"
+              className="h-4 w-4 appearance-none rounded-full border-[1.5px] border-border
+                         checked:border-accent checked:shadow-[inset_0_0_0_4px_#5C8EA7] transition"
               checked={localUI.mode === 'single'}
               onChange={() => setLocalUI({ ...localUI, mode: 'single' })}
             />
             Single date
           </label>
-          <label className="inline-flex items-center gap-2 text-sm text-[#2B2B2B]">
+          <label className="inline-flex items-center gap-2 text-sm text-primary">
             <input
               type="radio"
               name="mode"
-              className="h-4 w-4 appearance-none rounded-full border-[1.5px] border-[#CFCBC1]
-                         checked:border-[#5C8EA7] checked:shadow-[inset_0_0_0_4px_#5C8EA7] transition"
+              className="h-4 w-4 appearance-none rounded-full border-[1.5px] border-border
+                         checked:border-accent checked:shadow-[inset_0_0_0_4px_#5C8EA7] transition"
               checked={localUI.mode === 'range'}
               onChange={() => setLocalUI({ ...localUI, mode: 'range' })}
             />
@@ -255,7 +250,7 @@ export default function Filters({
               value={localUI.from}
               onChange={(e) => setLocalUI({ ...localUI, from: e.target.value })}
             />
-            <span className="text-sm text-[#6C7E88]">to</span>
+            <span className="text-sm text-muted">to</span>
             <input
               type="date"
               className={control}
@@ -267,11 +262,11 @@ export default function Filters({
       </div>
 
       {/* Actions */}
-      <div className={layout === 'sidebar' ? 'flex gap-2 pt-1' : 'ml-auto flex items-center gap-2'}>
+      <div className="flex gap-2 pt-1">
         <button
           type="button"
-          className="rounded-[14px] border-[1.5px] border-[#D9D6CD] bg-white px-4 py-2 text-sm font-semibold
-                     text-[#2B2B2B] hover:bg-[#F4F8FB]"
+          className="rounded-[14px] border-[1.5px] border-border bg-surface px-4 py-2 text-sm font-semibold
+                     text-primary hover:bg-[#F4F8FB]"
           onClick={handleReset}
           disabled={loading}
         >
@@ -279,7 +274,7 @@ export default function Filters({
         </button>
         <button
           type="button"
-          className="rounded-[14px] bg-[#5C8EA7] px-4 py-2 text-sm font-semibold text-white
+          className="rounded-[14px] bg-[#5C8EA7] px-4 py-2 text-sm font-semibold text-surface
                      hover:bg-[#4A7A93] disabled:opacity-60"
           onClick={handleApply}
           disabled={loading}

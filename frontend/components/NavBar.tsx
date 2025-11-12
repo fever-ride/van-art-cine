@@ -45,7 +45,7 @@ export default function NavBar() {
 
   return (
     <header
-      className={`${noto.className} sticky top-0 z-50 border-b border-[#E5E2D8] bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/75 shadow-[0_10px_24px_rgba(0,0,0,0.04)]`}
+      className={`${noto.className} sticky top-0 z-50 border-b border-[#E5E2D8] bg-surface backdrop-blur supports-[backdrop-filter]:bg-surface/75 shadow-[0_10px_24px_rgba(0,0,0,0.04)]`}
     >
       <div className="mx-auto max-w-7xl">
         {/* Row 1: Brand (left) + Auth (right) */}
@@ -76,7 +76,7 @@ export default function NavBar() {
               <>
                 <Link
                   href="/auth/login"
-                  className="rounded-[12px] border-[1.5px] border-[#D9D6CD] bg-white px-3 py-1.5 text-sm font-semibold text-[#2B2B2B] hover:bg-[#F4F8FB]"
+                  className="rounded-[12px] border-[1.5px] border-[#D9D6CD] bg-surface px-3 py-1.5 text-sm font-semibold text-[#2B2B2B] hover:bg-[#F4F8FB]"
                 >
                   Log in
                 </Link>
@@ -90,7 +90,7 @@ export default function NavBar() {
             ) : (
               <button
                 onClick={handleLogout}
-                className="rounded-[12px] border-[1.5px] border-[#D9D6CD] bg-white px-3.5 py-1.5 text-sm font-semibold text-[#2B2B2B] hover:bg-[#F4F8FB]"
+                className="rounded-[12px] border-[1.5px] border-[#D9D6CD] bg-surface px-3.5 py-1.5 text-sm font-semibold text-[#2B2B2B] hover:bg-[#F4F8FB]"
               >
                 Logout
               </button>
@@ -103,7 +103,7 @@ export default function NavBar() {
           <nav className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto">
             <Link
               href="/watchlist"
-              className={`${pill} ${isActive('/watchlist') ? 'bg-[#FFF8E7] text-gray-900' : ''} snap-start`}
+              className={`${pill} ${isActive('/watchlist') ? 'bg-surface text-gray-900' : ''} snap-start`}
             >
               My Watchlist
             </Link>
@@ -114,7 +114,7 @@ export default function NavBar() {
             */}
             <Link
               href="/about"
-              className={`${pill} ${isActive('/about') ? 'bg-[#FFF8E7] text-gray-900' : ''} snap-start`}
+              className={`${pill} ${isActive('/about') ? 'bg-surface text-gray-900' : ''} snap-start`}
             >
               About
             </Link>

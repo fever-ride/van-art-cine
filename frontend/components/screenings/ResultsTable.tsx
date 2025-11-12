@@ -49,14 +49,14 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
   }
 
   return (
-    <table className="w-full table-auto border-separate border-spacing-0 text-[13px] leading-6">
+    <table className="w-full bg-surface table-auto border-separate border-spacing-0 text-[14px] leading-6">
       <thead>
-        <tr className="border-b border-gray-200 bg-[#FFF8E7] text-left">
+        <tr className="border-b border-border bg-highlight text-left">
           <th className="w-12 px-2 py-3" aria-label="expand column" />
-          <th className="w-[12%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-gray-500">When</th>
-          <th className="w-[33%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-gray-500">Title</th>
-          <th className="w-[28%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-gray-500">Cinema</th>
-          <th className="w-[20%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-gray-500">Watchlist</th>
+          <th className="w-[12%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-muted">When</th>
+          <th className="w-[33%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-muted">Title</th>
+          <th className="w-[28%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-muted">Cinema</th>
+          <th className="w-[20%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-muted text-center">Watchlist</th>
         </tr>
       </thead>
 
@@ -82,7 +82,7 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
           return (
             <Fragment key={s.id}>
               {/* SUMMARY ROW */}
-              <tr className="align-middle border-b border-gray-200">
+              <tr className="align-middle border-b border-border">
                 {/* disclose */}
                 <td className="px-2 py-2">
                   <button
@@ -90,7 +90,7 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
                     onClick={() => toggle(s.id)}
                     aria-expanded={isOpen}
                     aria-controls={`row-details-${s.id}`}
-                    className="grid h-7 w-7 place-items-center rounded-md border border-gray-200 bg-white transition hover:bg-gray-50"
+                    className="grid h-7 w-7 place-items-center rounded-md border border-border bg-surface transition hover:bg-gray-50"
                     title={isOpen ? 'Hide details' : 'Show details'}
                   >
                     <svg
@@ -143,7 +143,7 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
                       {genres.map((g) => (
                         <span
                           key={g}
-                          className="inline-flex items-center rounded-full bg-[#E9EFF3] px-2.5 py-1 text-[12px] font-semibold text-[#2B2B2B]"
+                          className="inline-flex items-center rounded-full bg-pill px-2.5 py-1 text-[12px] font-semibold text-[#2B2B2B]"
                         >
                           {g}
                         </span>
@@ -169,7 +169,7 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
               </tr>
 
               {/* DETAILS ROW — full-bleed cream strip (no inner rounded card) */}
-              <tr id={`row-details-${s.id}`} className="border-b border-gray-200">
+              <tr id={`row-details-${s.id}`} className="border-b border-border">
                 <td colSpan={5} className="p-0">
                   <div
                     className={[
@@ -241,7 +241,7 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
                                   href={s.source_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-[#5C8EA7] transition-colors hover:bg-white/80"
+                                  className="inline-flex items-center rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-[#5C8EA7] transition-colors hover:bg-white/80"
                                 >
                                   Official / Source
                                 </a>
@@ -251,7 +251,7 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
                                   href={s.imdb_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-[#5C8EA7] transition-colors hover:bg-white/80"
+                                  className="inline-flex items-center rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-[#5C8EA7] transition-colors hover:bg-white/80"
                                 >
                                   IMDb
                                 </a>
