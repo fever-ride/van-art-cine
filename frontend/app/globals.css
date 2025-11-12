@@ -5,7 +5,7 @@
   --primary: #2B2B2B;      /* Dark gray for headings, important text */
   --background: #FAF6EF;   /* Cream background */
   --accent: #5C8EA7;       /* Blue-gray for interactive elements */
-  --highlight: #E5A44B;    /* Warm orange for emphasis */
+  --highlight: #F1CB99;    /* Warm orange for emphasis */
   
   /* Semantic colors derived from palette */
   --foreground: var(--primary);

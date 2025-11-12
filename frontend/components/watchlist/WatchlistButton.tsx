@@ -13,6 +13,11 @@ type Props = {
   /** Small stylistic knobs (optional) */
   readonly size?: 'sm' | 'md';
   readonly className?: string;
+
+  /** Ask for confirmation before removing (unsaving) */
+  confirmBeforeRemove?: boolean;
+  /** Custom confirm text (optional) */
+  confirmMessage?: string;
 };
 
 function hasNumberStatus(x: unknown): x is { status: number } {
@@ -36,6 +41,8 @@ export default function WatchlistButton({
   onChange,
   size = 'sm',
   className = '',
+  confirmBeforeRemove = false,
+  confirmMessage = ''
 }: Props) {
   const [saved, setSaved] = useState<boolean>(!!initialSaved);
   const [pending, setPending] = useState(false);
@@ -48,6 +55,13 @@ export default function WatchlistButton({
   }, [initialSaved]);
 
   async function toggle() {
+    if (saved && confirmBeforeRemove) {
+      const ok = window.confirm(
+      confirmMessage || 'Remove this from your watchlist?'
+    );
+      if (!ok) return; // abort remove
+    }
+
     const optimistic = !saved;
     setSaved(optimistic);
     setPending(true);

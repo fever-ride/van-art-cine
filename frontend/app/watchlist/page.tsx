@@ -223,13 +223,12 @@ export default function WatchlistPage() {
 
       {authed === false && !loading && (
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          You’re not signed in. Your guest watchlist currently has{' '}
-          <strong>{guestCount}</strong> item{guestCount === 1 ? '' : 's'} stored in this browser.
+          You’re browsing as a guest.{' '}
           <br />
           <Link href="/auth/login" className="text-blue-600 underline">
             Log in
           </Link>{' '}
-          to sync and keep them across devices.
+          to save your watchlist and access it anytime, on any device!
         </div>
       )}
 
@@ -317,6 +316,8 @@ export default function WatchlistPage() {
                       initialSaved={true}
                       onChange={(saved) => handleSavedChange(r.screening_id, saved)}
                       size="sm"
+                      confirmBeforeRemove
+                      confirmMessage={`Remove "${r.title}" from your watchlist?`}
                     />
                   </td>
                 </tr>

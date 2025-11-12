@@ -41,7 +41,7 @@ export default function NavBar() {
 
   const isActive = (href: string) => pathname === href;
   const pill =
-    'whitespace-nowrap rounded-[10px] px-3 py-1.5 text-sm font-medium text-[#5e6a6d] hover:bg-[#F4F8FB]';
+    'whitespace-nowrap rounded-[10px] px-2 py-1 text-sm font-medium text-[#5e6a6d] hover:bg-highlight';
 
   return (
     <header
@@ -103,7 +103,7 @@ export default function NavBar() {
           <nav className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto">
             <Link
               href="/watchlist"
-              className={`${pill} ${isActive('/watchlist') ? 'bg-surface text-gray-900' : ''} snap-start`}
+              className={`${pill} ${isActive('/watchlist') ? 'bg-highlight text-primary' : ''} snap-start`}
             >
               My Watchlist
             </Link>
@@ -114,7 +114,7 @@ export default function NavBar() {
             */}
             <Link
               href="/about"
-              className={`${pill} ${isActive('/about') ? 'bg-surface text-gray-900' : ''} snap-start`}
+              className={`${pill} ${isActive('/about') ? 'bg-highlight text-primary' : ''} snap-start`}
             >
               About
             </Link>
