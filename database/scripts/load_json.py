@@ -26,7 +26,6 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from aliases import resolve_cinema_alias
 
-# ✅ removed pymysql; this script is DB-agnostic and uses db_helper's psycopg2 connection
 from dateutil import parser as dtparser
 
 from db_helper import (
@@ -37,26 +36,56 @@ from db_helper import (
     normalize_person_name,
 )
 
+from ai_cleaning import ai_clean_title_and_tags
+
 # =========================
 # Config
 # =========================
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
-DATA_DIR = os.path.join(PROJECT_ROOT, "data", "latest")
+# DATA_DIR = os.path.join(PROJECT_ROOT, "data", "latest")
+DATA_DIR = os.path.join(PROJECT_ROOT, "data", "test")
 
 LOCAL_TZ = ZoneInfo("America/Vancouver")
 UTC = ZoneInfo("UTC")
 
-DEFAULT_FILES = [
-    "cinematheque_screenings_latest.json",
-    "viff_screenings_latest.json",
-    "rio_screenings_latest.json",
-]
 
 # =========================
 # Small utilities
 # =========================
+
+
+def find_latest_files(directory):
+    """
+    Scan directory and return the latest file for each cinema:
+    - cinematheque
+    - viff
+    - rio
+
+    Returns a list of file paths.
+    """
+    prefix_list = ["cinematheque_screenings_",
+                   "viff_screenings_", "rio_screenings_"]
+    result = []
+
+    all_files = [f for f in os.listdir(directory) if f.endswith(".json")]
+
+    for prefix in prefix_list:
+        # Filter by prefix
+        matched = [f for f in all_files if f.startswith(prefix)]
+        if not matched:
+            continue
+
+        # Sort by timestamp in filename
+        # because YYYYMMDD_HHMMSS is lexicographically sortable
+        matched.sort(reverse=True)
+
+        # Pick newest
+        newest = matched[0]
+        result.append(os.path.join(directory, newest))
+
+    return result
 
 
 def parse_runtime_minutes(s: str | int | None) -> int | None:
@@ -179,8 +208,8 @@ ON CONFLICT (film_id, person_id, role) DO NOTHING
 INSERT INTO stg_screening (
     film_id, cinema_id, start_at_utc, end_at_utc, runtime_min, tz,
     source, source_uid, source_url, notes, raw_date, raw_time,
-    content_hash, loaded_at_utc
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    content_hash, loaded_at_utc, tags
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """,
     # Store full raw payload for auditing; cast to jsonb
     "raw_import_ins": """
@@ -341,8 +370,11 @@ def load_source(
 
     # Audit record (one per source run)
     default_cid = ensure_cinema(cur, cinema_name, cinema_website)
-    upsert(cur, SQL["raw_import_ins"], (default_cid,
-           source_name, json.dumps(rows, ensure_ascii=False)))
+    upsert(
+        cur,
+        SQL["raw_import_ins"],
+        (default_cid, source_name, json.dumps(rows, ensure_ascii=False)),
+    )
 
     loaded_at_utc = datetime.now(UTC).replace(tzinfo=None)
 
@@ -353,10 +385,27 @@ def load_source(
         return (a or "").strip().lower() == (b or "").strip().lower()
 
     for r in rows:
-        title = r.get("title")
+        raw_title = r.get("title") or ""
+
+        # --- AI: normalize title + extract screening-level tags from title ---
+        try:
+            cleaned = ai_clean_title_and_tags(raw_title)
+            clean_title = cleaned.get("normalized_title") or raw_title
+            base_screening_tags = cleaned.get("screening_tags") or []
+            base_screening_tags = [
+                str(t).strip() for t in base_screening_tags if str(t).strip()
+            ]
+        except Exception as e:
+            print(
+                f"[AI FALLBACK] source={source_name} title='{raw_title}' error={e}")
+            clean_title = raw_title
+            base_screening_tags = []
+
         year = parse_year(r.get("year"))
         runtime = parse_runtime_minutes(r.get("duration"))
-        film_id = ensure_film(cur, title, year, r.get("description"))
+
+        # Use cleaned title when upserting film
+        film_id = ensure_film(cur, clean_title, year, r.get("description"))
         link_directors(cur, film_id, r.get("director"))
 
         for st in r.get("showtimes", []):
@@ -375,7 +424,9 @@ def load_source(
             time_str = (st.get("time") or "").strip()
             if is_missing_token(date_str) or is_missing_token(time_str):
                 print(
-                    f"[SKIP] {source_name}: '{title}' missing time/date → date='{date_str}' time='{time_str}'")
+                    f"[SKIP] {source_name}: '{raw_title}' missing time/date → "
+                    f"date='{date_str}' time='{time_str}'"
+                )
                 continue
 
             if year_hint is not None:
@@ -399,6 +450,9 @@ def load_source(
                 None,
             )
 
+            # Clone base tags so we could later add per-showtime tags if needed
+            screening_tags = list(base_screening_tags)
+
             upsert(
                 cur,
                 SQL["stg_screening_ins"],
@@ -412,11 +466,12 @@ def load_source(
                     source_name,
                     source_uid,
                     r.get("detail_url"),
-                    None,  # notes
+                    None,           # notes
                     st.get("date"),
                     st.get("time"),
                     content_hash,
                     loaded_at_utc,
+                    screening_tags,  # <-- tags: text[] column
                 ),
             )
 
@@ -463,30 +518,41 @@ def load_rio(cur, path):
 # Main
 # =========================
 def main():
+    # 1. Decide which files to load
     if len(sys.argv) > 1:
+        # Files given on command line -> use them as absolute paths
         files = [os.path.abspath(f) for f in sys.argv[1:]]
     else:
-        files = [os.path.join(DATA_DIR, f) for f in DEFAULT_FILES]
+        # No args -> use auto-discovered latest files under DATA_DIR
         if not os.path.isdir(DATA_DIR):
             print(f"Error: Data directory not found: {DATA_DIR}")
             print(
-                "Run this script from the project root or specify input files on command line.")
+                "Run this script from the project root or specify input files on the command line.")
             sys.exit(1)
 
+        files = find_latest_files(DATA_DIR)
+        if not files:
+            print(f"Error: No screening JSON files found in: {DATA_DIR}")
+            print(
+                "Expected files named like 'cinematheque_screenings_YYYYMMDD_HHMMSS.json', etc.")
+            sys.exit(1)
+
+    # 2. Sanity-check file existence
     missing = [f for f in files if not os.path.isfile(f)]
     if missing:
-        print("Error: Some input files not found:")
+        print("Error: Some input files were not found:")
         for f in missing:
             print(f"  {f}")
         sys.exit(1)
 
+    # 3. Log what we are about to load
     print(f"Loading {len(files)} files:")
     for f in files:
         print(f"  {f}")
 
+    # 4. Open DB connection and load each file into staging
     conn = conn_open()
     try:
-        # Using connection context manager ensures commit/rollback.
         with conn:
             with conn.cursor() as cur:
                 for fp in files:

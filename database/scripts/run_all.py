@@ -4,57 +4,56 @@ run_all.py
 
 Utility script to run the data enrichment pipeline in a predictable order.
 
-TERMS (two kinds of "merge"):
-  • merge-persons      → deduplicate rows in `person` (safe by default: dry run; use --force to apply)
-  • merge-screenings   → promote `stg_screening` → `screening` (apply by default; use --merge-dry-run to preview)
+TWO KINDS OF "MERGE":
+  • merge-persons      → deduplicate rows in `person`
+                         - default: DRY RUN (no changes)
+                         - use --force to actually merge
+  • merge-screenings   → promote `stg_screening` → `screening`
+                         - default: APPLY changes
+                         - use --merge-dry-run to preview only
 
-AVAILABLE STEPS (use hyphenated names):
+STEPS (hyphenated names):
   1) load-json               Load scraped movie screening data into staging
   2) resolve-imdb-id-url     Fetch TMDB/IMDB IDs for films
   3) omdb-api                Fetch detailed film metadata and create person records
   4) enrich-person-ids       Fetch TMDB/IMDB IDs for persons
-  5) merge-persons           Merge duplicate person records (requires --force to actually merge)
+  5) merge-persons           Merge duplicate person records
   6) merge-screenings        Promote staging data to live screening table
 
-FLAGS:
-  --steps X,Y,...            Run only these steps (comma-separated, hyphenated). Use 'all' for steps 1–4.
-  --merge-screenings         Append the merge-screenings step to whatever steps are running.
-  --merge-dry-run            Make merge-screenings a dry run (preview; no changes).
-  --force                    For merge-persons: actually merge (default: dry run).
-  --stop-on-error            Stop immediately if any step fails.
-
-DEFAULT RUN (no --steps):
-  load-json → resolve-imdb-id-url → omdb-api → enrich-person-ids
-
-ORDERING RULE:
-  If both merges are present, the pipeline enforces:
-    merge-persons  →  merge-screenings
-  even if the user lists them in the opposite order.
-
-COMMON RECIPES:
-  # Default pipeline (no merges)
+DEFAULT (no flags):
   python run_all.py
 
-  # Default pipeline + promote to live (apply)
-  python run_all.py --merge-screenings
+  Runs the FULL pipeline in this order:
+    load-json → resolve-imdb-id-url → omdb-api → enrich-person-ids
+    → merge-persons (DRY RUN)
+    → merge-screenings (APPLY)
 
-  # Default pipeline + promote to live (dry-run)
-  python run_all.py --merge-screenings --merge-dry-run
+COMMON USE CASES:
 
-  # Only promote to live (apply)
+  # 1) Full pipeline (recommended during normal use)
+  python run_all.py
+
+  # 2) Full pipeline, but do NOT write anything to live screening table
+  #    (both merges run, but merge-screenings is dry-run)
+  python run_all.py --merge-dry-run
+
+  # 3) Only the first 4 enrichment steps (no merges at all)
+  python run_all.py --no-merge
+
+  # 4) Only promote staging → live (apply)
   python run_all.py --steps merge-screenings
 
-  # Only promote to live (dry-run)
+  # 5) Only promote staging → live (dry-run)
   python run_all.py --steps merge-screenings --merge-dry-run
 
-  # Preview person dedup only (safe)
+  # 6) Preview person dedup only (safe)
   python run_all.py --steps merge-persons
 
-  # Apply person dedup only
+  # 7) Apply person dedup only
   python run_all.py --steps merge-persons --force
 
-  # Full pipeline: default 4 → dedup persons (apply) → promote to live (apply)
-  python run_all.py --steps all,merge-persons --force --merge-screenings --stop-on-error
+  # 8) Custom subset, e.g. just re-load JSON and re-merge screenings
+  python run_all.py --steps load-json,merge-screenings
 """
 
 from __future__ import annotations
@@ -80,13 +79,21 @@ HY_STEP_TO_INTERNAL = {
     "omdb-api": "omdb_api",
     "enrich-person-ids": "enrich_person_ids",
     "merge-persons": "merge_duplicate_persons",
-    # runner branch calls merge_staging_to_live
+    # merge-screenings → merge_staging_to_live.main(...)
     "merge-screenings": "merge_screenings",
 }
 
-# Back-compat / aliases accepted in --steps (underscores, short forms, etc.)
+# Back-compat / aliases accepted in --steps
 ALIASES = {
-    "all": ["load-json", "resolve-imdb-id-url", "omdb-api", "enrich-person-ids"],
+    # "all" = full pipeline including merges
+    "all": [
+        "load-json",
+        "resolve-imdb-id-url",
+        "omdb-api",
+        "enrich-person-ids",
+        "merge-persons",
+        "merge-screenings",
+    ],
 
     "load": ["load-json"],
     "load_json": ["load-json"],
@@ -109,10 +116,11 @@ ALIASES = {
 
     "merge-screenings": ["merge-screenings"],
     "merge_screenings": ["merge-screenings"],
-    "merge": ["merge-screenings"],  # old ambiguous alias → screenings
+    "merge": ["merge-screenings"],  # short alias → screenings
 }
 
-DEFAULT_HY_STEPS = ALIASES["all"]  # the 4 default steps
+# Default = FULL pipeline
+DEFAULT_HY_STEPS = ALIASES["all"]
 
 
 def _canon_token(tok: str) -> str:
@@ -148,12 +156,12 @@ def parse_steps(raw: str | None) -> List[str]:
 def ensure_merge_order(hy_steps: List[str]) -> List[str]:
     """Guarantee merge-persons runs before merge-screenings if both present."""
     if "merge-persons" in hy_steps and "merge-screenings" in hy_steps:
-        # Remove both; reinsert in the correct order at the position of the first encountered merge.
-        first_idx = min(hy_steps.index("merge-persons"),
-                        hy_steps.index("merge-screenings"))
+        first_idx = min(
+            hy_steps.index("merge-persons"),
+            hy_steps.index("merge-screenings"),
+        )
         others = [s for s in hy_steps if s not in {
             "merge-persons", "merge-screenings"}]
-        # Split others around the insertion point
         prefix = others[:first_idx]
         suffix = others[first_idx:]
         return prefix + ["merge-persons", "merge-screenings"] + suffix
@@ -176,7 +184,8 @@ def import_and_run(module_name: str, extra_args: List[str] | None = None) -> Non
     sys.argv = [module_name] + (extra_args or [])
     try:
         try:
-            mod.main([])  # some modules accept argv
+            # some modules accept argv
+            mod.main([])
         except TypeError:
             mod.main()
     finally:
@@ -189,13 +198,21 @@ def import_and_run(module_name: str, extra_args: List[str] | None = None) -> Non
 
 def main(argv: List[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
-        description="Run data enrichment pipeline")
+        description="Run data enrichment pipeline"
+    )
     parser.add_argument(
         "--steps",
-        help=("Comma-separated steps (hyphenated). Available: "
-              "load-json, resolve-imdb-id-url, omdb-api, enrich-person-ids, "
-              "merge-persons, merge-screenings. "
-              "Default: the first four (no merges)."),
+        help=(
+            "Comma-separated steps (hyphenated). Available: "
+            "load-json, resolve-imdb-id-url, omdb-api, enrich-person-ids, "
+            "merge-persons, merge-screenings. "
+            "Default (no --steps): run FULL pipeline (all steps)."
+        ),
+    )
+    parser.add_argument(
+        "--no-merge",
+        action="store_true",
+        help="Skip BOTH merge-persons and merge-screenings, even if they are in the default/steps.",
     )
     parser.add_argument(
         "--stop-on-error",
@@ -203,22 +220,18 @@ def main(argv: List[str] | None = None) -> None:
         help="Stop if any step fails",
     )
     parser.add_argument(
-        "--merge-screenings",
-        action="store_true",
-        help="Append merge-screenings after other steps",
-    )
-    parser.add_argument(
         "--merge-dry-run",
         action="store_true",
-        help="Run merge-screenings in dry-run mode (preview; no changes)",
+        help="Run merge-screenings in dry-run mode (preview; no changes).",
     )
     parser.add_argument(
         "--force",
         action="store_true",
-        help="For merge-persons: actually merge (default: dry run)",
+        help="For merge-persons: actually merge (default: dry run).",
     )
     args = parser.parse_args(argv)
 
+    # 1) Which steps to run?
     try:
         steps_hy = parse_steps(args.steps)
     except ValueError as e:
@@ -226,11 +239,12 @@ def main(argv: List[str] | None = None) -> None:
         parser.print_help()
         sys.exit(2)
 
-    # optionally append screenings merge
-    if args.merge_screenings and "merge-screenings" not in steps_hy:
-        steps_hy.append("merge-screenings")
+    # 2) Optionally drop all merge steps
+    if args.no_merge:
+        steps_hy = [s for s in steps_hy if s not in {
+            "merge-persons", "merge-screenings"}]
 
-    # enforce merge order if both present
+    # 3) Enforce merge order if both present
     steps_hy = ensure_merge_order(steps_hy)
 
     print("=" * 60)
@@ -240,9 +254,9 @@ def main(argv: List[str] | None = None) -> None:
     for s in steps_hy:
         print(f"  - {s}")
     if "merge-persons" in steps_hy and not args.force:
-        print("\nNOTE: merge-persons will run in DRY RUN mode (use --force to apply)")
+        print("\nNOTE: merge-persons will run in DRY RUN mode (use --force to apply).")
     if "merge-screenings" in steps_hy and args.merge_dry_run:
-        print("NOTE: merge-screenings will run in DRY RUN mode")
+        print("NOTE: merge-screenings will run in DRY RUN mode (no changes).")
     print()
 
     results = []

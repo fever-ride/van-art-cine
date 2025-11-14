@@ -14,14 +14,46 @@ from db_helper import conn_open
 SQL_INSERT = """
 WITH ins AS (
   INSERT INTO screening (
-    film_id, cinema_id, start_at_utc, end_at_utc, runtime_min, tz,
-    source, source_uid, source_url, notes, raw_date, raw_time,
-    content_hash, loaded_at_utc, ingest_run_id, is_active, created_at, updated_at
+    film_id,
+    cinema_id,
+    start_at_utc,
+    end_at_utc,
+    runtime_min,
+    tz,
+    source,
+    source_uid,
+    source_url,
+    notes,
+    raw_date,
+    raw_time,
+    content_hash,
+    loaded_at_utc,
+    ingest_run_id,
+    is_active,
+    tags,
+    created_at,
+    updated_at
   )
   SELECT
-    s.film_id, s.cinema_id, s.start_at_utc, s.end_at_utc, s.runtime_min, s.tz,
-    s.source, s.source_uid, s.source_url, s.notes, s.raw_date, s.raw_time,
-    s.content_hash, s.loaded_at_utc, %s, TRUE, NOW(), NOW()
+    s.film_id,
+    s.cinema_id,
+    s.start_at_utc,
+    s.end_at_utc,
+    s.runtime_min,
+    s.tz,
+    s.source,
+    s.source_uid,
+    s.source_url,
+    s.notes,
+    s.raw_date,
+    s.raw_time,
+    s.content_hash,
+    s.loaded_at_utc,
+    %s,
+    TRUE,
+    s.tags,
+    NOW(),
+    NOW()
   FROM stg_screening s
   ON CONFLICT (source, source_uid) DO NOTHING
   RETURNING 1
@@ -47,6 +79,7 @@ WITH upd AS (
     loaded_at_utc = s.loaded_at_utc,
     ingest_run_id = %s,
     is_active     = TRUE,
+    tags          = s.tags,
     updated_at    = NOW()
   FROM stg_screening s
   WHERE t.source = s.source
@@ -63,7 +96,8 @@ WITH upd AS (
       t.raw_date      IS DISTINCT FROM s.raw_date OR
       t.raw_time      IS DISTINCT FROM s.raw_time OR
       t.content_hash  IS DISTINCT FROM s.content_hash OR
-      t.is_active     IS DISTINCT FROM TRUE
+      t.is_active     IS DISTINCT FROM TRUE OR
+      t.tags          IS DISTINCT FROM s.tags
     )
   RETURNING 1
 )
@@ -121,28 +155,42 @@ def run_merge(dry_run: bool) -> None:
                         rows_deactivated = %s
                     WHERE id = %s
                     """,
-                    ("success" if not dry_run else "success_dry_run",
-                     rows_in, rows_inserted, rows_updated, rows_deactivated, run_id),
+                    (
+                        "success" if not dry_run else "success_dry_run",
+                        rows_in,
+                        rows_inserted,
+                        rows_updated,
+                        rows_deactivated,
+                        run_id,
+                    ),
                 )
 
                 if dry_run:
                     # preview only → rollback everything inside this transaction
                     conn.rollback()
                     print(
-                        f"[DRY RUN] rows_in={rows_in}, inserted={rows_inserted}, updated={rows_updated}, deactivated={rows_deactivated}")
+                        f"[DRY RUN] rows_in={rows_in}, inserted={rows_inserted}, "
+                        f"updated={rows_updated}, deactivated={rows_deactivated}"
+                    )
                     print("[DRY RUN] Transaction rolled back. No changes applied.")
                 else:
                     print(
-                        f"rows_in={rows_in}, inserted={rows_inserted}, updated={rows_updated}, deactivated={rows_deactivated}")
+                        f"rows_in={rows_in}, inserted={rows_inserted}, "
+                        f"updated={rows_updated}, deactivated={rows_deactivated}"
+                    )
     finally:
         conn.close()
 
 
 def main():
     ap = argparse.ArgumentParser(
-        description="Merge staging -> live (PostgreSQL)")
-    ap.add_argument("--dry-run", action="store_true",
-                    help="Preview changes without applying")
+        description="Merge staging -> live (PostgreSQL)"
+    )
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview changes without applying",
+    )
     args = ap.parse_args()
     run_merge(args.dry_run)
 
