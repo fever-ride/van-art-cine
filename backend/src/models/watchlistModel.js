@@ -30,20 +30,6 @@ export async function isInWatchlist({ userUid, screeningId }) {
   return !!row;
 }
 
-/**
- * Returns rows shaped like the original SQL:
- * - screening_id
- * - start_at_utc, end_at_utc, runtime_min, tz, is_active (as 0/1)
- * - film_id, title, year, imdb_rating, rt_rating_pct
- * - cinema_id, cinema_name
- * - source_url
- * - status  ('missing' | 'inactive' | 'past' | 'upcoming')
- * - is_past (0/1)
- *
- * Notes:
- * - We fetch via relations and compute CASE/order in JS to match the old query.
- * - When includePast === false, we apply the same filters as the SQL WHERE clause.
- */
 export async function listWatchlist({
   userUid,
   limit = 100,
