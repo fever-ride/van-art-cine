@@ -44,8 +44,8 @@ from ai_cleaning import ai_clean_title_and_tags
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
-# DATA_DIR = os.path.join(PROJECT_ROOT, "data", "latest")
-DATA_DIR = os.path.join(PROJECT_ROOT, "data", "test")
+DATA_DIR = os.path.join(PROJECT_ROOT, "data", "latest")
+# DATA_DIR = os.path.join(PROJECT_ROOT, "data", "test")
 
 LOCAL_TZ = ZoneInfo("America/Vancouver")
 UTC = ZoneInfo("UTC")
@@ -86,6 +86,36 @@ def find_latest_files(directory):
         result.append(os.path.join(directory, newest))
 
     return result
+
+
+def infer_show_year_from_month(date_str: str, base_year: int) -> int:
+    """
+    Given a 'month day' style date_str (without year) and a base_year,
+    adjust the year for cross-year schedules.
+
+    Rule:
+      - Normally use base_year.
+      - But if current month is Oct/Nov/Dec and the show month is Jan–Jun,
+        treat it as next year (base_year + 1).
+    """
+    try:
+        # Use a dummy default date; we only care about the parsed month.
+        dummy_default = datetime(base_year, 1, 1)
+        parsed = dtparser.parse(
+            date_str, default=dummy_default, dayfirst=False)
+        show_month = parsed.month
+    except Exception:
+        # If parsing fails, just fall back to base_year.
+        return base_year
+
+    now = datetime.now(LOCAL_TZ)
+    current_month = now.month
+
+    year = base_year
+    if current_month in (10, 11, 12) and show_month in (1, 2, 3, 4, 5, 6):
+        year = base_year + 1
+
+    return year
 
 
 def parse_runtime_minutes(s: str | int | None) -> int | None:
@@ -334,19 +364,62 @@ def parse_dt_cinematheque(date_str: str, time_str: str) -> datetime:
 
 
 def parse_dt_viff(date_str: str, time_str: str, year_hint: int | None) -> datetime:
+    """
+    VIFF examples (date_str):
+      - 'Fri Nov 08'
+      - 'Thu Jan 02'
+
+    year_hint comes from the caller (typically current year in LOCAL_TZ),
+    but we adjust it for cross-year schedules using infer_show_year_from_month.
+    """
     t = normalize_ampm(time_str)
+
+    # Fall back to current local year if no hint is given.
+    base_year = year_hint if year_hint is not None else datetime.now(
+        LOCAL_TZ).year
+    year_for_show = infer_show_year_from_month(date_str, base_year)
+
     try:
-        return datetime.strptime(f"{date_str} {year_hint} {t}", "%a %b %d %Y %I:%M %p")
+        # Example format: 'Fri Nov 08 2025 7:00 PM'
+        return datetime.strptime(
+            f"{date_str} {year_for_show} {t}",
+            "%a %b %d %Y %I:%M %p",
+        )
     except ValueError:
-        return dtparser.parse(f"{date_str} {year_hint} {t}", dayfirst=False)
+        # Fallback to dateutil if the format changes.
+        return dtparser.parse(
+            f"{date_str} {year_for_show} {t}",
+            dayfirst=False,
+        )
 
 
 def parse_dt_rio(date_str: str, time_str: str, year_hint: int | None) -> datetime:
+    """
+    Rio examples (date_str):
+      - 'Friday January 3'
+      - 'Sunday March 15'
+
+    We use year_hint as the base year and adjust with infer_show_year_from_month.
+    """
+    # Rio times often look like '7:00pm' (no space before am/pm).
     t = normalize_ampm(time_str).replace(" ", "")
+
+    base_year = year_hint if year_hint is not None else datetime.now(
+        LOCAL_TZ).year
+    year_for_show = infer_show_year_from_month(date_str, base_year)
+
     try:
-        return datetime.strptime(f"{date_str} {year_hint} {t}", "%A %B %d %Y %I:%M%p")
+        # Example: 'Friday January 3 2026 7:00pm'
+        return datetime.strptime(
+            f"{date_str} {year_for_show} {t}",
+            "%A %B %d %Y %I:%M%p",
+        )
     except ValueError:
-        return dtparser.parse(f"{date_str} {year_hint} {t}")
+        # Fallback if Rio changes the text format.
+        return dtparser.parse(
+            f"{date_str} {year_for_show} {t}",
+            dayfirst=False,
+        )
 
 
 # =========================
