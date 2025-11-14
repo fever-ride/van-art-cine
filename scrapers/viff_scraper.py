@@ -6,6 +6,12 @@ from datetime import datetime
 from playwright.sync_api import sync_playwright, TimeoutError
 
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+# project_root/data/test
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "data", "test")
+
+
 def scrape_viff_listings():
 
     with sync_playwright() as p:
@@ -61,7 +67,7 @@ def scrape_viff_listings():
                     if i > 0:
                         time.sleep(random.uniform(0.3, 0.8))
 
-                    # Initialize event with all fields as null
+                    # Initialize event with all fields as null/empty
                     event = {
                         "title": None,
                         "director": None,
@@ -141,9 +147,9 @@ def scrape_viff_listings():
                     # Log what was found
                     found_fields = [f"title={event['title']}"]
                     if event.get("director"):
-                        found_fields.append(f"director")
+                        found_fields.append("director")
                     if event.get("duration"):
-                        found_fields.append(f"duration")
+                        found_fields.append("duration")
                     found_fields.append(f"{len(event['showtimes'])} showtimes")
 
                     print(f"    {i+1}/{len(cards)}: {', '.join(found_fields)}")
@@ -157,13 +163,9 @@ def scrape_viff_listings():
 
         browser.close()
 
-        os.makedirs("data", exist_ok=True)
-        with open("data/viff_listings_only.json", "w", encoding="utf-8") as f:
-            json.dump(results, f, ensure_ascii=False, indent=2)
-
         print(
             f"\nPhase 1 complete! Scraped {len(results)} events from {page_num - 1} pages")
-        print("Saved basic info to: data/viff_listings_only.json")
+        # No longer save the intermediate listings-only file.
 
         return results
 
@@ -242,11 +244,13 @@ def scrape_viff_complete():
 
         complete_events = scrape_viff_details(events)
 
-        os.makedirs("data", exist_ok=True)
+        # Save only one final JSON under database/scripts/test
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"viff_screenings_{timestamp}.json"
+        output_path = os.path.join(OUTPUT_DIR, filename)
 
-        timestamped_filename = f"data/viff_screenings_{timestamp}.json"
-        with open(timestamped_filename, "w", encoding="utf-8") as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(complete_events, f, ensure_ascii=False, indent=2)
 
         events_with_director = len(
@@ -267,7 +271,7 @@ def scrape_viff_complete():
         print(f"Events with duration: {events_with_duration}")
         print(f"Events with detail URL: {events_with_url}")
         print(f"Total showtimes: {total_showtimes}")
-        print(f"Saved to: {timestamped_filename}")
+        print(f"Saved to: {output_path}")
 
         return complete_events
 

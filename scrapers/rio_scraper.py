@@ -7,6 +7,12 @@ from datetime import datetime
 from playwright.sync_api import sync_playwright, TimeoutError
 
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+# project_root/data/test
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "data", "test")
+
+
 def scrape_rio_listings():
     url = "https://riotheatre.ca/calendar/"
 
@@ -116,14 +122,10 @@ def scrape_rio_listings():
         results = list(unique_events.values())
         browser.close()
 
-        os.makedirs("data", exist_ok=True)
-        with open("data/rio_listings_only.json", "w", encoding="utf-8") as f:
-            json.dump(results, f, ensure_ascii=False, indent=2)
-
         print(f"\n✓ Phase 1 complete")
         print(f"Unique events found: {len(results)}")
         print(f"Total showtimes: {total_showtimes}")
-        print("Saved basic listings to: data/rio_listings_only.json")
+        # no longer save the intermediate file.
 
         return results
 
@@ -288,14 +290,12 @@ def scrape_rio_complete():
 
         complete_events = scrape_rio_details_by_clicking(events)
 
-        os.makedirs("data", exist_ok=True)
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"rio_screenings_{timestamp}.json"
+        output_path = os.path.join(OUTPUT_DIR, filename)
 
-        timestamped_filename = f"data/rio_screenings_{timestamp}.json"
-        with open(timestamped_filename, "w", encoding="utf-8") as f:
-            json.dump(complete_events, f, ensure_ascii=False, indent=2)
-
-        with open("data/rio_screenings.json", "w", encoding="utf-8") as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(complete_events, f, ensure_ascii=False, indent=2)
 
         events_with_director = len(
@@ -316,8 +316,7 @@ def scrape_rio_complete():
         print(f"Events with duration: {events_with_duration}")
         print(f"Events with detail URL: {events_with_url}")
         print(f"Total showtimes: {total_showtimes}")
-        print(f"Saved to: {timestamped_filename}")
-        print(f"Also saved to: data/rio_screenings.json")
+        print(f"Saved to: {output_path}")
 
         return complete_events
 

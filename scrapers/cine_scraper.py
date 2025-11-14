@@ -7,6 +7,12 @@ from datetime import datetime
 from playwright.sync_api import sync_playwright, TimeoutError
 
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+# project_root/data/test
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "data", "test")
+
+
 def scrape_cinematheque_listings():
     """Phase 1: Scrape all basic info from calendar page"""
     url = "https://thecinematheque.ca/films/calendar"
@@ -137,14 +143,10 @@ def scrape_cinematheque_listings():
         results = list(unique_events.values())
         browser.close()
 
-        os.makedirs("data", exist_ok=True)
-        with open("data/cinematheque_listings_only.json", "w", encoding="utf-8") as f:
-            json.dump(results, f, ensure_ascii=False, indent=2)
-
         print(f"\n✓ Phase 1 complete!")
         print(f"Unique events found: {len(results)}")
         print(f"Total showtimes: {total_showtimes}")
-        print("Saved basic listings to: data/cinematheque_listings_only.json")
+        # no longer save the intermediate file.
 
         return results
 
@@ -246,11 +248,13 @@ def scrape_cinematheque_complete():
 
         complete_events = scrape_cinematheque_details(events)
 
-        os.makedirs("data", exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-        timestamped_filename = f"data/cinematheque_screenings_{timestamp}.json"
-        with open(timestamped_filename, "w", encoding="utf-8") as f:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"cinematheque_screenings_{timestamp}.json"
+        output_path = os.path.join(OUTPUT_DIR, filename)
+
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(complete_events, f, ensure_ascii=False, indent=2)
 
         events_with_director = len(
@@ -268,7 +272,7 @@ def scrape_cinematheque_complete():
         print(f"Events with year: {events_with_year}")
         print(f"Events with duration: {events_with_duration}")
         print(f"Total showtimes: {total_showtimes}")
-        print(f"Saved to: {timestamped_filename}")
+        print(f"Saved to: {output_path}")
 
         return complete_events
 
