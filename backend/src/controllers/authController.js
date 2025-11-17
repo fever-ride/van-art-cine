@@ -1,4 +1,5 @@
 import * as svc from '../services/authService.js';
+import { AuthError } from '../utils/errors.js';
 import {
   accessCookieOptions,
   refreshCookieOptions,
@@ -23,21 +24,34 @@ export async function registerHandler(req, res, next) {
 }
 
 export async function loginHandler(req, res, next) {
-	try {
-		const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
     const userAgent = req.get('user-agent') || null;
     const ip = req.ip || req.connection?.remoteAddress || null;
-		const { user, accessToken, refreshToken, refreshExpiresAt } = 
-			await svc.login({ email, password, userAgent, ip });
-		res.cookie('access_token', accessToken, accessCookieOptions);
-		res.cookie('refresh_token', refreshToken, refreshCookieOptions);
-		return res.status(200).json({
-			user,
-			message: 'Log in successfully',
-		});
-	} catch (err) {
-		return next(err);
-	}
+
+    const { user, accessToken, refreshToken, refreshExpiresAt } =
+      await svc.login({ email, password, userAgent, ip });
+
+    res.cookie('access_token', accessToken, accessCookieOptions);
+    res.cookie('refresh_token', refreshToken, refreshCookieOptions);
+
+    return res.status(200).json({
+      user,
+      message: 'Log in successfully',
+    });
+  } catch (err) {
+    if (err instanceof AuthError) {
+      // Normalize anything credential-related to one public error
+      if (err.code === 'EMAIL_NOT_EXIST' || err.code === 'BAD_CREDENTIALS') {
+        return res.status(401).json({
+          error: 'INVALID_CREDENTIALS',
+          message: 'Incorrect email or password.',
+        });
+      }
+    }
+
+    return next(err);
+  }
 }
 
 export async function refreshHandler(req, res, next) {

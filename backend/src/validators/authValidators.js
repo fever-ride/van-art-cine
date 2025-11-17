@@ -2,7 +2,7 @@
 // Usage example (in routes/auth.js):
 //   router.post('/register', registerValidator, handleValidationErrors, ctrl.register)
 
-import { body, cookie, oneOf, validationResult } from 'express-validator';
+import { body, cookie, oneOf } from 'express-validator';
 
 /** Shared rules */
 const emailRule = body('email')
