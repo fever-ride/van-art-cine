@@ -43,9 +43,45 @@ export async function apiLogin(body: { email: string; password: string }) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`Login failed: ${res.status}`);
 
-  const data = await res.json(); // { user, message }
+  if (!res.ok) {
+    let errorCode: string | undefined;
+    let backendMessage: string | undefined;
+
+    try {
+      const data = await res.json();
+      if (data && typeof data.error === 'string') {
+        errorCode = data.error;
+      }
+      if (data && typeof data.message === 'string') {
+        backendMessage = data.message;
+      }
+    } catch {
+      // ignore parse errors
+    }
+
+    // Default user-facing message
+    let friendly = 'Login failed. Let’s try that scene again.';
+
+    // Map known error codes / statuses
+    if (errorCode === 'INVALID_CREDENTIALS') {
+      friendly = 'Incorrect email or password. Please check and try again.';
+    } else if (errorCode === 'VALIDATION_ERROR') {
+      friendly = 'Your email or password format is invalid. Please check and try again.';
+    } else if (res.status >= 500) {
+      friendly = 'We’re experiencing a technical issue. Please try again shortly.';
+    }
+
+    // If backend gives a nice message and we don't have a dedicated mapping,
+    // we can fall back to that:
+    if (!errorCode && backendMessage) {
+      friendly = backendMessage;
+    }
+
+    throw new Error(friendly);
+  }
+
+  const data = await res.json(); // { user, message? }
   await mergeGuestAfterAuth();
   return data;
 }

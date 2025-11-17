@@ -8,8 +8,8 @@ import ResultsTable from '@/components/screenings/ResultsTable';
 import Pagination from '@/components/screenings/Pagination';
 import { useScreeningsUI } from '@/lib/hooks/useScreeningsUI';
 import { useScreeningsData } from '@/lib/hooks/useScreeningsData';
-import { usePagination } from '@/lib/hooks/usePagination';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 const noto = Noto_Sans({
   subsets: ['latin'],
@@ -17,22 +17,40 @@ const noto = Noto_Sans({
 });
 
 export default function Home() {
-  const screeningsUI   = useScreeningsUI();
-  const pagination     = usePagination(screeningsUI.ui.limit);
-  const screeningsData = useScreeningsData(screeningsUI.ui, pagination.offset);
-  const watchlist      = useWatchlist();
+  const screeningsUI = useScreeningsUI();
+  const watchlist    = useWatchlist();
 
-  const fmt = useMemo(
-    () =>
-      new Intl.DateTimeFormat(undefined, {
-        weekday: 'short', month: 'short', day: 'numeric',
-        hour: '2-digit', minute: '2-digit', hour12: true,
-      }),
-    []
-  );
+  const searchParams = useSearchParams();
+  const router       = useRouter();
+  const pathname     = usePathname();
+
+  const rawPage = searchParams.get('page');
+  let page = Number(rawPage);
+  if (!Number.isFinite(page) || page < 1) page = 1;
+
+  const limit  = screeningsUI.ui.limit;
+  const offset = (page - 1) * limit;
+
+  const screeningsData = useScreeningsData(screeningsUI.ui, offset);
+
+  const goToPage = (nextPage: number) => {
+    if (nextPage < 1) nextPage = 1;
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextPage === 1) {
+      params.delete('page');
+    } else {
+      params.set('page', String(nextPage));
+    }
+
+    const qs = params.toString();
+    const url = qs ? `${pathname}?${qs}` : pathname;
+
+    router.push(url);
+  };
 
   const handleApplyFilters = () => {
-    pagination.resetPagination();
+    goToPage(1);
     screeningsData.reload(0);
   };
 
@@ -48,8 +66,11 @@ export default function Home() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [screeningsData.items]);
 
-  // quick facts
   const cinemaCount = cinemaOptions.length;
+  
+  const disablePrev = page <= 1 || screeningsData.loading;
+  const disableNext = !screeningsData.hasMore || screeningsData.loading;
+
 
   return (
     <main className={`${noto.className} mx-auto max-w-[1400px] px-4 py-8`}>
@@ -113,7 +134,6 @@ export default function Home() {
             <div className="overflow-x-auto rounded-xl border border-border bg-white shadow-sm">
               <ResultsTable
                 items={screeningsData.items}
-                fmt={fmt}
                 savedIds={watchlist.savedIds}
                 onSavedChange={watchlist.handleSavedChange}
               />
@@ -122,10 +142,14 @@ export default function Home() {
 
           <Pagination
             className="mt-4"
-            onPrev={pagination.prevPage}
-            onNext={pagination.nextPage}
-            disablePrev={!pagination.canGoPrev || screeningsData.loading}
-            disableNext={!screeningsData.hasMore || screeningsData.loading}
+            onPrev={() => {
+              if (!disablePrev) goToPage(page - 1);
+            }}
+            onNext={() => {
+              if (!disableNext) goToPage(page + 1);
+            }}
+            disablePrev={disablePrev}
+            disableNext={disableNext}
           />
         </section>
       </div>

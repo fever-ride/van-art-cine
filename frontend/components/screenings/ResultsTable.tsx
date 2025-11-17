@@ -7,12 +7,11 @@ import WatchlistButton from '@/components/watchlist/WatchlistButton';
 
 type Props = {
   readonly items: Screening[];
-  readonly fmt: Intl.DateTimeFormat;
   readonly savedIds?: Set<number>;
   readonly onSavedChange?: (screeningId: number, saved: boolean) => void;
 };
 
-export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Props) {
+export default function ResultsTable({ items, savedIds, onSavedChange }: Props) {
   const [open, setOpen] = useState<Set<number>>(new Set());
   const toggle = (id: number) =>
     setOpen(prev => {
@@ -64,16 +63,28 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
         {items.map((s) => {
           const isOpen = open.has(s.id);
           const dt = new Date(s.start_at_utc);
-          const whenFull = fmt.format(dt);
+
           const dateStr = new Intl.DateTimeFormat('en-US', {
             month: 'short',
             day: 'numeric',
-            weekday: 'short'
+            weekday: 'short',
+            timeZone: 'America/Vancouver'
           }).format(dt);
           const timeStr = new Intl.DateTimeFormat('en-US', {
             hour: 'numeric',
             minute: '2-digit',
-            hour12: true
+            hour12: true,
+            timeZone: 'America/Vancouver'
+          }).format(dt);
+
+          const startsFull = new Intl.DateTimeFormat('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'America/Vancouver',
           }).format(dt);
 
           const year = s.year ? ` (${s.year})` : '';
@@ -184,14 +195,22 @@ export default function ResultsTable({ items, fmt, savedIds, onSavedChange }: Pr
                           <div className="grid gap-2 text-[13px]">
                             <div className="flex gap-3">
                               <span className="w-16 shrink-0 text-gray-500">Starts</span>
-                              <span className="text-gray-900">{whenFull}</span>
+                              <span className="text-gray-900">{startsFull}</span>
                             </div>
 
                             {s.end_at_utc && (
                               <div className="flex gap-3">
                                 <span className="w-16 shrink-0 text-gray-500">Ends</span>
                                 <span className="text-gray-900">
-                                  {fmt.format(new Date(s.end_at_utc))}
+                                  {new Intl.DateTimeFormat('en-US', {
+                                    weekday: 'short',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    hour12: true,
+                                    timeZone: 'America/Vancouver',
+                                  }).format(new Date(s.end_at_utc))}
                                 </span>
                               </div>
                             )}
