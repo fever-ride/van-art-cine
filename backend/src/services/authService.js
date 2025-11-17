@@ -9,44 +9,52 @@ import { hashPassword, verifyPassword } from '../utils/password.js';
 import { signAccess, signRefresh, verifyRefresh } from '../utils/jwt.js';
 import jwt from 'jsonwebtoken';
 import { AuthError } from '../utils/errors.js';
-	
 
-export async function register({ email, password, name }) {
-	const normalizedEmail = email.trim().toLowerCase();
-	// check duplicate
-	const existing = await findByEmail(normalizedEmail);
-	if (existing) {
-		throw new AuthError('Email already registered', 'EMAIL_TAKEN', 409);
-	}
-	// hash password
-	const passwordHash = await hashPassword(password);
-	// Fallback name if not provided
-	const finalName = name?.trim() || 'User';
-	// create user
-	const user = await createUser({ 
-		email: normalizedEmail, 
-		passwordHash: passwordHash, 
-		name: finalName, 
-		role: 'user' })
-		// issue tokens
-		const accessToken = signAccess(user);
-		const refreshToken = signRefresh(user);
-		
-		// persist refresh
-		const decoded = jwt.decode(refreshToken);
-		const refreshExpiresAt = decoded?.exp ? new Date(decoded.exp * 1000) : null;
-		if (refreshExpiresAt) {
-			await storeRefreshToken({
-				userId: user.uid,
-				token: refreshToken,
-				expiresAt: refreshExpiresAt,
-				userAgent: null,
-				ip: null,
-			});
-		}
-		// return safe user + token expiry (Date | null)
-		return { user, accessToken, refreshToken, refreshExpiresAt };
-	}
+
+export async function register({ email, password, name, userAgent, ip }) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // Check duplicate
+  const existing = await findByEmail(normalizedEmail);
+  if (existing) {
+    throw new AuthError('Email already registered', 'EMAIL_TAKEN', 409);
+  }
+
+  // Hash password
+  const passwordHash = await hashPassword(password);
+
+  // Fallback name if not provided
+  const finalName = name?.trim() || 'User';
+
+  // Create user
+  const user = await createUser({
+    email: normalizedEmail,
+    passwordHash,
+    name: finalName,
+    role: 'user',
+  });
+
+  const accessToken = signAccess(user);
+  const refreshToken = signRefresh(user);
+
+  // Persist refresh token (with UA/IP like login)
+  const decoded = jwt.decode(refreshToken);
+  const refreshExpiresAt = decoded?.exp ? new Date(decoded.exp * 1000) : null;
+
+  if (refreshExpiresAt) {
+    await storeRefreshToken({
+      userId: user.uid,
+      token: refreshToken,
+      expiresAt: refreshExpiresAt,
+      userAgent: userAgent ?? null,
+      ip: ip ?? null,
+    });
+  }
+
+  const { password_hash, ...safeUser } = user;
+
+  return { user: safeUser, accessToken, refreshToken, refreshExpiresAt };
+}
 	
 export async function login({ email, password, userAgent, ip }) {
 	// lookup user

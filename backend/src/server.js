@@ -73,11 +73,20 @@ app.use((req, res, next) => {
 
 /* -------- Final error handler -------- */
 app.use((err, _req, res, _next) => {
-  // can add more structured logging here
   console.error(err);
+
   const status = err.status || 500;
-  const message = err.message || 'Server error';
-  res.status(status).json({ error: message });
+
+  const code =
+    err.code ||          // AuthError, custom errors
+    err.error ||         // Validation, other structured errors
+    'SERVER_ERROR';
+
+  res.status(status).json({
+    error: code,
+    message: err.message || 'Server error',
+    details: err.details || undefined,
+  });
 });
 
 /* -------- Start server -------- */

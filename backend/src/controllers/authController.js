@@ -6,21 +6,34 @@ import {
   clearCookieOptions,
 } from '../utils/jwt.js';
 
-/** POST /api/auth/register */
+
 export async function registerHandler(req, res, next) {
-	try {
-		const { email, password, name } = req.body;
-		const { user, accessToken, refreshToken, refreshExpiresAt } = 
-			await svc.register({ email, password, name });
-		res.cookie('access_token', accessToken, accessCookieOptions);
-		res.cookie('refresh_token', refreshToken, refreshCookieOptions);
-		return res.status(201).json({
-			user,
-			message: 'Registered successfully',
-		});
-	} catch (err) {
-		return next(err);
-	}
+  try {
+    const { email, password, name } = req.body;
+
+    const userAgent = req.get('user-agent') || null;
+    const ip = req.ip || req.connection?.remoteAddress || null;
+
+    const result = await svc.register({
+      email,
+      password,
+      name,
+      userAgent,
+      ip,
+    });
+
+    const { user, accessToken, refreshToken } = result;
+
+    res.cookie('access_token', accessToken, accessCookieOptions);
+    res.cookie('refresh_token', refreshToken, refreshCookieOptions);
+
+    return res.status(201).json({
+      user,
+      message: 'Registered successfully',
+    });
+  } catch (err) {
+    next(err);
+  }
 }
 
 export async function loginHandler(req, res, next) {
