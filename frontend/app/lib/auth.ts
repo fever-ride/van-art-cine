@@ -29,7 +29,40 @@ export async function apiRegister(body: { email: string; password: string; name?
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`Register failed: ${res.status}`);
+
+  if (!res.ok) {
+    let errorCode: string | undefined;
+    let backendMessage: string | undefined;
+
+    try {
+      const data = await res.json();
+      if (data && typeof data.error === 'string') {
+        errorCode = data.error;
+      }
+      if (data && typeof data.message === 'string') {
+        backendMessage = data.message;
+      }
+    } catch {
+      // ignore parse errors
+    }
+
+    // Default friendly message
+    let friendly = 'Registration failed. Please try again.';
+
+    if (errorCode === 'EMAIL_TAKEN') {
+      friendly = 'This email is already registered.';
+    } else if (errorCode === 'VALIDATION_ERROR') {
+      friendly = 'Your email or password format is invalid. Please check and try again.';
+    } else if (res.status >= 500) {
+      friendly = 'We’re experiencing a technical issue. Please try again shortly.';
+    }
+
+    if (!errorCode && backendMessage) {
+      friendly = backendMessage;
+    }
+
+    throw new Error(friendly);
+  }
 
   const data = await res.json(); // { user, message }
   await mergeGuestAfterAuth();

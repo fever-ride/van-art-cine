@@ -37,7 +37,7 @@ export default function RegisterPage() {
       } else if (typeof err === 'string') {
         setErr(err);
       } else {
-        setErr('Registration failed');
+        setErr('Registration failed. Please try again.');
       }
     } finally {
       setLoading(false);
