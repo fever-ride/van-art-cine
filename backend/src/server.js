@@ -46,6 +46,9 @@ app.use(cors({
 app.use(express.json());
 app.use(morgan('dev'));
 
+/* -------- Ping -------- */
+app.get('/ping', (_req, res) => res.json({ "message": "pong" }))
+
 /* -------- Health -------- */
 app.get('/health', (_req, res) => res.json({ ok: true }));
 

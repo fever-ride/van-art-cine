@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  /// relationMode = "prisma"
+  // relationMode = "prisma"
 }
 
 model app_user {
@@ -32,7 +32,6 @@ model cinema {
   stg_screening stg_screening[]
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model custom_event {
   id         BigInt    @id @default(autoincrement()) @db.BigInt
   user_uid   BigInt    @db.BigInt
@@ -44,7 +43,6 @@ model custom_event {
   @@index([user_uid])
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model film {
   id               Int             @id @default(autoincrement())
   title            String          @db.VarChar(255)
@@ -138,7 +136,6 @@ model refresh_token {
   @@index([user_id])
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model screening {
   id                  Int                   @id @default(autoincrement())
   film_id             Int
@@ -174,8 +171,7 @@ model screening {
   @@index([start_at_utc])
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// Staging now has a proper PK
+// Staging now has a proper PK
 model stg_screening {
   film_id       Int
   cinema_id     Int
@@ -204,7 +200,7 @@ model stg_screening {
   @@index([source, source_uid])
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+// This table is not used in current version.
 model user_schedule {
   id            BigInt    @id @default(autoincrement()) @db.BigInt
   user_uid      BigInt    @db.BigInt
