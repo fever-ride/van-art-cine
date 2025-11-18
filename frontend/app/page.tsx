@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, Suspense } from 'react';
 import { Noto_Sans } from 'next/font/google';
 
 import Filters from '@/components/screenings/Filters';
@@ -16,7 +16,7 @@ const noto = Noto_Sans({
   display: 'swap',
 });
 
-export default function Home() {
+function ScreeningsPageInner() {
   const screeningsUI = useScreeningsUI();
   const watchlist    = useWatchlist();
 
@@ -70,7 +70,6 @@ export default function Home() {
   
   const disablePrev = page <= 1 || screeningsData.loading;
   const disableNext = !screeningsData.hasMore || screeningsData.loading;
-
 
   return (
     <main className={`${noto.className} mx-auto max-w-[1400px] px-4 py-8`}>
@@ -154,5 +153,19 @@ export default function Home() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <main className={`${noto.className} mx-auto max-w-[1400px] px-4 py-8`}>
+          <p className="text-sm text-muted">Loading…</p>
+        </main>
+      }
+    >
+      <ScreeningsPageInner />
+    </Suspense>
   );
 }
