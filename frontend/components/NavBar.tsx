@@ -76,13 +76,13 @@ export default function NavBar() {
               <>
                 <Link
                   href="/auth/login"
-                  className="rounded-[12px] border-[1.5px] border-[#D9D6CD] bg-surface px-3 py-1.5 text-sm font-semibold text-[#2B2B2B] hover:bg-[#F4F8FB]"
+                  className="rounded-[12px] border-[1.5px] border-border bg-surface px-3 py-1.5 text-sm font-semibold text-primary hover:bg-[#F4F8FB]"
                 >
                   Log in
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="rounded-[12px] bg-[#5C8EA7] px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-[#4A7A93]"
+                  className="rounded-[12px] bg-accent px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-[#4A7A93]"
                 >
                   Register
                 </Link>
@@ -90,7 +90,7 @@ export default function NavBar() {
             ) : (
               <button
                 onClick={handleLogout}
-                className="rounded-[12px] border-[1.5px] border-[#D9D6CD] bg-surface px-3.5 py-1.5 text-sm font-semibold text-[#2B2B2B] hover:bg-[#F4F8FB]"
+                className="rounded-[12px] border-[1.5px] border-border bg-surface px-3.5 py-1.5 text-sm font-semibold text-[#2B2B2B] hover:bg-[#F4F8FB]"
               >
                 Logout
               </button>

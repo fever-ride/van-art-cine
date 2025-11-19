@@ -115,7 +115,7 @@ export default function WatchlistButton({
         pending ? 'opacity-60 cursor-not-allowed' : '',
         saved
           ? 'border border-dashed border-slate-300 text-slate-500 bg-slate-50 hover:bg-slate-100'
-          : 'bg-[#6d8fa6] text-white hover:bg-[#5b7c93]',
+          : 'bg-accent text-surface hover:bg-[#5b7c93]',
         className,
       ].join(' ')}
     >

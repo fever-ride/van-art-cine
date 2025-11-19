@@ -249,7 +249,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
 
                               {typeof s.rt_rating_pct === 'number' && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-900 ring-1 ring-gray-200">
-                                  RT · {s.rt_rating_pct}%
+                                  Rotten Tomatoes · {s.rt_rating_pct}%
                                 </span>
                               )}
                             </div>
@@ -262,7 +262,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-[#5C8EA7] transition-colors hover:bg-white/80"
                                 >
-                                  Official / Source
+                                  View film on cinema site
                                 </a>
                               )}
                               {s.imdb_url && (
@@ -272,7 +272,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-[#5C8EA7] transition-colors hover:bg-white/80"
                                 >
-                                  IMDb
+                                  View film on IMDb
                                 </a>
                               )}
                             </div>
