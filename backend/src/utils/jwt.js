@@ -10,16 +10,21 @@ const {
 } = process.env;
 
 /**
- * Sign short-lived Access Token
+ * Issues a short-lived Access JWT.
+ *
+ * Claims contract:
+ * - uid   : user id
+ * - role  : user role
  */
 export function signAccess(user) {
   return jwt.sign(
-    {
-      uid: user.uid,
-      role: user.role,
-    },
+    { uid: user.uid, 
+      role: user.role },
     JWT_ACCESS_SECRET,
-    { expiresIn: ACCESS_TTL }
+    { expiresIn: ACCESS_TTL, 
+      issuer: 'cinephilesvan', 
+      subject: String(user.uid), 
+      audience: 'web' }
   );
 }
 
