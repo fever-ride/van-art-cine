@@ -1,0 +1,602 @@
+[
+  {
+    "title": "The Gold Rush",
+    "director": "Charles Chaplin",
+    "duration": "88 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/gold-rush",
+    "year": "1925",
+    "showtimes": [
+      {
+        "date": "2025-September-21",
+        "time": "10:30 am",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Ikiru",
+    "director": "Kurosawa Akira",
+    "duration": "143 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/ikiru",
+    "year": "1952",
+    "showtimes": [
+      {
+        "date": "2025-September-21",
+        "time": "1:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-September-25",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-13",
+        "time": "3:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Hard Boiled",
+    "director": "John Woo",
+    "duration": "128 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/hard-boiled",
+    "year": "1992",
+    "showtimes": [
+      {
+        "date": "2025-September-21",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-September-22",
+        "time": "8:50 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-September-27",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-September-28",
+        "time": "8:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "The Friends",
+    "director": "Somai Shinji",
+    "duration": "113 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/friends",
+    "year": "1994",
+    "showtimes": [
+      {
+        "date": "2025-September-21",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-01",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Throne of Blood",
+    "director": "Kurosawa Akira",
+    "duration": "109 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/throne-blood",
+    "year": "1957",
+    "showtimes": [
+      {
+        "date": "2025-September-22",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-September-26",
+        "time": "9:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Perfumed Nightmare",
+    "director": "Kidlat Tahimik",
+    "duration": "94 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/perfumed-nightmare",
+    "year": "1977",
+    "showtimes": [
+      {
+        "date": "2025-September-23",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Tea Creek",
+    "director": "Ryan Dickie",
+    "duration": "74 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/tea-creek",
+    "year": "2024",
+    "showtimes": [
+      {
+        "date": "2025-September-24",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Linda Linda Linda",
+    "director": "Yamashita Nobuhiro",
+    "duration": "114 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/linda-linda-linda",
+    "year": "2005",
+    "showtimes": [
+      {
+        "date": "2025-September-26",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-September-27",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-September-28",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-01",
+        "time": "8:50 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "88:88",
+    "director": "Isiah Medina",
+    "duration": "65 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/8888",
+    "year": "2015",
+    "showtimes": [
+      {
+        "date": "2025-September-29",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "VIFF 2025: Vancouver International Film Festival",
+    "director": "No director found",
+    "duration": "No duration found",
+    "detail_url": "https://viff.org/festival/viff-2025/",
+    "year": "No year found",
+    "showtimes": [
+      {
+        "date": "2025-October-02",
+        "time": "No time",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-03",
+        "time": "No time",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-04",
+        "time": "No time",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-05",
+        "time": "No time",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-06",
+        "time": "No time",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-07",
+        "time": "No time",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-08",
+        "time": "No time",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-09",
+        "time": "No time",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-10",
+        "time": "No time",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-11",
+        "time": "No time",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-12",
+        "time": "No time",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Yojimbo",
+    "director": "Kurosawa Akira",
+    "duration": "110 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/yojimbo",
+    "year": "1961",
+    "showtimes": [
+      {
+        "date": "2025-October-13",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-19",
+        "time": "8:50 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-29",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-November-02",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Sanjuro",
+    "director": "Kurosawa Akira",
+    "duration": "95 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/sanjuro",
+    "year": "1962",
+    "showtimes": [
+      {
+        "date": "2025-October-13",
+        "time": "8:20 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-21",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-27",
+        "time": "8:50 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-November-02",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Stories to Share: Respecting the Spirit",
+    "director": "",
+    "duration": "78 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/ozigwan-nxaxaitk-northlore",
+    "year": "",
+    "showtimes": [
+      {
+        "date": "2025-October-15",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Joonam",
+    "director": "Sierra Urich",
+    "duration": "100 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/joonam",
+    "year": "2023",
+    "showtimes": [
+      {
+        "date": "2025-October-16",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "SFMF Series 1",
+    "director": "",
+    "duration": "112 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/sfmf-series-1",
+    "year": "",
+    "showtimes": [
+      {
+        "date": "2025-October-17",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "SFMF Series 2",
+    "director": "",
+    "duration": "88 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/sfmf-series-2",
+    "year": "",
+    "showtimes": [
+      {
+        "date": "2025-October-18",
+        "time": "11:00 am",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "SFMF Series 3",
+    "director": "",
+    "duration": "65 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/sfmf-series-3",
+    "year": "",
+    "showtimes": [
+      {
+        "date": "2025-October-18",
+        "time": "2:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "The Proposal",
+    "director": "Jill Magid",
+    "duration": "83 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/proposal",
+    "year": "2018",
+    "showtimes": [
+      {
+        "date": "2025-October-18",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "A Chinese Ghost Story",
+    "director": "Ching Siu-tung",
+    "duration": "96 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/chinese-ghost-story",
+    "year": "1987",
+    "showtimes": [
+      {
+        "date": "2025-October-18",
+        "time": "9:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-21",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-26",
+        "time": "4:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-30",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Bride of Frankenstein",
+    "director": "James Whale",
+    "duration": "75 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/bride-frankenstein",
+    "year": "1935",
+    "showtimes": [
+      {
+        "date": "2025-October-19",
+        "time": "10:30 am",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Red Beard",
+    "director": "Kurosawa Akira",
+    "duration": "185 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/red-beard",
+    "year": "1965",
+    "showtimes": [
+      {
+        "date": "2025-October-19",
+        "time": "1:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-24",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-November-01",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "The Hidden Fortress",
+    "director": "Kurosawa Akira",
+    "duration": "139 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/hidden-fortress",
+    "year": "1958",
+    "showtimes": [
+      {
+        "date": "2025-October-19",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-25",
+        "time": "8:20 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-27",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-30",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "World as Tripod",
+    "director": "",
+    "duration": "90 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/world-tripod",
+    "year": "",
+    "showtimes": [
+      {
+        "date": "2025-October-20",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Fremont",
+    "director": "Babak Jalali",
+    "duration": "91 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/fremont",
+    "year": "2023",
+    "showtimes": [
+      {
+        "date": "2025-October-22",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "The Eve of Ivan Kupalo",
+    "director": "Yurii Illienko",
+    "duration": "71 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/eve-ivan-kupalo",
+    "year": "1968",
+    "showtimes": [
+      {
+        "date": "2025-October-23",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-29",
+        "time": "8:50 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "The Lost Letter",
+    "director": "Borys Ivchenko",
+    "duration": "79 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/lost-letter",
+    "year": "1972",
+    "showtimes": [
+      {
+        "date": "2025-October-23",
+        "time": "8:20 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-October-25",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "A Chinese Ghost Story II",
+    "director": "Ching Siu-tung",
+    "duration": "103 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/chinese-ghost-story-ii",
+    "year": "1990",
+    "showtimes": [
+      {
+        "date": "2025-October-26",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "A Chinese Ghost Story III",
+    "director": "Ching Siu-tung",
+    "duration": "109 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/chinese-ghost-story-iii",
+    "year": "1991",
+    "showtimes": [
+      {
+        "date": "2025-October-26",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "13-Hour Horror Movie Marathon",
+    "director": "",
+    "duration": "780 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/13-hour-horror-movie-marathon",
+    "year": "",
+    "showtimes": [
+      {
+        "date": "2025-October-31",
+        "time": "8:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Laura Taler: the village trilogy + Matryoshka Crush",
+    "director": "",
+    "duration": "69 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/laura-taler",
+    "year": "",
+    "showtimes": [
+      {
+        "date": "2025-November-10",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  }
+]

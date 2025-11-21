@@ -1,0 +1,855 @@
+[
+  {
+    "title": "The Saturday Morning All-You-Can-Eat Cereal Halloween Party",
+    "showtimes": [
+      {
+        "date": "Sunday October 26",
+        "time": "10:00 a.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/46963/"
+  },
+  {
+    "title": "The Rocky Horror Picture Show (50th Anniversary!)",
+    "showtimes": [
+      {
+        "date": "Sunday October 26",
+        "time": "2:00 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Sunday October 26",
+        "time": "10:45 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Tuesday October 28",
+        "time": "11:15 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Wednesday October 29",
+        "time": "11:45 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Thursday October 30",
+        "time": "11:55 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Friday October 31",
+        "time": "8:15 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Friday October 31",
+        "time": "11:55 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Saturday November 1",
+        "time": "1:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Sunday November 2",
+        "time": "9:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/the-rocky-horror-picture-show-3/",
+    "year": "1975",
+    "duration": "100 mins",
+    "director": "Jim Sharman"
+  },
+  {
+    "title": "Don’t Look Now (Hosted by Osgood Perkins)",
+    "showtimes": [
+      {
+        "date": "Sunday October 26",
+        "time": "5:45 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/dont-look-now-hosted-by-osgoode-perkins/",
+    "year": "1973",
+    "duration": "110 mins",
+    "director": "Nicolas Roeg"
+  },
+  {
+    "title": "Good Boy",
+    "showtimes": [
+      {
+        "date": "Sunday October 26",
+        "time": "8:45 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Tuesday October 28",
+        "time": "6:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Sunday November 2",
+        "time": "6:45 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Saturday November 8",
+        "time": "12:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/good-boy/",
+    "year": "2025",
+    "duration": "73 mins",
+    "director": "Ben Leonberg"
+  },
+  {
+    "title": "The VVitch",
+    "showtimes": [
+      {
+        "date": "Monday October 27",
+        "time": "6:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/the-witch/",
+    "year": "2016",
+    "duration": "92 mins",
+    "director": "Robert Eggers"
+  },
+  {
+    "title": "Brian de Palma’s ‘Carrie’ (Hosted by Mike Flanagan and SPECIAL GUESTS!)",
+    "showtimes": [
+      {
+        "date": "Monday October 27",
+        "time": "8:15 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Monday October 27",
+        "time": "10:45 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/carrie/",
+    "year": "1976",
+    "duration": "98 mins",
+    "director": "Brian De Palma"
+  },
+  {
+    "title": "Slither (Hosted by Todd Masters!)",
+    "showtimes": [
+      {
+        "date": "Tuesday October 28",
+        "time": "8:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/slither/",
+    "year": "2006",
+    "duration": "95 mins",
+    "director": "James Gunn"
+  },
+  {
+    "title": "Clue (40th Anniversary Restoration)",
+    "showtimes": [
+      {
+        "date": "Wednesday October 29",
+        "time": "6:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/clue/",
+    "year": "1985",
+    "duration": "94 mins",
+    "director": "Jonathan Lynn"
+  },
+  {
+    "title": "Jacob’s Ladder (2025 Restoration)",
+    "showtimes": [
+      {
+        "date": "Wednesday October 29",
+        "time": "8:45 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/jacobs-ladder-2025-restoration/",
+    "year": "1990",
+    "duration": "113 mins",
+    "director": "Adrian Lyne"
+  },
+  {
+    "title": "Beetlejuice",
+    "showtimes": [
+      {
+        "date": "Thursday October 30",
+        "time": "6:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/beetlejuice/",
+    "year": "1988",
+    "duration": "92 mins",
+    "director": "Tim Burton"
+  },
+  {
+    "title": "The Exorcist",
+    "showtimes": [
+      {
+        "date": "Thursday October 30",
+        "time": "8:45 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/the-exorcist-2/",
+    "year": "1973",
+    "duration": "122 mins",
+    "director": "William Friedkin"
+  },
+  {
+    "title": "Halloween",
+    "showtimes": [
+      {
+        "date": "Friday October 31",
+        "time": "5:20 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/halloween/",
+    "year": "1978",
+    "duration": "91 mins",
+    "director": "John Carpenter"
+  },
+  {
+    "title": "Häxan with Live Score by Tall Shadows",
+    "showtimes": [
+      {
+        "date": "Saturday November 1",
+        "time": "7:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/haxan/",
+    "year": "1929",
+    "duration": "105 mins",
+    "director": "Benjamin Christensen"
+  },
+  {
+    "title": "Guillermo del Toro’s ‘Frankenstein’",
+    "showtimes": [
+      {
+        "date": "Saturday November 1",
+        "time": "10:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Sunday November 2",
+        "time": "2:45 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Friday November 7",
+        "time": "3:00 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Saturday November 8",
+        "time": "2:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Sunday November 9",
+        "time": "9:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Tuesday November 11",
+        "time": "3:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/frankenstein-2/",
+    "duration": "150 mins"
+  },
+  {
+    "title": "Downton Abbey: The Grand Finale",
+    "showtimes": [
+      {
+        "date": "Sunday November 2",
+        "time": "12:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/downton-abbey-the-grand-finale/",
+    "year": "2025",
+    "duration": "123 mins",
+    "director": "Simon Curtis"
+  },
+  {
+    "title": "Lilith Fair: Building a Mystery",
+    "showtimes": [
+      {
+        "date": "Monday November 3",
+        "time": "6:20 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/lilith-fair-building-a-mystery/",
+    "duration": "99 mins"
+  },
+  {
+    "title": "Radu Jude’s ‘Dracula’",
+    "showtimes": [
+      {
+        "date": "Monday November 3",
+        "time": "8:45 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/dracula-3/",
+    "year": "2025",
+    "duration": "170 mins",
+    "director": "Radu Jude"
+  },
+  {
+    "title": "Bif Naked LIVE",
+    "showtimes": [
+      {
+        "date": "Tuesday November 4",
+        "time": "7:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/bif-naked-live-screening-qa/",
+    "duration": "107 mins"
+  },
+  {
+    "title": "Shits n Giggles: Opening Night Shitshow",
+    "showtimes": [
+      {
+        "date": "Wednesday November 5",
+        "time": "6:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Wednesday November 5",
+        "time": "8:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/shits-n-giggles-opening-night-shitshow/"
+  },
+  {
+    "title": "Maria Bamford",
+    "showtimes": [
+      {
+        "date": "Thursday November 6",
+        "time": "6:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Thursday November 6",
+        "time": "9:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/maria-bamford-live/"
+  },
+  {
+    "title": "The Motorcycle Film Festival (TMFF)",
+    "showtimes": [
+      {
+        "date": "Friday November 7",
+        "time": "6:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Friday November 7",
+        "time": "8:45 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/the-motorcycle-film-festival/"
+  },
+  {
+    "title": "Twilight",
+    "showtimes": [
+      {
+        "date": "Friday November 7",
+        "time": "11:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/twilight-2/",
+    "year": "2008",
+    "duration": "122 mins",
+    "director": "Catherine Hardwicke"
+  },
+  {
+    "title": "Shits n Giggles The Final Flush: The Best of the Fest",
+    "showtimes": [
+      {
+        "date": "Saturday November 8",
+        "time": "7:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/shits-n-giggles-the-final-flush-the-best-of-the-fest/"
+  },
+  {
+    "title": "The Smashing Machine",
+    "showtimes": [
+      {
+        "date": "Sunday November 9",
+        "time": "12:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/the-smashing-machine/",
+    "year": "2025",
+    "duration": "123 mins",
+    "director": "Benny Safdie"
+  },
+  {
+    "title": "If I Had Legs I’d Kick You",
+    "showtimes": [
+      {
+        "date": "Sunday November 9",
+        "time": "2:45 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/50496/",
+    "year": "2025",
+    "duration": "113 mins",
+    "director": "Mary Bronstein"
+  },
+  {
+    "title": "Geoffrey Asmus",
+    "showtimes": [
+      {
+        "date": "Sunday November 9",
+        "time": "6:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/geoffrey-asmus/"
+  },
+  {
+    "title": "Nataly Aukar",
+    "showtimes": [
+      {
+        "date": "Monday November 10",
+        "time": "7:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/nataly-aukar/"
+  },
+  {
+    "title": "Nirvanna the Band the Show the Movie: The Tour (With Live Filmmaker Q&A!)",
+    "showtimes": [
+      {
+        "date": "Monday November 10",
+        "time": "9:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/nirvanna-the-band-the-show-the-movie-live-filmmaker-qa/",
+    "duration": "100 mins"
+  },
+  {
+    "title": "After The Snowfall",
+    "showtimes": [
+      {
+        "date": "Tuesday November 11",
+        "time": "7:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/king-snows-the-realm/"
+  },
+  {
+    "title": "Opening Night Adventures: VIMFF 2025",
+    "showtimes": [
+      {
+        "date": "Wednesday November 12",
+        "time": "7:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/vimff-2025-2/"
+  },
+  {
+    "title": "Rock Climbing Show: VIMFF 2025",
+    "showtimes": [
+      {
+        "date": "Thursday November 13",
+        "time": "7:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/rock-climbing-show-vimff-2025/"
+  },
+  {
+    "title": "Back to the Future (40th Anniversary Screening)",
+    "showtimes": [
+      {
+        "date": "Friday November 14",
+        "time": "5:45 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/back-to-the-future-2/",
+    "year": "1985",
+    "duration": "116 mins",
+    "director": "Robert Zemeckis"
+  },
+  {
+    "title": "House (“Hausu”)",
+    "showtimes": [
+      {
+        "date": "Friday November 14",
+        "time": "11:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/house/",
+    "year": "1977",
+    "duration": "88 mins",
+    "director": "Nobuhiko Obayashi"
+  },
+  {
+    "title": "Urchin",
+    "showtimes": [
+      {
+        "date": "Saturday November 15",
+        "time": "3:10 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/urchin/",
+    "duration": "101 mins"
+  },
+  {
+    "title": "Martin Amini",
+    "showtimes": [
+      {
+        "date": "Saturday November 15",
+        "time": "6:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/martin-amini/"
+  },
+  {
+    "title": "The Twilight Saga: New Moon",
+    "showtimes": [
+      {
+        "date": "Saturday November 15",
+        "time": "11:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/the-twilight-saga-new-moon/",
+    "year": "2009",
+    "duration": "131 mins",
+    "director": "Chris Weitz"
+  },
+  {
+    "title": "Extreme Ascents: VIMFF 2025",
+    "showtimes": [
+      {
+        "date": "Sunday November 16",
+        "time": "6:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/extreme-ascents-vimff-2025/"
+  },
+  {
+    "title": "Extreme Ascents 2: VIMFF 2025",
+    "showtimes": [
+      {
+        "date": "Sunday November 16",
+        "time": "8:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/extreme-ascents-2-vimff-2025/"
+  },
+  {
+    "title": "Big Walls Climbing Show: VIMFF 2025",
+    "showtimes": [
+      {
+        "date": "Monday November 17",
+        "time": "7:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/big-walls-climbing-show-vimff-2025/"
+  },
+  {
+    "title": "Unchartered Adventures 1: VIMFF 2025",
+    "showtimes": [
+      {
+        "date": "Tuesday November 18",
+        "time": "6:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/unchartered-adventures-1-vimff-2025/"
+  },
+  {
+    "title": "Unchartered Adventures 2: VIMFF 2025",
+    "showtimes": [
+      {
+        "date": "Tuesday November 18",
+        "time": "8:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/uncharted-adventures-2-vimff-2025/"
+  },
+  {
+    "title": "HUB Cycling Presents: The Bicycle Film Festival",
+    "showtimes": [
+      {
+        "date": "Wednesday November 19",
+        "time": "6:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/hub-clycling-presents-the-bicycle-film-festival/"
+  },
+  {
+    "title": "Private Event",
+    "showtimes": [
+      {
+        "date": "Thursday November 20",
+        "time": "8:00 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Friday November 21",
+        "time": "10:00 a.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Sunday November 23",
+        "time": "6:00 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Friday November 28",
+        "time": "6:00 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Monday December 1",
+        "time": "5:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/private-event/"
+  },
+  {
+    "title": "The Rio Theatre Burlesque & Variety Show",
+    "showtimes": [
+      {
+        "date": "Friday November 21",
+        "time": "8:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/the-rio-theatre-burlesque-and-variety-show/"
+  },
+  {
+    "title": "Requiem for a Dream (25th Anniversary Restoration Screening)",
+    "showtimes": [
+      {
+        "date": "Friday November 21",
+        "time": "11:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/requiem-for-a-dream-25th-anniversary-screening/",
+    "year": "2000",
+    "duration": "102 mins",
+    "director": "Darren Aronofsky"
+  },
+  {
+    "title": "The East Van Opry XII",
+    "showtimes": [
+      {
+        "date": "Saturday November 22",
+        "time": "8:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/the-east-van-opry/"
+  },
+  {
+    "title": "Saints and Warriors (Director Q&A)",
+    "showtimes": [
+      {
+        "date": "Sunday November 23",
+        "time": "12:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/saints-and-warriors-director-qa/",
+    "duration": "97 mins"
+  },
+  {
+    "title": "BritRock 7",
+    "showtimes": [
+      {
+        "date": "Sunday November 23",
+        "time": "3:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/britrock-7/",
+    "duration": "115 mins"
+  },
+  {
+    "title": "An Evening with Travis Baldree",
+    "showtimes": [
+      {
+        "date": "Monday November 24",
+        "time": "7:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/an-evening-with-travis-baldree/"
+  },
+  {
+    "title": "Alberta Number One (Filmmakers in Attendance for Q&A!)",
+    "showtimes": [
+      {
+        "date": "Tuesday November 25",
+        "time": "6:15 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/alberta-number-one-filmmaker-in-attendance/",
+    "duration": "83 mins"
+  },
+  {
+    "title": "Deathstalker",
+    "showtimes": [
+      {
+        "date": "Tuesday November 25",
+        "time": "9:15 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/deathstalker/",
+    "year": "2025",
+    "duration": "102 mins",
+    "director": "Steven Kostanski"
+  },
+  {
+    "title": "Lunatic: The Luna Vachon Story (Filmmaker in Attendance for Q&A)",
+    "showtimes": [
+      {
+        "date": "Wednesday November 26",
+        "time": "6:15 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/lunatic-the-luna-vachon-story-filmmaker-in-attendance-for-qa/",
+    "duration": "114 mins"
+  },
+  {
+    "title": "The Royal Strays: Album Release Show",
+    "showtimes": [
+      {
+        "date": "Thursday November 27",
+        "time": "7:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/51118/"
+  },
+  {
+    "title": "Clare Voyeur presents Broadville",
+    "showtimes": [
+      {
+        "date": "Saturday November 29",
+        "time": "7:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/clare-voyeur-presents-broadville/"
+  },
+  {
+    "title": "The Mastermind",
+    "showtimes": [
+      {
+        "date": "Sunday November 30",
+        "time": "3:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/the-mastermind/",
+    "year": "2025",
+    "duration": "110 mins",
+    "director": "Kelly Reichardt"
+  },
+  {
+    "title": "Green Room (10th Anniversary Screening w / Director Q&A)",
+    "showtimes": [
+      {
+        "date": "Sunday November 30",
+        "time": "6:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/green-room/",
+    "year": "2016",
+    "duration": "95 mins",
+    "director": "Jeremy Saulnier"
+  },
+  {
+    "title": "Angel’s Egg (40th Anniversary Restoration)",
+    "showtimes": [
+      {
+        "date": "Sunday November 30",
+        "time": "9:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/movie/angels-egg-40th-anniversary-restoration/",
+    "year": "2025",
+    "duration": "73 mins",
+    "director": "Mamoru Oshii"
+  },
+  {
+    "title": "Gareth Reynolds LIVE!",
+    "showtimes": [
+      {
+        "date": "Tuesday December 2",
+        "time": "6:45 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/gareth-reynolds-live-2/"
+  },
+  {
+    "title": "The Vancouver Burlesque Co. December Student Showcase",
+    "showtimes": [
+      {
+        "date": "Saturday December 6",
+        "time": "9:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ],
+    "detail_url": "https://riotheatre.ca/event/vancouver-burlesque-co-presents-december-student-showcase/"
+  }
+]

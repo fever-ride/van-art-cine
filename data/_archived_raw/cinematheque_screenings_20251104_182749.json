@@ -1,0 +1,1171 @@
+[
+  {
+    "title": "Sanjuro",
+    "detail_url": "https://thecinematheque.ca/films/2025/sanjuro",
+    "showtimes": [
+      {
+        "date": "2025-November-02",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Kurosawa Akira",
+    "year": "1962",
+    "duration": "95 mins"
+  },
+  {
+    "title": "Yojimbo",
+    "detail_url": "https://thecinematheque.ca/films/2025/yojimbo",
+    "showtimes": [
+      {
+        "date": "2025-November-02",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Kurosawa Akira",
+    "year": "1961",
+    "duration": "110 mins"
+  },
+  {
+    "title": "Ways of Seeing: short short films by Gordon Payne",
+    "detail_url": "https://thecinematheque.ca/films/2025/gordon-payne",
+    "showtimes": [
+      {
+        "date": "2025-November-03",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "duration": "30 mins"
+  },
+  {
+    "title": "Eve and the Fire Horse",
+    "detail_url": "https://thecinematheque.ca/films/2025/eve-fire-horse",
+    "showtimes": [
+      {
+        "date": "2025-November-04",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Julia Kwan",
+    "year": "2005",
+    "duration": "92 mins"
+  },
+  {
+    "title": "#skoden",
+    "detail_url": "https://thecinematheque.ca/films/2025/skoden",
+    "showtimes": [
+      {
+        "date": "2025-November-05",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Damien Eagle Bear",
+    "year": "2025",
+    "duration": "75 mins"
+  },
+  {
+    "title": "Peking Opera Blues",
+    "detail_url": "https://thecinematheque.ca/films/2025/peking-opera-blues-restoration",
+    "showtimes": [
+      {
+        "date": "2025-November-06",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-November-29",
+        "time": "8:50 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-07",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Tsui Hark",
+    "year": "1986",
+    "duration": "106 mins"
+  },
+  {
+    "title": "The Killer",
+    "detail_url": "https://thecinematheque.ca/films/2025/killer",
+    "showtimes": [
+      {
+        "date": "2025-November-06",
+        "time": "8:45 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-November-08",
+        "time": "9:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-November-29",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-07",
+        "time": "8:45 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "John Woo",
+    "year": "1989",
+    "duration": "111 mins"
+  },
+  {
+    "title": "The Asthenic Syndrome",
+    "detail_url": "https://thecinematheque.ca/films/2025/asthenic-syndrome",
+    "showtimes": [
+      {
+        "date": "2025-November-07",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-November-09",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Kira Muratova",
+    "year": "1989",
+    "duration": "153 mins"
+  },
+  {
+    "title": "The Melt Goes On Forever: The Art & Times of David Hammons",
+    "detail_url": "https://thecinematheque.ca/films/2025/melt-goes-on",
+    "showtimes": [
+      {
+        "date": "2025-November-08",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Judd Tully, Harold Crooks",
+    "year": "2022",
+    "duration": "101 mins"
+  },
+  {
+    "title": "Laura Taler: the village trilogy + Matryoshka Crush",
+    "detail_url": "https://thecinematheque.ca/films/2025/laura-taler",
+    "showtimes": [
+      {
+        "date": "2025-November-10",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "duration": "69 mins"
+  },
+  {
+    "title": "Crocodile Tears",
+    "detail_url": "https://thecinematheque.ca/films/2025/crocodile-tears",
+    "showtimes": [
+      {
+        "date": "2025-November-12",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Tumpal Tampubolon",
+    "year": "2024",
+    "duration": "98 mins"
+  },
+  {
+    "title": "The Land of Short Sentences",
+    "detail_url": "https://thecinematheque.ca/films/2025/land-short-sentences",
+    "showtimes": [
+      {
+        "date": "2025-November-13",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Hella Joof",
+    "year": "2023",
+    "duration": "106 mins"
+  },
+  {
+    "title": "Peacock",
+    "detail_url": "https://thecinematheque.ca/films/2025/peacock",
+    "showtimes": [
+      {
+        "date": "2025-November-14",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Bernhard Wenger",
+    "year": "2024",
+    "duration": "102 mins"
+  },
+  {
+    "title": "8 Views of Lake Biwa",
+    "detail_url": "https://thecinematheque.ca/films/2025/8-views",
+    "showtimes": [
+      {
+        "date": "2025-November-14",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Marko Raat",
+    "year": "2024",
+    "duration": "126 mins"
+  },
+  {
+    "title": "Savanna and the Mountain",
+    "detail_url": "https://thecinematheque.ca/films/2025/savanna-mountain",
+    "showtimes": [
+      {
+        "date": "2025-November-15",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Paulo Carneiro",
+    "year": "2024",
+    "duration": "77 mins"
+  },
+  {
+    "title": "Hammarskjöld",
+    "detail_url": "https://thecinematheque.ca/films/2025/hammarskjold",
+    "showtimes": [
+      {
+        "date": "2025-November-15",
+        "time": "8:20 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Per Fly",
+    "year": "2023",
+    "duration": "114 mins"
+  },
+  {
+    "title": "Faith & John Hubley × 7",
+    "detail_url": "https://thecinematheque.ca/films/2025/faith-john-hubley",
+    "showtimes": [
+      {
+        "date": "2025-November-16",
+        "time": "10:30 am",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "duration": "69 mins"
+  },
+  {
+    "title": "I Accidentally Wrote a Book",
+    "detail_url": "https://thecinematheque.ca/films/2025/i-accidentally",
+    "showtimes": [
+      {
+        "date": "2025-November-16",
+        "time": "4:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Nóra Lakos",
+    "year": "2024",
+    "duration": "98 mins"
+  },
+  {
+    "title": "Breached",
+    "detail_url": "https://thecinematheque.ca/films/2025/breached",
+    "showtimes": [
+      {
+        "date": "2025-November-16",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Bartosz Konopka",
+    "year": "2023",
+    "duration": "95 mins"
+  },
+  {
+    "title": "Réveillon",
+    "detail_url": "https://thecinematheque.ca/films/2025/reveillon",
+    "showtimes": [
+      {
+        "date": "2025-November-16",
+        "time": "8:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Michal Kunes Kováč",
+    "year": "2023",
+    "duration": "101 mins"
+  },
+  {
+    "title": "Memory Lane",
+    "detail_url": "https://thecinematheque.ca/films/2025/memory-lane",
+    "showtimes": [
+      {
+        "date": "2025-November-17",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Jelle de Jonge",
+    "year": "2024",
+    "duration": "98 mins"
+  },
+  {
+    "title": "Smaragda: I Got Thick Skin and I Can’t Jump",
+    "detail_url": "https://thecinematheque.ca/films/2025/smaragda",
+    "showtimes": [
+      {
+        "date": "2025-November-17",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Emilios Avraam",
+    "year": "2024",
+    "duration": "99 mins"
+  },
+  {
+    "title": "The Land in the Shadows",
+    "detail_url": "https://thecinematheque.ca/films/2025/land-shadows",
+    "showtimes": [
+      {
+        "date": "2025-November-18",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Lukas Grevis",
+    "year": "2023",
+    "duration": "73 mins"
+  },
+  {
+    "title": "Making Of",
+    "detail_url": "https://thecinematheque.ca/films/2025/making-of",
+    "showtimes": [
+      {
+        "date": "2025-November-18",
+        "time": "8:10 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Cédric Kahn",
+    "year": "2023",
+    "duration": "119 mins"
+  },
+  {
+    "title": "Dreamtown",
+    "detail_url": "https://thecinematheque.ca/films/2025/dreamtown",
+    "showtimes": [
+      {
+        "date": "2025-November-19",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Steven McKenna",
+    "year": "2024",
+    "duration": "97 mins"
+  },
+  {
+    "title": "Wedlock",
+    "detail_url": "https://thecinematheque.ca/films/2025/wedlock",
+    "showtimes": [
+      {
+        "date": "2025-November-19",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Magdalena Ralcheva",
+    "year": "2024",
+    "duration": "117 mins"
+  },
+  {
+    "title": "Drowning Dry",
+    "detail_url": "https://thecinematheque.ca/films/2025/drowning-dry",
+    "showtimes": [
+      {
+        "date": "2025-November-20",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Laurynas Bareiša",
+    "year": "2024",
+    "duration": "88 mins"
+  },
+  {
+    "title": "Omen",
+    "detail_url": "https://thecinematheque.ca/films/2025/omen",
+    "showtimes": [
+      {
+        "date": "2025-November-20",
+        "time": "8:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Baloji Tshiani",
+    "year": "2023",
+    "duration": "83 mins"
+  },
+  {
+    "title": "Maria’s Silence",
+    "detail_url": "https://thecinematheque.ca/films/2025/marias-silence",
+    "showtimes": [
+      {
+        "date": "2025-November-21",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Dāvis Sīmanis Jr.",
+    "year": "2024",
+    "duration": "104 mins"
+  },
+  {
+    "title": "The Summer Book",
+    "detail_url": "https://thecinematheque.ca/films/2025/summer-book",
+    "showtimes": [
+      {
+        "date": "2025-November-21",
+        "time": "8:45 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Charlie McDowell",
+    "year": "2025",
+    "duration": "95 mins"
+  },
+  {
+    "title": "30 Years of Learning & Outreach: Screening and Showcase",
+    "detail_url": "https://thecinematheque.ca/events/2025/30-years-of-learning-outreach-screening-and-showcase",
+    "showtimes": [
+      {
+        "date": "2025-November-22",
+        "time": "1:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "Three Kilometres to the End of the World",
+    "detail_url": "https://thecinematheque.ca/films/2025/three-kilometres",
+    "showtimes": [
+      {
+        "date": "2025-November-22",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Emanuel Pârvu",
+    "year": "2024",
+    "duration": "105 mins"
+  },
+  {
+    "title": "Franz",
+    "detail_url": "https://thecinematheque.ca/films/2025/franz",
+    "showtimes": [
+      {
+        "date": "2025-November-22",
+        "time": "8:45 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Agnieszka Holland",
+    "year": "2025",
+    "duration": "127 mins"
+  },
+  {
+    "title": "Even Pigs Go to Heaven",
+    "detail_url": "https://thecinematheque.ca/films/2025/even-pigs",
+    "showtimes": [
+      {
+        "date": "2025-November-23",
+        "time": "4:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Goran Dukić",
+    "year": "2022",
+    "duration": "86 mins"
+  },
+  {
+    "title": "Brando with a Glass Eye",
+    "detail_url": "https://thecinematheque.ca/films/2025/brando-glass-eye",
+    "showtimes": [
+      {
+        "date": "2025-November-23",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Antonis Tsonis",
+    "year": "2024",
+    "duration": "122 mins"
+  },
+  {
+    "title": "We Treat Women Too Well",
+    "detail_url": "https://thecinematheque.ca/films/2025/we-treat-women-too-well",
+    "showtimes": [
+      {
+        "date": "2025-November-23",
+        "time": "8:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Clara Bilbao",
+    "year": "2024",
+    "duration": "97 mins"
+  },
+  {
+    "title": "Ciao Ciao",
+    "detail_url": "https://thecinematheque.ca/films/2025/ciao-ciao",
+    "showtimes": [
+      {
+        "date": "2025-November-24",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Keith Albert Tedesco",
+    "year": "2025",
+    "duration": "90 mins"
+  },
+  {
+    "title": "Beyond the Blue Border",
+    "detail_url": "https://thecinematheque.ca/films/2025/beyond-blue-border",
+    "showtimes": [
+      {
+        "date": "2025-November-24",
+        "time": "8:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Sarah Neumann",
+    "year": "2024",
+    "duration": "102 mins"
+  },
+  {
+    "title": "Whites Wash at Ninety",
+    "detail_url": "https://thecinematheque.ca/films/2025/whites-wash-ninety",
+    "showtimes": [
+      {
+        "date": "2025-November-25",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Marko Naberšnik",
+    "year": "2025",
+    "duration": "142 mins"
+  },
+  {
+    "title": "Casanova’s Return",
+    "detail_url": "https://thecinematheque.ca/films/2025/casanovas-return",
+    "showtimes": [
+      {
+        "date": "2025-November-26",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Gabriele Salvatores",
+    "year": "2023",
+    "duration": "94 mins"
+  },
+  {
+    "title": "Porcelain War",
+    "detail_url": "https://thecinematheque.ca/films/2025/porcelain-war",
+    "showtimes": [
+      {
+        "date": "2025-November-26",
+        "time": "8:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Brendan Bellomo, Slava Leontyev",
+    "year": "2024",
+    "duration": "87 mins"
+  },
+  {
+    "title": "Silvestre",
+    "detail_url": "https://thecinematheque.ca/films/2025/silvestre",
+    "showtimes": [
+      {
+        "date": "2025-November-27",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-08",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "João César Monteiro",
+    "year": "1981",
+    "duration": "113 mins"
+  },
+  {
+    "title": "Trails",
+    "detail_url": "https://thecinematheque.ca/films/2025/trails",
+    "showtimes": [
+      {
+        "date": "2025-November-28",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-03",
+        "time": "8:45 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "João César Monteiro",
+    "year": "1978",
+    "duration": "120 mins"
+  },
+  {
+    "title": "City on Fire",
+    "detail_url": "https://thecinematheque.ca/films/2025/city-on-fire",
+    "showtimes": [
+      {
+        "date": "2025-November-28",
+        "time": "9:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-03",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-06",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Ringo Lam",
+    "year": "1987",
+    "duration": "105 mins"
+  },
+  {
+    "title": "The Last Dive",
+    "detail_url": "https://thecinematheque.ca/films/2025/last-dive",
+    "showtimes": [
+      {
+        "date": "2025-November-30",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-08",
+        "time": "8:50 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "João César Monteiro",
+    "year": "1992",
+    "duration": "92 mins"
+  },
+  {
+    "title": "Recollections of the Yellow House",
+    "detail_url": "https://thecinematheque.ca/films/2025/recollections-yellow-house",
+    "showtimes": [
+      {
+        "date": "2025-November-30",
+        "time": "8:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-06",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "João César Monteiro",
+    "year": "1989",
+    "duration": "122 mins"
+  },
+  {
+    "title": "Hovering Over the Water",
+    "detail_url": "https://thecinematheque.ca/films/2025/hovering-water",
+    "showtimes": [
+      {
+        "date": "2025-December-01",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-09",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "João César Monteiro",
+    "year": "1986",
+    "duration": "143 mins"
+  },
+  {
+    "title": "Mother of Snow Cranes",
+    "detail_url": "https://thecinematheque.ca/films/2025/mother-snow-cranes",
+    "showtimes": [
+      {
+        "date": "2025-December-04",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Iiris Härmä",
+    "year": "2024",
+    "duration": "78 mins"
+  },
+  {
+    "title": "A Better Tomorrow",
+    "detail_url": "https://thecinematheque.ca/films/2025/better-tomorrow",
+    "showtimes": [
+      {
+        "date": "2025-December-05",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-12",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-21",
+        "time": "4:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "John Woo",
+    "year": "1986",
+    "duration": "95 mins"
+  },
+  {
+    "title": "God’s Comedy",
+    "detail_url": "https://thecinematheque.ca/films/2025/gods-comedy",
+    "showtimes": [
+      {
+        "date": "2025-December-07",
+        "time": "3:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "João César Monteiro",
+    "year": "1995",
+    "duration": "170 mins"
+  },
+  {
+    "title": "Levers",
+    "detail_url": "https://thecinematheque.ca/films/2025/levers",
+    "showtimes": [
+      {
+        "date": "2025-December-10",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Rhayne Vermette",
+    "year": "2025",
+    "duration": "95 mins"
+  },
+  {
+    "title": "Blue Velvet",
+    "detail_url": "https://thecinematheque.ca/films/2025/blue-velvet",
+    "showtimes": [
+      {
+        "date": "2025-December-11",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-19",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-30",
+        "time": "8:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "David Lynch",
+    "year": "1986",
+    "duration": "121 mins"
+  },
+  {
+    "title": "A Better Tomorrow II",
+    "detail_url": "https://thecinematheque.ca/films/2025/better-tomorrow-ii",
+    "showtimes": [
+      {
+        "date": "2025-December-12",
+        "time": "8:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-21",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "John Woo",
+    "year": "1987",
+    "duration": "105 mins"
+  },
+  {
+    "title": "Six Shorts by David Lynch",
+    "detail_url": "https://thecinematheque.ca/films/2025/six-shorts-david-lynch",
+    "showtimes": [
+      {
+        "date": "2025-December-13",
+        "time": "5:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "duration": "55 mins"
+  },
+  {
+    "title": "Eraserhead",
+    "detail_url": "https://thecinematheque.ca/films/2025/eraserhead",
+    "showtimes": [
+      {
+        "date": "2025-December-13",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-22",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "David Lynch",
+    "year": "1977",
+    "duration": "89 mins"
+  },
+  {
+    "title": "Twin Peaks: The Pilot",
+    "detail_url": "https://thecinematheque.ca/films/2025/twin-peaks-pilot",
+    "showtimes": [
+      {
+        "date": "2025-December-13",
+        "time": "8:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-19",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "David Lynch",
+    "year": "1989",
+    "duration": "94 mins"
+  },
+  {
+    "title": "The Elephant Man",
+    "detail_url": "https://thecinematheque.ca/films/2025/elephant-man",
+    "showtimes": [
+      {
+        "date": "2025-December-14",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-29",
+        "time": "8:10 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "David Lynch",
+    "year": "1980",
+    "duration": "124 mins"
+  },
+  {
+    "title": "Dune",
+    "detail_url": "https://thecinematheque.ca/films/2025/dune",
+    "showtimes": [
+      {
+        "date": "2025-December-14",
+        "time": "8:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-27",
+        "time": "3:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "David Lynch",
+    "year": "1984",
+    "duration": "137 mins"
+  },
+  {
+    "title": "The Fullness of Time",
+    "detail_url": "https://thecinematheque.ca/films/2025/fullness-time",
+    "showtimes": [
+      {
+        "date": "2025-December-15",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Cauleen Smith",
+    "year": "2008",
+    "duration": "49 mins"
+  },
+  {
+    "title": "True Chronicles of the Blida Joinville Psychiatric Hospital in the Last Century, when Dr Frantz Fanon Was Head of the Fifth Ward between 1953 and 1956",
+    "detail_url": "https://thecinematheque.ca/films/2025/true-chronicles-blida",
+    "showtimes": [
+      {
+        "date": "2025-December-17",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Abdenour Zahzah",
+    "year": "2024",
+    "duration": "91 mins"
+  },
+  {
+    "title": "Wild at Heart",
+    "detail_url": "https://thecinematheque.ca/films/2025/wild-heart",
+    "showtimes": [
+      {
+        "date": "2025-December-18",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-23",
+        "time": "8:20 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-28",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "David Lynch",
+    "year": "1990",
+    "duration": "125 mins"
+  },
+  {
+    "title": "Bullet in the Head",
+    "detail_url": "https://thecinematheque.ca/films/2025/bullet-head",
+    "showtimes": [
+      {
+        "date": "2025-December-18",
+        "time": "9:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-27",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-29",
+        "time": "5:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "John Woo",
+    "year": "1990",
+    "duration": "131 mins"
+  },
+  {
+    "title": "Twin Peaks: Fire Walk with Me",
+    "detail_url": "https://thecinematheque.ca/films/2025/twin-peaks-fire-walk-with-me",
+    "showtimes": [
+      {
+        "date": "2025-December-20",
+        "time": "4:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-22",
+        "time": "8:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2026-January-02",
+        "time": "3:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "David Lynch",
+    "year": "1992",
+    "duration": "135 mins"
+  },
+  {
+    "title": "Mulholland Dr.",
+    "detail_url": "https://thecinematheque.ca/films/2025/mulholland-dr",
+    "showtimes": [
+      {
+        "date": "2025-December-20",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-26",
+        "time": "8:20 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-28",
+        "time": "3:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "David Lynch",
+    "year": "2001",
+    "duration": "147 mins"
+  },
+  {
+    "title": "The Snow Queen",
+    "detail_url": "https://thecinematheque.ca/films/2025/snow-queen",
+    "showtimes": [
+      {
+        "date": "2025-December-21",
+        "time": "10:30 am",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Lev Atamanov",
+    "year": "1957",
+    "duration": "65 mins"
+  },
+  {
+    "title": "A Better Tomorrow III: Love & Death in Saigon",
+    "detail_url": "https://thecinematheque.ca/films/2025/better-tomorrow-iii-love-death-saigon",
+    "showtimes": [
+      {
+        "date": "2025-December-21",
+        "time": "8:45 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-30",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "Tsui Hark",
+    "year": "1989",
+    "duration": "119 mins"
+  },
+  {
+    "title": "The Straight Story",
+    "detail_url": "https://thecinematheque.ca/films/2025/straight-story",
+    "showtimes": [
+      {
+        "date": "2025-December-23",
+        "time": "6:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-27",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "David Lynch",
+    "year": "1999",
+    "duration": "112 mins"
+  },
+  {
+    "title": "Inland Empire",
+    "detail_url": "https://thecinematheque.ca/films/2025/inland-empire",
+    "showtimes": [
+      {
+        "date": "2025-December-26",
+        "time": "2:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-29",
+        "time": "2:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "David Lynch",
+    "year": "2006",
+    "duration": "180 mins"
+  },
+  {
+    "title": "Lost Highway",
+    "detail_url": "https://thecinematheque.ca/films/2025/lost-highway",
+    "showtimes": [
+      {
+        "date": "2025-December-26",
+        "time": "5:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-28",
+        "time": "8:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2025-December-30",
+        "time": "3:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "David Lynch",
+    "year": "1997",
+    "duration": "134 mins"
+  },
+  {
+    "title": "Twin Peaks: The Return",
+    "detail_url": "https://thecinematheque.ca/films/2025/twin-peaks-return",
+    "showtimes": [
+      {
+        "date": "2026-January-02",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2026-January-03",
+        "time": "3:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2026-January-03",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2026-January-04",
+        "time": "3:00 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2026-January-04",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      },
+      {
+        "date": "2026-January-05",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ],
+    "director": "David Lynch",
+    "year": "2017",
+    "duration": "1020 mins"
+  }
+]

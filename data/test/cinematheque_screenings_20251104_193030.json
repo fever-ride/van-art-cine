@@ -1,0 +1,44 @@
+[
+  {
+    "title": "cine cross year test 1",
+    "director": "test",
+    "year": "1962",
+    "duration": "95 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/sanjuro",
+    "showtimes": [
+      {
+        "date": "2026-November-02",
+        "time": "6:30 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "cine cross year test 2",
+    "director": "test",
+    "year": "1961",
+    "duration": "110 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/yojimbo",
+    "showtimes": [
+      {
+        "date": "2026-January-03",
+        "time": "8:40 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  },
+  {
+    "title": "cine cross year test 3",
+    "director": "test",
+    "year": null,
+    "duration": "30 mins",
+    "detail_url": "https://thecinematheque.ca/films/2025/gordon-payne",
+    "showtimes": [
+      {
+        "date": "2025-November-03",
+        "time": "7:00 pm",
+        "venue": "The Cinematheque"
+      }
+    ]
+  }
+]

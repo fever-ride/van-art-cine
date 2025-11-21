@@ -1,0 +1,809 @@
+[
+  {
+    "title": "Orwell: 2+2=5",
+    "director": "Dir. Raoul Peck",
+    "year": "2025",
+    "duration": "119 min",
+    "detail_url": "https://viff.org/whats-on/orwell-225/",
+    "showtimes": [
+      {
+        "date": "Wed Nov 19",
+        "time": "4:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Tue Nov 25",
+        "time": "4:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Wed Nov 26",
+        "time": "4:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Wisdom of Happiness",
+    "director": "Dir. Philip Delaquis & Barbara Miller",
+    "year": "2024",
+    "duration": "90 min",
+    "detail_url": "https://viff.org/whats-on/wisdom-of-happiness/",
+    "showtimes": [
+      {
+        "date": "Wed Nov 19",
+        "time": "4:10 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Sat Nov 29",
+        "time": "10:30 am",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Left-Handed Girl",
+    "director": "Dir. Shih-Ching Tsou",
+    "year": "2025",
+    "duration": "109 min",
+    "detail_url": "https://viff.org/whats-on/left-handed-girl/",
+    "showtimes": [
+      {
+        "date": "Wed Nov 19",
+        "time": "6:10 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Thu Nov 20",
+        "time": "12:45 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Thu Nov 20",
+        "time": "5:40 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Sembene!",
+    "director": "Dir. Jason Silverman & Samba Gadjigo",
+    "year": "2015",
+    "duration": "89 min",
+    "detail_url": "https://viff.org/whats-on/sembene/",
+    "showtimes": [
+      {
+        "date": "Wed Nov 19",
+        "time": "6:30 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Mon Nov 24",
+        "time": "7:30 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Train Dreams",
+    "director": "Dir. Clint Bentley",
+    "year": "2025",
+    "duration": "104 min",
+    "detail_url": "https://viff.org/whats-on/train-dreams/",
+    "showtimes": [
+      {
+        "date": "Wed Nov 19",
+        "time": "8:30 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Thu Nov 20",
+        "time": "3:20 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Köln 75",
+    "director": "Dir. Ido Fluk",
+    "year": "2025",
+    "duration": "116 min",
+    "detail_url": "https://viff.org/whats-on/koln-75/",
+    "showtimes": [
+      {
+        "date": "Wed Nov 19",
+        "time": "8:45 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "The Librarians",
+    "director": "Dir. Kim A Snyder",
+    "year": "2025",
+    "duration": "92 min",
+    "detail_url": "https://viff.org/whats-on/the-librarians/",
+    "showtimes": [
+      {
+        "date": "Thu Nov 20",
+        "time": "1:15 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Thu Nov 20",
+        "time": "5:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Fri Nov 21",
+        "time": "4:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Caravaggio",
+    "director": "Dir. David Bickerstaff & Phil Grabsky",
+    "year": "2025",
+    "duration": "100 min",
+    "detail_url": "https://viff.org/whats-on/caravaggio/",
+    "showtimes": [
+      {
+        "date": "Thu Nov 20",
+        "time": "3:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Tue Nov 25",
+        "time": "2:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Jay Kelly",
+    "director": "Dir. Noah Baumbach",
+    "year": "2025",
+    "duration": "130 min",
+    "detail_url": "https://viff.org/whats-on/jay-kelly/",
+    "showtimes": [
+      {
+        "date": "Fri Nov 21",
+        "time": "1:00 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Fri Nov 21",
+        "time": "5:40 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Fri Nov 21",
+        "time": "8:20 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Put Your Soul On Your Hand and Walk",
+    "director": "Dir. Sepideh Farsi",
+    "year": "2025",
+    "duration": "113 min",
+    "detail_url": "https://viff.org/whats-on/put-soul-hand-walk/",
+    "showtimes": [
+      {
+        "date": "Fri Nov 21",
+        "time": "1:30 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Fri Nov 21",
+        "time": "7:45 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Sat Nov 22",
+        "time": "7:10 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Peter Hujar's Day",
+    "director": "Dir. Ira Sachs",
+    "year": "2025",
+    "duration": "76 min",
+    "detail_url": "https://viff.org/whats-on/peter-hujars-day/",
+    "showtimes": [
+      {
+        "date": "Fri Nov 21",
+        "time": "3:45 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Fri Nov 21",
+        "time": "6:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Sat Nov 22",
+        "time": "3:30 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Snowtime!",
+    "director": "Dir. Jean-François Pouliot",
+    "year": "2015",
+    "duration": "82 min",
+    "detail_url": "https://viff.org/whats-on/snowtime/",
+    "showtimes": [
+      {
+        "date": "Sat Nov 22",
+        "time": "11:00 am",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Little Amelie or the Character of Rain",
+    "director": "Dir. Mailys Vallade & Liane-Cho Han",
+    "year": "2025",
+    "duration": "90 min",
+    "detail_url": "https://viff.org/whats-on/little-amelie-character-rain/",
+    "showtimes": [
+      {
+        "date": "Sat Nov 22",
+        "time": "1:30 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Sun Nov 23",
+        "time": "12:45 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Mon Nov 24",
+        "time": "3:30 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "The Prowler",
+    "director": "Dir. Joseph Losey",
+    "year": "1951",
+    "duration": "92 min",
+    "detail_url": "https://viff.org/whats-on/the-prowler/",
+    "showtimes": [
+      {
+        "date": "Mon Nov 24",
+        "time": "11:00 am",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "My Father's Glory",
+    "director": "Dir. Yves Robert",
+    "year": "1990",
+    "duration": "110 min",
+    "detail_url": "https://viff.org/whats-on/my-fathers-glory/",
+    "showtimes": [
+      {
+        "date": "Tue Nov 25",
+        "time": "11:00 am",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Meadowlarks",
+    "director": "Dir. Tasha Hubbard",
+    "year": "2025",
+    "duration": "91 min",
+    "detail_url": "https://viff.org/whats-on/meadowlarks/",
+    "showtimes": [
+      {
+        "date": "Fri Nov 28",
+        "time": "1:30 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Fri Nov 28",
+        "time": "6:30 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Sat Nov 29",
+        "time": "2:30 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Mistress Dispeller",
+    "director": "Dir. Elizabeth Lo",
+    "year": "2024",
+    "duration": "94 min",
+    "detail_url": "https://viff.org/whats-on/mistress-dispeller/",
+    "showtimes": [
+      {
+        "date": "Fri Nov 28",
+        "time": "2:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Sat Nov 29",
+        "time": "4:30 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Sun Nov 30",
+        "time": "4:30 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Measures for a Funeral",
+    "director": "Dir. Sofia Bohdanowicz",
+    "year": "2024",
+    "duration": "142 min",
+    "detail_url": "https://viff.org/whats-on/measures-for-a-funeral/",
+    "showtimes": [
+      {
+        "date": "Sat Nov 29",
+        "time": "12:30 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Sun Nov 30",
+        "time": "6:45 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Mon Dec 01",
+        "time": "2:10 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "O Brother, Where Art Thou? + The Soda Crackers",
+    "director": "Dir. Joel & Ethan Coen",
+    "year": null,
+    "duration": "107 min",
+    "detail_url": "https://viff.org/whats-on/soda-crackers-live/",
+    "showtimes": [
+      {
+        "date": "Sun Nov 30",
+        "time": "2:00 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "He Ran All the Way",
+    "director": "Dir. John Berry",
+    "year": "1951",
+    "duration": "78 min",
+    "detail_url": "https://viff.org/whats-on/he-ran-all-the-way/",
+    "showtimes": [
+      {
+        "date": "Mon Dec 01",
+        "time": "11:00 am",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "The New Year That Never Came",
+    "director": "Dir. Bogdan Mureşanu",
+    "year": "2024",
+    "duration": "138 min",
+    "detail_url": "https://viff.org/whats-on/the-new-year-that-never-came/",
+    "showtimes": [
+      {
+        "date": "Mon Dec 01",
+        "time": "6:30 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Traffic",
+    "director": "Dir. Teodora Mihai",
+    "year": "2024",
+    "duration": "119 min",
+    "detail_url": "https://viff.org/whats-on/traffic/",
+    "showtimes": [
+      {
+        "date": "Tue Dec 02",
+        "time": "6:20 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Box of Freedom",
+    "director": "Dir. Adelina Șuvagău",
+    "year": "2021",
+    "duration": "86 min",
+    "detail_url": "https://viff.org/whats-on/box-of-freedom/",
+    "showtimes": [
+      {
+        "date": "Tue Dec 02",
+        "time": "8:50 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Milk Teeth",
+    "director": "Dir. Mihai Mincan",
+    "year": "2025",
+    "duration": "104 min",
+    "detail_url": "https://viff.org/whats-on/milk-teeth/",
+    "showtimes": [
+      {
+        "date": "Wed Dec 03",
+        "time": "6:15 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Tata",
+    "director": "Dir. Lina Vdovîi & Radu Ciorniciuc",
+    "year": "2024",
+    "duration": "82 min",
+    "detail_url": "https://viff.org/whats-on/tata/",
+    "showtimes": [
+      {
+        "date": "Wed Dec 03",
+        "time": "8:30 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Nasty",
+    "director": "Dir. Tudor Giurgiu, Cristian Pascariu & Tudor D Posecu",
+    "year": "2025",
+    "duration": "104 min",
+    "detail_url": "https://viff.org/whats-on/nasty/",
+    "showtimes": [
+      {
+        "date": "Thu Dec 04",
+        "time": "6:00 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Comatogen",
+    "director": "Dir. Igor Cobileanschi",
+    "year": "2025",
+    "duration": "114 min",
+    "detail_url": "https://viff.org/whats-on/comatogen/",
+    "showtimes": [
+      {
+        "date": "Thu Dec 04",
+        "time": "8:30 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "The Baltimorons",
+    "director": "Dir. Jay Duplass",
+    "year": "2025",
+    "duration": "101 min",
+    "detail_url": "https://viff.org/whats-on/the-baltimorons/",
+    "showtimes": [
+      {
+        "date": "Fri Dec 05",
+        "time": "12:15 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Sun Dec 07",
+        "time": "1:30 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Mon Dec 08",
+        "time": "3:30 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Cover-Up",
+    "director": "Dir. Laura Poitras & Mark Obenhaus",
+    "year": "2025",
+    "duration": "117 min",
+    "detail_url": "https://viff.org/whats-on/cover-up/",
+    "showtimes": [
+      {
+        "date": "Fri Dec 05",
+        "time": "2:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Sun Dec 07",
+        "time": "8:30 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Mon Dec 08",
+        "time": "8:30 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Ju Dou",
+    "director": "Dir. Zhang Yimou",
+    "year": "1990",
+    "duration": "95 min",
+    "detail_url": "https://viff.org/whats-on/ju-dou/",
+    "showtimes": [
+      {
+        "date": "Fri Dec 05",
+        "time": "2:30 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Sun Dec 07",
+        "time": "3:00 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Mon Dec 08",
+        "time": "5:45 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Clairtone",
+    "director": "Dir. Ron Mann",
+    "year": "2025",
+    "duration": "73 min",
+    "detail_url": "https://viff.org/whats-on/clairtone/",
+    "showtimes": [
+      {
+        "date": "Sun Dec 07",
+        "time": "1:00 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "You Got Gold: A Celebration of John Prine",
+    "director": "Dir. Michael John Warren",
+    "year": "2025",
+    "duration": "90 min",
+    "detail_url": "https://viff.org/whats-on/gold-celebration-john-prine/",
+    "showtimes": [
+      {
+        "date": "Sun Dec 07",
+        "time": "4:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Tue Dec 09",
+        "time": "3:40 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Tue Dec 09",
+        "time": "8:40 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Beatlemania! Get Back Unplugged",
+    "director": "Dir. Richard Lester",
+    "year": null,
+    "duration": "190 min",
+    "detail_url": "https://viff.org/whats-on/beatlemania-live/",
+    "showtimes": [
+      {
+        "date": "Sun Dec 07",
+        "time": "7:00 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "The Apartment",
+    "director": "Dir. Billy Wilder",
+    "year": "1960",
+    "duration": "125 min",
+    "detail_url": "https://viff.org/whats-on/the-apartment/",
+    "showtimes": [
+      {
+        "date": "Mon Dec 08",
+        "time": "7:45 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "The Secret Agent",
+    "director": "Dir. Kleber Mendonça Filho",
+    "year": "2025",
+    "duration": "158 min",
+    "detail_url": "https://viff.org/whats-on/the-secret-agent/",
+    "showtimes": [
+      {
+        "date": "Fri Dec 12",
+        "time": "1:45 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Fri Dec 12",
+        "time": "4:55 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Fri Dec 12",
+        "time": "8:00 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Cutting Through Rocks",
+    "director": "Dir. Sara Khaki & Mohammadreza Eyni",
+    "year": "2025",
+    "duration": "95 min",
+    "detail_url": "https://viff.org/whats-on/cutting-through-rocks/",
+    "showtimes": [
+      {
+        "date": "Fri Dec 12",
+        "time": "2:15 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Sat Dec 13",
+        "time": "4:15 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Sun Dec 14",
+        "time": "12:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Fantasia",
+    "director": null,
+    "year": "1940",
+    "duration": "126 min",
+    "detail_url": "https://viff.org/whats-on/fantasia/",
+    "showtimes": [
+      {
+        "date": "Sun Dec 14",
+        "time": "11:00 am",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Tue Dec 16",
+        "time": "6:30 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Leading Ladies Perform Duke Ellington's The Nutcracker Suite",
+    "director": "Dir. Annie Sundberg",
+    "year": null,
+    "duration": "180 min",
+    "detail_url": "https://viff.org/whats-on/nutcracker-suite-live/",
+    "showtimes": [
+      {
+        "date": "Sun Dec 14",
+        "time": "5:00 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Maudie",
+    "director": "Dir. Aisling Walsh",
+    "year": "2016",
+    "duration": "115 min",
+    "detail_url": "https://viff.org/whats-on/maudie/",
+    "showtimes": [
+      {
+        "date": "Tue Dec 16",
+        "time": "11:00 am",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "The Nutcracker at Wethersfield",
+    "director": "Dir. Annie Sundberg",
+    "year": "2025",
+    "duration": "83 min",
+    "detail_url": "https://viff.org/whats-on/the-nutcracker-at-wethersfield/",
+    "showtimes": [
+      {
+        "date": "Fri Dec 19",
+        "time": "1:30 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Sat Dec 20",
+        "time": "2:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Sat Dec 20",
+        "time": "6:00 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Pictures of Ghosts",
+    "director": "Dir. Kleber Mendonça Filho",
+    "year": "2024",
+    "duration": "93 min",
+    "detail_url": "https://viff.org/whats-on/pictures-of-ghosts/",
+    "showtimes": [
+      {
+        "date": "Fri Dec 19",
+        "time": "3:30 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      },
+      {
+        "date": "Fri Dec 19",
+        "time": "8:10 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      },
+      {
+        "date": "Sat Dec 20",
+        "time": "7:50 pm",
+        "venue": "VIFF Centre - Lochmaddy Studio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Dean Thiessen Plays Vince Guaraldi + Charlie Brown",
+    "director": "Dir. Bill Melendez",
+    "year": null,
+    "duration": "180 min",
+    "detail_url": "https://viff.org/whats-on/dean-thiessen-vince-guaraldi-live/",
+    "showtimes": [
+      {
+        "date": "Sat Dec 20",
+        "time": "7:00 pm",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  },
+  {
+    "title": "Smoke Sauna Sisterhood",
+    "director": "Dir. Anna Hints",
+    "year": "2023",
+    "duration": "89 min",
+    "detail_url": "https://viff.org/whats-on/smoke-sauna-sisterhood/",
+    "showtimes": [
+      {
+        "date": "Tue Jan 27",
+        "time": "11:00 am",
+        "venue": "VIFF Centre - VIFF Cinema"
+      }
+    ]
+  }
+]

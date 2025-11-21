@@ -1,0 +1,40 @@
+[
+  {
+    "title": "rio cross year test 1",
+    "director": "test",
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/46963/",
+    "showtimes": [
+      {
+        "date": "Sunday December 26",
+        "time": "10:00 a.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "rio cross year test 2",
+    "director": "test",
+    "year": "1975",
+    "duration": "100 mins",
+    "detail_url": "https://riotheatre.ca/movie/the-rocky-horror-picture-show-3/",
+    "showtimes": [
+      {
+        "date": "Sunday January 26",
+        "time": "2:00 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Sunday April 26",
+        "time": "10:45 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Tuesday October 28",
+        "time": "11:15 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  }
+]

@@ -1,0 +1,178 @@
+Date : 2025-10-23 13:23:29
+Directory : /Users/wendyzhong/Desktop/van_art_cinema_guide
+Total : 101 files,  33465 codes, 679 comments, 721 blanks, all 34865 lines
+
+Languages
++--------------------+------------+------------+------------+------------+------------+
+| language           | files      | code       | comment    | blank      | total      |
++--------------------+------------+------------+------------+------------+------------+
+| JSON               |         20 |     29,497 |          0 |          5 |     29,502 |
+| Python             |         10 |      1,154 |        391 |        312 |      1,857 |
+| JavaScript         |         27 |      1,002 |        129 |        159 |      1,290 |
+| TypeScript JSX     |         14 |        675 |         19 |         68 |        762 |
+| MS SQL             |          7 |        577 |        124 |         93 |        794 |
+| TypeScript         |          6 |        258 |          6 |         40 |        304 |
+| YAML               |          1 |        164 |          0 |          6 |        170 |
+| Markdown           |          4 |         43 |          0 |         21 |         64 |
+| Shell Script       |          4 |         30 |         10 |         11 |         51 |
+| JSON with Comments |          1 |         27 |          0 |          1 |         28 |
+| PostCSS            |          1 |         22 |          0 |          5 |         27 |
+| XML                |          6 |         16 |          0 |          0 |         16 |
++--------------------+------------+------------+------------+------------+------------+
+
+Directories
++------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                             | files      | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                |        101 |     33,465 |        679 |        721 |     34,865 |
+| . (Files)                                                                                                        |          1 |        276 |         84 |         53 |        413 |
+| backend                                                                                                          |         27 |      2,679 |        129 |        154 |      2,962 |
+| backend (Files)                                                                                                  |          2 |      1,702 |          0 |          2 |      1,704 |
+| backend/src                                                                                                      |         25 |        977 |        129 |        152 |      1,258 |
+| backend/src (Files)                                                                                              |          2 |         72 |         13 |         17 |        102 |
+| backend/src/controllers                                                                                          |          2 |        118 |          4 |         17 |        139 |
+| backend/src/middleware                                                                                           |          1 |         47 |         18 |          4 |         69 |
+| backend/src/models                                                                                               |          4 |        283 |          9 |         28 |        320 |
+| backend/src/routes                                                                                               |          4 |         98 |         13 |         30 |        141 |
+| backend/src/services                                                                                             |          2 |        146 |         25 |         21 |        192 |
+| backend/src/utils                                                                                                |          8 |        125 |         33 |         22 |        180 |
+| backend/src/validators                                                                                           |          2 |         88 |         14 |         13 |        115 |
+| data                                                                                                             |         15 |     21,533 |          0 |          0 |     21,533 |
+| data (Files)                                                                                                     |          1 |      1,854 |          0 |          0 |      1,854 |
+| data/curated                                                                                                     |          6 |      9,310 |          0 |          0 |      9,310 |
+| data/latest                                                                                                      |          3 |      6,103 |          0 |          0 |      6,103 |
+| data/raw                                                                                                         |          5 |      4,266 |          0 |          0 |      4,266 |
+| database                                                                                                         |         16 |        777 |        371 |        159 |      1,307 |
+| database (Files)                                                                                                 |          1 |          0 |          0 |          1 |          1 |
+| database/bin                                                                                                     |          4 |         30 |         10 |         11 |         51 |
+| database/etl                                                                                                     |          1 |         33 |         14 |          6 |         53 |
+| database/migrations                                                                                              |          3 |        254 |         21 |         30 |        305 |
+| database/scripts                                                                                                 |          7 |        460 |        326 |        111 |        897 |
+| doc                                                                                                              |          3 |        184 |          0 |         12 |        196 |
+| frontend                                                                                                         |         32 |      7,257 |         25 |        137 |      7,419 |
+| frontend (Files)                                                                                                 |          7 |      6,309 |          0 |         26 |      6,335 |
+| frontend/app                                                                                                     |         11 |        365 |          4 |         47 |        416 |
+| frontend/app (Files)                                                                                             |          3 |         98 |          0 |         19 |        117 |
+| frontend/app/auth                                                                                                |          2 |        111 |          2 |          8 |        121 |
+| frontend/app/auth/login                                                                                          |          1 |         52 |          1 |          4 |         57 |
+| frontend/app/auth/register                                                                                       |          1 |         59 |          1 |          4 |         64 |
+| frontend/app/films                                                                                               |          3 |         23 |          0 |          2 |         25 |
+| frontend/app/films/[id]                                                                                          |          3 |         23 |          0 |          2 |         25 |
+| frontend/app/lib                                                                                                 |          3 |        133 |          2 |         18 |        153 |
+| frontend/components                                                                                              |          7 |        465 |         17 |         44 |        526 |
+| frontend/components (Files)                                                                                      |          1 |         61 |          0 |          6 |         67 |
+| frontend/components/films                                                                                        |          3 |        185 |         14 |         25 |        224 |
+| frontend/components/screenings                                                                                   |          3 |        219 |          3 |         13 |        235 |
+| frontend/lib                                                                                                     |          2 |        113 |          4 |         20 |        137 |
+| frontend/public                                                                                                  |          5 |          5 |          0 |          0 |          5 |
+| others                                                                                                           |          3 |        103 |          6 |         13 |        122 |
+| scrapers                                                                                                         |          4 |        656 |         64 |        193 |        913 |
++------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++------------------------------------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| filename                                                                                                         | language           | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/package-lock.json                                         | JSON               |      1,669 |          0 |          1 |      1,670 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/package.json                                              | JSON               |         33 |          0 |          1 |         34 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/controllers/authController.js                         | JavaScript         |         82 |          4 |         12 |         98 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/controllers/watchlistController.js                    | JavaScript         |         36 |          0 |          5 |         41 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/db.js                                                 | JavaScript         |         11 |          0 |          1 |         12 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/middleware/auth.js                                    | JavaScript         |         47 |         18 |          4 |         69 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/models/films.js                                       | JavaScript         |         60 |          0 |          3 |         63 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/models/screenings.js                                  | JavaScript         |         86 |          5 |         10 |        101 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/models/userModel.js                                   | JavaScript         |         92 |          1 |         11 |        104 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/models/watchlistModel.js                              | JavaScript         |         45 |          3 |          4 |         52 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/routes/auth.js                                        | JavaScript         |         22 |          4 |          7 |         33 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/routes/films.js                                       | JavaScript         |         17 |          0 |          6 |         23 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/routes/screenings.js                                  | JavaScript         |         29 |          5 |         11 |         45 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/routes/watchlist.js                                   | JavaScript         |         30 |          4 |          6 |         40 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/server.js                                             | JavaScript         |         61 |         13 |         16 |         90 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/services/authService.js                               | JavaScript         |        104 |         25 |         15 |        144 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/services/watchlistService.js                          | JavaScript         |         42 |          0 |          6 |         48 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/errors.js                                       | JavaScript         |          7 |          0 |          0 |          7 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/httpsErrors.js                                  | JavaScript         |          0 |          1 |          0 |          1 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/jwt.js                                          | JavaScript         |         53 |         18 |          9 |         80 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/password.js                                     | JavaScript         |         12 |          6 |          3 |         21 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/time.js                                         | JavaScript         |         27 |          3 |          8 |         38 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/tokenHash.js                                    | JavaScript         |          4 |          0 |          0 |          4 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/validateTz.js                                   | JavaScript         |          9 |          0 |          0 |          9 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/validators.js                                   | JavaScript         |         13 |          5 |          2 |         20 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/validators/authValidators.js                          | JavaScript         |         77 |         12 |         10 |         99 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/validators/watchlistValidators.js                     | JavaScript         |         11 |          2 |          3 |         16 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/curated/cinematheque_screenings_20250815_194302_curated.json | JSON               |      1,036 |          0 |          0 |      1,036 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/curated/cinematheque_screenings_20250927_211341.json         | JSON               |        602 |          0 |          0 |        602 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/curated/rio_screenings_20250812_070654.curated.json          | JSON               |      1,166 |          0 |          0 |      1,166 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/curated/rio_screenings_20250927_210415.json                  | JSON               |        958 |          0 |          0 |        958 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/curated/viff_screenings_20250811_155331.curated.json         | JSON               |      1,005 |          0 |          0 |      1,005 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/curated/viff_screenings_20250927_205436.json                 | JSON               |      4,543 |          0 |          0 |      4,543 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/latest/cinematheque_screenings_latest.json                   | JSON               |        602 |          0 |          0 |        602 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/latest/rio_screenings_latest.json                            | JSON               |        958 |          0 |          0 |        958 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/latest/viff_screenings_latest.json                           | JSON               |      4,543 |          0 |          0 |      4,543 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/raw/cinematheque_screenings_20250811_195018.json             | JSON               |        443 |          0 |          0 |        443 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/raw/cinematheque_screenings_20250815_194302.json             | JSON               |      1,036 |          0 |          0 |      1,036 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/raw/cinematheque_screenings_20250926_160338.json             | JSON               |        602 |          0 |          0 |        602 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/raw/rio_screenings_20250812_070654.json                      | JSON               |      1,180 |          0 |          0 |      1,180 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/raw/viff_screenings_20250811_155331.json                     | JSON               |      1,005 |          0 |          0 |      1,005 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/data/tmdb_cache.json                                              | JSON               |      1,854 |          0 |          0 |      1,854 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/README.md                                                | Markdown           |          0 |          0 |          1 |          1 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/bin/run_merge.sh                                         | Shell Script       |         13 |          2 |          5 |         20 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/bin/run_patch.sh                                         | Shell Script       |          1 |          1 |          0 |          2 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/bin/run_pipeline.sh                                      | Shell Script       |         15 |          6 |          6 |         27 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/bin/run_validation.sh                                    | Shell Script       |          1 |          1 |          0 |          2 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/etl/merge_staging_to_live.sql                            | MS SQL             |         33 |         14 |          6 |         53 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/migrations/001_init_schema.sql                           | MS SQL             |        188 |         15 |         20 |        223 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/migrations/002.sql                                       | MS SQL             |         45 |          3 |          4 |         52 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/migrations/003.sql                                       | MS SQL             |         21 |          3 |          6 |         30 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/aliases.py                                       | Python             |          8 |          1 |          3 |         12 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/db_helper.py                                     | Python             |         54 |          9 |         18 |         81 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/load_json.py                                     | Python             |        121 |        297 |         24 |        442 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/omdb_api.py                                      | Python             |        116 |          3 |         23 |        142 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/patch_staging.sql                                | MS SQL             |          9 |          3 |          2 |         14 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/resolve_imdb_id_url.py                           | Python             |        147 |         11 |         39 |        197 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/validate_staging.sql                             | MS SQL             |          5 |          2 |          2 |          9 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/doc/CHANGELOG.md                                                  | Markdown           |          0 |          0 |          1 |          1 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/doc/api-style.md                                                  | Markdown           |         20 |          0 |          5 |         25 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/doc/openapi.yaml                                                  | YAML               |        164 |          0 |          6 |        170 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/dump-vancine-202509261754.sql                                     | MS SQL             |        276 |         84 |         53 |        413 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/README.md                                                | Markdown           |         23 |          0 |         14 |         37 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/auth/login/page.tsx                                  | TypeScript JSX     |         52 |          1 |          4 |         57 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/auth/register/page.tsx                               | TypeScript JSX     |         59 |          1 |          4 |         64 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/films/[id]/error.tsx                                 | TypeScript JSX     |          1 |          0 |          0 |          1 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/films/[id]/loading.tsx                               | TypeScript JSX     |          7 |          0 |          0 |          7 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/films/[id]/page.tsx                                  | TypeScript JSX     |         15 |          0 |          2 |         17 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/globals.css                                          | PostCSS            |         22 |          0 |          5 |         27 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/layout.tsx                                           | TypeScript JSX     |         28 |          0 |          6 |         34 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/lib/auth.ts                                          | TypeScript         |         38 |          0 |          4 |         42 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/lib/films.ts                                         | TypeScript         |         40 |          1 |          4 |         45 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/lib/screenings.ts                                    | TypeScript         |         55 |          1 |         10 |         66 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/page.tsx                                             | TypeScript JSX     |         48 |          0 |          8 |         56 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/NavBar.tsx                                    | TypeScript JSX     |         61 |          0 |          6 |         67 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/films/FilmHeader.tsx                          | TypeScript JSX     |         64 |          4 |          7 |         75 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/films/FilmMeta.tsx                            | TypeScript JSX     |         39 |          3 |          7 |         49 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/films/FilmShowtimes.tsx                       | TypeScript JSX     |         82 |          7 |         11 |        100 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/screenings/Filters.tsx                        | TypeScript JSX     |        130 |          3 |         10 |        143 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/screenings/Pagination.tsx                     | TypeScript JSX     |         33 |          0 |          1 |         34 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/screenings/ResultsTable.tsx                   | TypeScript JSX     |         56 |          0 |          2 |         58 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/eslint.config.mjs                                        | JavaScript         |         21 |          0 |          5 |         26 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/lib/buildParams.ts                                       | TypeScript         |         33 |          2 |          5 |         40 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/lib/useScreenings.ts                                     | TypeScript         |         80 |          2 |         15 |         97 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/next.config.ts                                           | TypeScript         |         12 |          0 |          2 |         14 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/package-lock.json                                        | JSON               |      6,192 |          0 |          1 |      6,193 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/package.json                                             | JSON               |         30 |          0 |          1 |         31 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/postcss.config.mjs                                       | JavaScript         |          4 |          0 |          2 |          6 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/public/file.svg                                          | XML                |          1 |          0 |          0 |          1 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/public/globe.svg                                         | XML                |          1 |          0 |          0 |          1 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/public/next.svg                                          | XML                |          1 |          0 |          0 |          1 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/public/vercel.svg                                        | XML                |          1 |          0 |          0 |          1 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/public/window.svg                                        | XML                |          1 |          0 |          0 |          1 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/tsconfig.json                                            | JSON with Comments |         27 |          0 |          1 |         28 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/others/omdb_api_example.py                                        | Python             |         20 |          3 |          3 |         26 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/others/omdb_response_exmaple.json                                 | JSON               |         40 |          0 |          1 |         41 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/others/tmdb_api_example.py                                        | Python             |         43 |          3 |          9 |         55 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/scrapers/cine_scraper.py                                          | Python             |        221 |         30 |         68 |        319 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/scrapers/rio_scraper.py                                           | Python             |        259 |         26 |         69 |        354 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/scrapers/scrapers.iml                                             | XML                |         11 |          0 |          0 |         11 |
+| /Users/wendyzhong/Desktop/van_art_cinema_guide/scrapers/viff_scraper.py                                          | Python             |        165 |          8 |         56 |        229 |
+| Total                                                                                                            |                    |     33,465 |        679 |        721 |     34,865 |
++------------------------------------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+

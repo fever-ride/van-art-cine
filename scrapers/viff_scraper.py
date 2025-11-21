@@ -9,7 +9,7 @@ from playwright.sync_api import sync_playwright, TimeoutError
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 # project_root/data/test
-OUTPUT_DIR = os.path.join(PROJECT_ROOT, "data", "test")
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "data", "latest")
 
 
 def scrape_viff_listings():

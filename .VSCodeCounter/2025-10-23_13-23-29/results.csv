@@ -1,0 +1,103 @@
+"filename", "language", "Python", "MS SQL", "Markdown", "Shell Script", "JSON", "XML", "YAML", "JavaScript", "TypeScript JSX", "TypeScript", "JSON with Comments", "PostCSS", "comment", "blank", "total"
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/package-lock.json", "JSON", 0, 0, 0, 0, 1669, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1670
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/package.json", "JSON", 0, 0, 0, 0, 33, 0, 0, 0, 0, 0, 0, 0, 0, 1, 34
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/controllers/authController.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 82, 0, 0, 0, 0, 4, 12, 98
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/controllers/watchlistController.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 36, 0, 0, 0, 0, 0, 5, 41
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/db.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 1, 12
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/middleware/auth.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 47, 0, 0, 0, 0, 18, 4, 69
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/models/films.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 60, 0, 0, 0, 0, 0, 3, 63
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/models/screenings.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 86, 0, 0, 0, 0, 5, 10, 101
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/models/userModel.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 92, 0, 0, 0, 0, 1, 11, 104
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/models/watchlistModel.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 45, 0, 0, 0, 0, 3, 4, 52
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/routes/auth.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 22, 0, 0, 0, 0, 4, 7, 33
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/routes/films.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 17, 0, 0, 0, 0, 0, 6, 23
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/routes/screenings.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 5, 11, 45
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/routes/watchlist.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 30, 0, 0, 0, 0, 4, 6, 40
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/server.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 61, 0, 0, 0, 0, 13, 16, 90
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/services/authService.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 104, 0, 0, 0, 0, 25, 15, 144
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/services/watchlistService.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 42, 0, 0, 0, 0, 0, 6, 48
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/errors.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 7
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/httpsErrors.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/jwt.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 0, 18, 9, 80
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/password.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 6, 3, 21
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/time.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 27, 0, 0, 0, 0, 3, 8, 38
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/tokenHash.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 4
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/validateTz.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 9
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/utils/validators.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 5, 2, 20
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/validators/authValidators.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 77, 0, 0, 0, 0, 12, 10, 99
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/backend/src/validators/watchlistValidators.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 2, 3, 16
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/curated/cinematheque_screenings_20250815_194302_curated.json", "JSON", 0, 0, 0, 0, 1036, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1036
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/curated/cinematheque_screenings_20250927_211341.json", "JSON", 0, 0, 0, 0, 602, 0, 0, 0, 0, 0, 0, 0, 0, 0, 602
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/curated/rio_screenings_20250812_070654.curated.json", "JSON", 0, 0, 0, 0, 1166, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1166
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/curated/rio_screenings_20250927_210415.json", "JSON", 0, 0, 0, 0, 958, 0, 0, 0, 0, 0, 0, 0, 0, 0, 958
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/curated/viff_screenings_20250811_155331.curated.json", "JSON", 0, 0, 0, 0, 1005, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1005
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/curated/viff_screenings_20250927_205436.json", "JSON", 0, 0, 0, 0, 4543, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4543
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/latest/cinematheque_screenings_latest.json", "JSON", 0, 0, 0, 0, 602, 0, 0, 0, 0, 0, 0, 0, 0, 0, 602
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/latest/rio_screenings_latest.json", "JSON", 0, 0, 0, 0, 958, 0, 0, 0, 0, 0, 0, 0, 0, 0, 958
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/latest/viff_screenings_latest.json", "JSON", 0, 0, 0, 0, 4543, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4543
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/raw/cinematheque_screenings_20250811_195018.json", "JSON", 0, 0, 0, 0, 443, 0, 0, 0, 0, 0, 0, 0, 0, 0, 443
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/raw/cinematheque_screenings_20250815_194302.json", "JSON", 0, 0, 0, 0, 1036, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1036
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/raw/cinematheque_screenings_20250926_160338.json", "JSON", 0, 0, 0, 0, 602, 0, 0, 0, 0, 0, 0, 0, 0, 0, 602
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/raw/rio_screenings_20250812_070654.json", "JSON", 0, 0, 0, 0, 1180, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1180
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/raw/viff_screenings_20250811_155331.json", "JSON", 0, 0, 0, 0, 1005, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1005
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/data/tmdb_cache.json", "JSON", 0, 0, 0, 0, 1854, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1854
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/README.md", "Markdown", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/bin/run_merge.sh", "Shell Script", 0, 0, 0, 13, 0, 0, 0, 0, 0, 0, 0, 0, 2, 5, 20
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/bin/run_patch.sh", "Shell Script", 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/bin/run_pipeline.sh", "Shell Script", 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 27
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/bin/run_validation.sh", "Shell Script", 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/etl/merge_staging_to_live.sql", "MS SQL", 0, 33, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 6, 53
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/migrations/001_init_schema.sql", "MS SQL", 0, 188, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 20, 223
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/migrations/002.sql", "MS SQL", 0, 45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 4, 52
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/migrations/003.sql", "MS SQL", 0, 21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 30
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/aliases.py", "Python", 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 12
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/db_helper.py", "Python", 54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 18, 81
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/load_json.py", "Python", 121, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 297, 24, 442
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/omdb_api.py", "Python", 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 23, 142
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/patch_staging.sql", "MS SQL", 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 14
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/resolve_imdb_id_url.py", "Python", 147, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 39, 197
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/database/scripts/validate_staging.sql", "MS SQL", 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 9
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/doc/CHANGELOG.md", "Markdown", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/doc/api-style.md", "Markdown", 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 25
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/doc/openapi.yaml", "YAML", 0, 0, 0, 0, 0, 0, 164, 0, 0, 0, 0, 0, 0, 6, 170
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/dump-vancine-202509261754.sql", "MS SQL", 0, 276, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84, 53, 413
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/README.md", "Markdown", 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 37
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/auth/login/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 52, 0, 0, 0, 1, 4, 57
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/auth/register/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 59, 0, 0, 0, 1, 4, 64
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/films/[id]/error.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/films/[id]/loading.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 7
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/films/[id]/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 15, 0, 0, 0, 0, 2, 17
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/globals.css", "PostCSS", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 0, 5, 27
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 28, 0, 0, 0, 0, 6, 34
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/lib/auth.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 38, 0, 0, 0, 4, 42
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/lib/films.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 40, 0, 0, 1, 4, 45
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/lib/screenings.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 55, 0, 0, 1, 10, 66
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/app/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 0, 8, 56
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/NavBar.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 61, 0, 0, 0, 0, 6, 67
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/films/FilmHeader.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 4, 7, 75
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/films/FilmMeta.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 39, 0, 0, 0, 3, 7, 49
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/films/FilmShowtimes.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 82, 0, 0, 0, 7, 11, 100
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/screenings/Filters.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 130, 0, 0, 0, 3, 10, 143
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/screenings/Pagination.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 33, 0, 0, 0, 0, 1, 34
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/components/screenings/ResultsTable.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 56, 0, 0, 0, 0, 2, 58
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/eslint.config.mjs", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 5, 26
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/lib/buildParams.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 33, 0, 0, 2, 5, 40
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/lib/useScreenings.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 80, 0, 0, 2, 15, 97
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/next.config.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 2, 14
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/package-lock.json", "JSON", 0, 0, 0, 0, 6192, 0, 0, 0, 0, 0, 0, 0, 0, 1, 6193
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/package.json", "JSON", 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 1, 31
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/postcss.config.mjs", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 2, 6
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/public/file.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/public/globe.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/public/next.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/public/vercel.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/public/window.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/frontend/tsconfig.json", "JSON with Comments", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 0, 0, 1, 28
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/others/omdb_api_example.py", "Python", 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 26
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/others/omdb_response_exmaple.json", "JSON", 0, 0, 0, 0, 40, 0, 0, 0, 0, 0, 0, 0, 0, 1, 41
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/others/tmdb_api_example.py", "Python", 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 9, 55
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/scrapers/cine_scraper.py", "Python", 221, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 68, 319
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/scrapers/rio_scraper.py", "Python", 259, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 69, 354
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/scrapers/scrapers.iml", "XML", 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 11
+"/Users/wendyzhong/Desktop/van_art_cinema_guide/scrapers/viff_scraper.py", "Python", 165, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 56, 229
+"Total", "-", 1154, 577, 43, 30, 29497, 16, 164, 1002, 675, 258, 27, 22, 679, 721, 34865
