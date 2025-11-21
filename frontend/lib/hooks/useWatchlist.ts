@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { GUEST_KEY, getGuestSet } from '@/app/lib/guestWatchlist';
+import { apiListWatchlist } from '@/app/lib/watchlist';
 
 type WatchlistItem = { screening_id: number | string };
 type WatchlistResponse = { items: WatchlistItem[] };
@@ -10,30 +11,34 @@ export function useWatchlist() {
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    // Initialize with guest state
+    // Initialize from guest storage
     setSavedIds(getGuestSet());
 
-    // Try to fetch server state
+    // Try loading authenticated watchlist
     (async () => {
       try {
-        const res = await fetch('/api/watchlist?limit=100', { credentials: 'include' });
-        if (!res.ok) return; // likely 401 (guest) — keep guest state
-        const data = (await res.json()) as WatchlistResponse;
+        const data: WatchlistResponse = await apiListWatchlist({ limit: 100 });
         const ids = new Set<number>(
           (data.items ?? []).map((it) => Number(it.screening_id))
         );
         setSavedIds(ids);
       } catch {
-        // ignore network errors; keep guest state
+        // User is likely a guest or request failed;
+        // keep using guest state
       }
     })();
 
-    // Listen for guest state changes
+    // Sync guest watchlist across tabs
     function onStorage(e: StorageEvent) {
-      if (e.key === GUEST_KEY) setSavedIds(getGuestSet());
+      if (e.key === GUEST_KEY) {
+        setSavedIds(getGuestSet());
+      }
     }
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+
+    return () => {
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
 
   const handleSavedChange = (screeningId: number, saved: boolean) => {

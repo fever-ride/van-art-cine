@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { apiLogout } from '@/app/lib/auth';
+import { apiLogout, apiMe } from '@/app/lib/auth';
 import { Noto_Sans } from 'next/font/google';
 
 const noto = Noto_Sans({ subsets: ['latin'], weight: ['400', '600', '700'] });
@@ -15,20 +15,20 @@ export default function NavBar() {
 
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
       try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        const data = await apiMe();
+
         if (cancelled) return;
-        if (res.ok) {
-          const data = await res.json();
-          setIsAuthed(!!data.user);
-        } else {
-          setIsAuthed(false);
-        }
+
+        setIsAuthed(!!data?.user);
       } catch {
+        if (cancelled) return;
         setIsAuthed(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };

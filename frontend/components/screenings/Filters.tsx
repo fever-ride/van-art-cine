@@ -187,7 +187,7 @@ export default function Filters({
             <option value="time">Screening Time</option>
             <option value="title">Film Title</option>
             <option value="imdb">IMDb Ratings</option>
-            <option value="rt">Rotten Tomato %</option>
+            <option value="rt">Rotten Tomatoes %</option>
           </select>
         </label>
 

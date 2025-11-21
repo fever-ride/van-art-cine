@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { apiListWatchlist } from '@/app/lib/watchlist';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import { getGuestSet } from '@/app/lib/guestWatchlist';
 
@@ -90,81 +91,87 @@ export default function WatchlistPage() {
       setGuestCount(guestIds.length);
 
       try {
-        const res = await fetch('/api/watchlist', { credentials: 'include' });
+        // First, try to load the authenticated watchlist.
+        // This goes through fetchWithAuth and will attempt a token refresh on 401.
+        const data = await apiListWatchlist({ limit: 100 });
+        setAuthed(true);
+        setItems(Array.isArray(data.items) ? data.items : []);
+        return;
+      } catch (e: unknown) {
+        const errAny = e as { status?: number } | undefined;
 
-        if (res.status === 401) {
-          setAuthed(false);
+        // If it is not a 401, treat it as a real error and let the outer catch handle it.
+        if (!errAny || errAny.status !== 401) {
+          throw e;
+        }
 
-          if (guestIds.length === 0) {
-            setItems([]);
-            setLoading(false);
-            return;
-          }
+        // 401 means the user is effectively a guest (no valid session).
+        setAuthed(false);
 
-          const bulkRes = await fetch('/api/screenings/bulk', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids: guestIds }),
-          });
-
-          if (!bulkRes.ok) throw new Error(`HTTP ${bulkRes.status}`);
-          const bulkData = await bulkRes.json();
-
-          const now = Date.now();
-          const byId = new Map<number, BulkScreening>(
-            (bulkData.items ?? []).map((s: BulkScreening) => [Number(s.id), s])
-          );
-
-          const rows: WatchlistRow[] = guestIds.map((id) => {
-            const s = byId.get(id);
-            if (!s) {
-              return {
-                screening_id: id,
-                start_at_utc: null,
-                film_id: null,
-                title: '(no longer available)',
-                cinema_id: null,
-                cinema_name: null,
-                status: 'missing',
-              } as WatchlistRow;
-            }
-            const startMs = s.start_at_utc ? Date.parse(s.start_at_utc) : NaN;
-            const past = Number.isFinite(startMs) && startMs < now;
-
-            return {
-              screening_id: Number(s.id),
-              start_at_utc: s.start_at_utc ?? null,
-              end_at_utc: s.end_at_utc ?? null,
-              runtime_min: s.runtime_min ?? null,
-              tz: s.tz ?? null,
-
-              film_id: s.film_id ?? null,
-              title: s.title ?? '(untitled)',
-              year: s.year ?? null,
-              imdb_rating: s.imdb_rating ?? null,
-              rt_rating_pct: s.rt_rating_pct ?? null,
-
-              cinema_id: s.cinema_id ?? null,
-              cinema_name: s.cinema_name ?? null,
-
-              source_url: s.source_url ?? null,
-
-              status: past ? 'past' : 'upcoming',
-            };
-          });
-
-          setItems(rows);
+        if (guestIds.length === 0) {
+          setItems([]);
           setLoading(false);
           return;
         }
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setAuthed(true);
-        setItems(Array.isArray(data.items) ? data.items : []);
-      } catch (e: unknown) {
-        setErr(isErrorLike(e) ? e.message : 'Failed to load watchlist');
+        // Guest fallback: look up screenings via the bulk endpoint.
+        const bulkRes = await fetch('/api/screenings/bulk', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: guestIds }),
+        });
+
+        if (!bulkRes.ok) throw new Error(`HTTP ${bulkRes.status}`);
+        const bulkData: BulkResponse = await bulkRes.json();
+
+        const now = Date.now();
+        const byId = new Map<number, BulkScreening>(
+          (bulkData.items ?? []).map((s: BulkScreening) => [Number(s.id), s])
+        );
+
+        const rows: WatchlistRow[] = guestIds.map((id) => {
+          const s = byId.get(id);
+          if (!s) {
+            return {
+              screening_id: id,
+              start_at_utc: null,
+              film_id: null,
+              title: '(no longer available)',
+              cinema_id: null,
+              cinema_name: null,
+              status: 'missing',
+            } as WatchlistRow;
+          }
+
+          const startMs = s.start_at_utc ? Date.parse(s.start_at_utc) : NaN;
+          const past = Number.isFinite(startMs) && startMs < now;
+
+          return {
+            screening_id: Number(s.id),
+            start_at_utc: s.start_at_utc ?? null,
+            end_at_utc: s.end_at_utc ?? null,
+            runtime_min: s.runtime_min ?? null,
+            tz: s.tz ?? null,
+
+            film_id: s.film_id ?? null,
+            title: s.title ?? '(untitled)',
+            year: s.year ?? null,
+            imdb_rating: s.imdb_rating ?? null,
+            rt_rating_pct: s.rt_rating_pct ?? null,
+
+            cinema_id: s.cinema_id ?? null,
+            cinema_name: s.cinema_name ?? null,
+
+            source_url: s.source_url ?? null,
+
+            status: past ? 'past' : 'upcoming',
+          };
+        });
+
+        setItems(rows);
+        setLoading(false);
+        return;
       } finally {
         setLoading(false);
       }

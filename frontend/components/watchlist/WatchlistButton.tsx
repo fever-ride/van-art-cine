@@ -111,7 +111,7 @@ export default function WatchlistButton({
       className={[
         'rounded-xl font-semibold transition-all duration-150 whitespace-nowrap shrink-0',
         sizeClass[size],
-        'min-w-[7.5rem]', // ensures stable width (~"Add to Watchlist" width)
+        'min-w-[7.5rem]', // ensures stable width ("Add to Watchlist" width)
         pending ? 'opacity-60 cursor-not-allowed' : '',
         saved
           ? 'border border-dashed border-slate-300 text-slate-500 bg-slate-50 hover:bg-slate-100'

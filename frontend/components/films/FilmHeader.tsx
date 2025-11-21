@@ -15,7 +15,7 @@ type Props = {
     | 'imdb_url'
     | 'directors'
   > & {
-    poster_url?: string | null; // optional; will fallback to placeholder
+    poster_url?: string | null;
   };
 };
 
