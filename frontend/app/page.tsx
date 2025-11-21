@@ -65,8 +65,6 @@ function ScreeningsPageInner() {
     return Array.from(m, ([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [screeningsData.items]);
-
-  const cinemaCount = cinemaOptions.length;
   
   const disablePrev = page <= 1 || screeningsData.loading;
   const disableNext = !screeningsData.hasMore || screeningsData.loading;
@@ -86,9 +84,6 @@ function ScreeningsPageInner() {
           {/*<span className="inline-flex items-center rounded-full bg-[#FFF8E7] px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-200">
             Updated daily
           </span>*/}
-          <span className="inline-flex items-center rounded-full bg-surface px-3 py-1 text-xs font-medium text-accent ring-1 ring-gray-200">
-            {cinemaCount > 0 ? `${cinemaCount} cinemas covered` : 'Multiple cinemas covered'}
-          </span>
           <span className="inline-flex items-center rounded-full bg-surface px-3 py-1 text-xs font-medium text-accent ring-1 ring-gray-200">
             Plan your week by starting your own watchlist!
           </span>
