@@ -26,6 +26,10 @@ Remove ALL information that is NOT part of the film’s actual title, including:
 
 • These modifiers must be removed even if inside parentheses/brackets:
   - “(...)”, “[...]”, “- ...”, “: ...”
+• However, if a colon appears as part of the real film title 
+  and the content after the colon is NOT a screening modifier,
+  you must keep it.
+  - Example: “Orwell: 2+2=5” → normalized_title must stay exactly the same.
 
 Do NOT translate titles.  
 Do NOT infer meaning.  

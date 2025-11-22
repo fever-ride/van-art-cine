@@ -12,6 +12,41 @@ Usage:
     python scripts/merge_duplicate_persons.py [--dry-run]
 """
 
+# NOTE: Known limitations / future improvements for merge_duplicate_persons
+#
+# 1) Same group processed multiple times
+#    The same logical person can appear as a duplicate group in:
+#      - Step 1: imdb_id
+#      - Step 2: tmdb_id
+#      - Step 3: normalized_name
+#    We currently do not track which IDs have already been merged, so some
+#    records may be revisited in later steps. This is mostly harmless because
+#    inserts use ON CONFLICT DO NOTHING, but it can generate redundant work
+#    and noisy logs. A future improvement would be to keep a "seen/merged"
+#    set and skip IDs that were already consolidated.
+#
+# 2) Limited field reconciliation
+#    When merging, we only reconcile external IDs (imdb_id, tmdb_id), and we
+#    leave other fields (e.g. name, normalized_name) as they are on the
+#    chosen "winner" record. In groups where different rows have conflicting
+#    or complementary data, we may keep a suboptimal name or other fields.
+#    A future improvement is to define a more complete merge strategy for
+#    non-ID fields (e.g. preferring longer / non-empty names).
+#
+# 3) Schema coupling (only film_person references)
+#    This script assumes that film_person is the only table referencing
+#    person.id. If new relations are added in the schema, they must be
+#    included here. A future refactor could centralize all foreign-key updates
+#    (or generate them from schema metadata) to reduce this risk.
+#
+# 4) Performance considerations
+#    For large datasets, repeatedly querying per-person (details + ref counts)
+#    and re-processing the same logical groups across multiple steps may be
+#    slow. If needed, we could:
+#      - batch queries to reduce round-trips, and/or
+#      - collapse the three passes (imdb_id, tmdb_id, normalized_name) into
+#        a single dedup pass with a unified grouping / scoring strategy.
+
 import sys
 from typing import List, Tuple, Dict, Any
 from db_helper import conn_open
