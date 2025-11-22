@@ -121,7 +121,7 @@ def is_missing_token(s: str | None) -> bool:
 
 
 def stable_uid(cinema_id: int, film_id: int, start_at_utc: datetime) -> str:
-    """Stable synthetic UID when upstream has no ID."""
+    """Stable synthetic UID."""
     key = f"{cinema_id}|{film_id}|{start_at_utc:%Y-%m-%d %H:%M:%S}"
     return hashlib.sha256(key.encode("utf-8")).hexdigest()[:32]
 
@@ -438,8 +438,7 @@ def load_source(
             end_utc = guess_end(start_utc, runtime)
 
             # --- IDs & content hash ---
-            upstream_id = st.get("id") or r.get("id")
-            source_uid = upstream_id or stable_uid(cid, film_id, start_utc)
+            source_uid = stable_uid(cid, film_id, start_utc)
             content_hash = make_content_hash(
                 film_id,
                 cid,
