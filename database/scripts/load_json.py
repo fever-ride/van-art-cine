@@ -509,9 +509,12 @@ def load_source(
 
             start_utc = to_utc(dt_local)
             end_utc = guess_end(start_utc, runtime)
-
-            upstream_id = st.get("id") or r.get("id")
-            source_uid = upstream_id or stable_uid(cid, film_id, start_utc)
+            # source_uid:
+            # - Unique identifier for this scraped screening inside (source).
+            # - Used as primary key in stg_screening and unique key in screening.
+            # - Not a permanent business ID; not used for merge or activation logic.
+            # - Do NOT rely on this ID surviving film_id merges.
+            source_uid = stable_uid(cid, film_id, start_utc)
             content_hash = make_content_hash(
                 film_id,
                 cid,
