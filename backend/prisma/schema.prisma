@@ -136,6 +136,10 @@ model refresh_token {
   @@index([user_id])
 }
 
+/// source_uid:
+/// - Generated during scraping based on the *original* scraped data.
+/// - NOT a business-stable ID (film_id may change after merge_duplicate_films).
+/// - screening uniqueness is guaranteed by (cinema_id, film_id, start_at_utc).
 model screening {
   id                  Int                   @id @default(autoincrement())
   film_id             Int
@@ -171,7 +175,10 @@ model screening {
   @@index([start_at_utc])
 }
 
-// Staging now has a proper PK
+/// source_uid: primary key for staging rows.
+/// - Ensures each scraped screening is uniquely stored for a given (source, source_uid).
+/// - Allows staging to be loaded safely without duplicates.
+/// - This ID is not stable across film merges; only staging-level identity.
 model stg_screening {
   film_id       Int
   cinema_id     Int
