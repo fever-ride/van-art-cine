@@ -1,5 +1,6 @@
 // src/models/userModel.js
 import { prisma } from '../lib/prismaClient.js';
+import { Prisma } from '@prisma/client';
 import { hashToken } from '../utils/tokenHash.js';
 
 // helpers
@@ -58,6 +59,22 @@ export async function findById(id) {
   return row ? mapUserRow(row) : null;
 }
 
+// NEW: safe version for profile, admin lists, etc.
+export async function findSafeById(id) {
+  if (!id) return null;
+  const row = await prisma.app_user.findUnique({
+    where: { uid: Number(id) },
+    select: {
+      uid: true,
+      name: true,
+      email: true,
+      role: true,
+      created_at: true,
+    },
+  });
+  return row ? mapUserSafeRow(row) : null;
+}
+
 export async function createUser({ email, passwordHash, name = null, role = 'user' }) {
   const normalizedEmail = email.trim().toLowerCase();
 
@@ -84,6 +101,94 @@ export async function createUser({ email, passwordHash, name = null, role = 'use
   });
 
   return row ? mapUserSafeRow(row) : null;
+}
+
+export async function deleteUserById(id) {
+  if (!id) return false;
+
+  try {
+    await prisma.app_user.delete({
+      where: { uid: Number(id) },
+    });
+    return true;
+  } catch (err) {
+    // “record not found”
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === 'P2025'
+    ) {
+      return false;
+    }
+    throw err;
+  }
+}
+
+export async function deleteUserWatchlist(userId) {
+  if (!userId) return;
+
+  await prisma.watchlist_screening.deleteMany({
+    where: { user_uid: Number(userId) },
+  });
+}
+
+export async function updateName(id, { name }) {
+  if (!id) return null;
+
+  try {
+    const row = await prisma.app_user.update({
+      where: { uid: Number(id) },
+      data: { name },
+      select: {
+        uid: true,
+        name: true,
+        email: true,
+        role: true,
+        created_at: true,
+      },
+    });
+
+    return mapUserSafeRow(row);
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === 'P2025'
+    ) {
+      // “record not found” → “no such user”
+      return null;
+    }
+    throw err; // DB error, let it bubble
+  }
+}
+
+export async function updatePassword(id, { passwordHash }) {
+  if (!id) return null;
+
+  try {
+    const row = await prisma.app_user.update({
+      where: { uid: Number(id) },
+      data: {
+        password_hash: passwordHash,
+      },
+      select: {
+        uid: true,
+        name: true,
+        email: true,
+        role: true,
+        created_at: true,
+      },
+    });
+
+    return mapUserSafeRow(row);
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === 'P2025'
+    ) {
+      // record not found → no such user
+      return null;
+    }
+    throw err; // DB error, let it bubble
+  }
 }
 
 export async function storeRefreshToken({ userId, token, expiresAt, userAgent = null, ip = null }) {

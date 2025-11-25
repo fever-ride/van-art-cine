@@ -9,6 +9,7 @@ import films from './routes/films.js';
 import auth from './routes/auth.js';
 import watchlist from './routes/watchlist.js';
 import cinemas from './routes/cinemas.js';
+import user from './routes/user.js';
 
 const app = express();
 
@@ -67,6 +68,7 @@ app.use('/api/screenings', screenings);
 app.use('/api/films', films);
 app.use('/api/watchlist', watchlist);
 app.use('/api/cinemas', cinemas);
+app.use('/api/user', user);
 
 /* -------- 404 -------- */
 app.use((req, res, next) => {

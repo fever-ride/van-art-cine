@@ -5,3 +5,11 @@ export class AuthError extends Error {
     this.status = status;
   }
 }
+
+export class NotFoundError extends Error {
+  constructor(message = 'Not found', code = 'NOT_FOUND', status = 404) {
+    super(message);
+    this.code = code;
+    this.status = status;
+  }
+}
