@@ -142,10 +142,6 @@ export async function refresh({ refreshToken, userAgent, ip }) {
 	return { user: safeUser, accessToken, refreshToken: newRefreshToken, refreshExpiresAt };
 }
 
-/**
-* logout({ refreshToken })
-* (optional) revoke refresh in DB
-*/
 export async function logout({ refreshToken }) {
 	await revokeRefreshToken(refreshToken)
 	return { ok: true }

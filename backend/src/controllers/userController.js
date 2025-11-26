@@ -1,4 +1,5 @@
 import * as svc from '../services/userService.js';
+import { clearCookieOptions } from '../utils/jwt.js';
 
 export async function getMyProfile(req, res, next) {
   try {
@@ -41,6 +42,10 @@ export async function deleteMyAccount(req, res, next) {
     const { uid } = req.user;
 
     await svc.deleteUserAccount(uid);
+
+    // Clear auth cookies so the client is logged out
+    res.clearCookie('access_token', clearCookieOptions);
+    res.clearCookie('refresh_token', clearCookieOptions);
 
     return res.json({ success: true });
   } catch (err) {

@@ -114,9 +114,8 @@ export async function logoutHandler(req, res, next) {
   }
 }
 
-/** GET /api/auth/me (optional) */
+/** GET /api/auth/me */
 export async function meHandler(req, res) {
-  // If you add `requireAuth` middleware on this route, you’ll have req.user
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
