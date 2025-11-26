@@ -103,18 +103,29 @@ export default function NavBar() {
           <nav className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto">
             <Link
               href="/watchlist"
-              className={`${pill} ${isActive('/watchlist') ? 'bg-highlight text-primary' : ''} snap-start`}
+              className={`${pill} ${
+                isActive('/watchlist') ? 'bg-highlight text-primary' : ''
+              } snap-start`}
             >
               My Watchlist
             </Link>
-            {/* Add more sections when ready
-            <Link href="/blog" className={`${pill} ${isActive('/blog') ? 'bg-[#FFF8E7] text-gray-900' : ''} snap-start`}>
-              Blog
-            </Link>
-            */}
+
+            {isAuthed && (
+              <Link
+                href="/profile"
+                className={`${pill} ${
+                  isActive('/profile') ? 'bg-highlight text-primary' : ''
+                } snap-start`}
+              >
+                My Profile
+              </Link>
+            )}
+
             <Link
               href="/about"
-              className={`${pill} ${isActive('/about') ? 'bg-highlight text-primary' : ''} snap-start`}
+              className={`${pill} ${
+                isActive('/about') ? 'bg-highlight text-primary' : ''
+              } snap-start`}
             >
               About
             </Link>
