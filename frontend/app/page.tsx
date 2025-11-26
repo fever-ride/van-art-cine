@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Noto_Sans } from 'next/font/google';
 
 import Filters from '@/components/screenings/Filters';
@@ -10,6 +10,7 @@ import { useScreeningsUI } from '@/lib/hooks/useScreeningsUI';
 import { useScreeningsData } from '@/lib/hooks/useScreeningsData';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { apiListCinemas, type Cinema } from '@/app/lib/cinemas';
 
 const noto = Noto_Sans({
   subsets: ['latin'],
@@ -23,6 +24,9 @@ function ScreeningsPageInner() {
   const searchParams = useSearchParams();
   const router       = useRouter();
   const pathname     = usePathname();
+
+  const [cinemaOptions, setCinemaOptions] = useState<Cinema[]>([]);
+  const [cinemaLoading, setCinemaLoading] = useState(false);
 
   const rawPage = searchParams.get('page');
   let page = Number(rawPage);
@@ -43,7 +47,7 @@ function ScreeningsPageInner() {
       params.set('page', String(nextPage));
     }
 
-    const qs = params.toString();
+    const qs  = params.toString();
     const url = qs ? `${pathname}?${qs}` : pathname;
 
     router.push(url);
@@ -54,18 +58,30 @@ function ScreeningsPageInner() {
     screeningsData.reload(0);
   };
 
-  // derive cinema options from current results
-  const cinemaOptions = useMemo(() => {
-    const m = new Map<number, string>();
-    screeningsData.items.forEach(s => {
-      if (typeof s.cinema_id === 'number' && s.cinema_name) {
-        m.set(s.cinema_id, s.cinema_name);
+  // Fetch all cinemas once, sort alphabetically
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      setCinemaLoading(true);
+      try {
+        const items = await apiListCinemas();
+        if (cancelled) return;
+
+        const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name));
+        setCinemaOptions(sorted);
+      } catch (e) {
+        console.warn('Failed to load cinemas', e);
+      } finally {
+        if (!cancelled) setCinemaLoading(false);
       }
-    });
-    return Array.from(m, ([id, name]) => ({ id, name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [screeningsData.items]);
-  
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const disablePrev = page <= 1 || screeningsData.loading;
   const disableNext = !screeningsData.hasMore || screeningsData.loading;
 
@@ -81,9 +97,6 @@ function ScreeningsPageInner() {
       {/* ---------------------- #2 Quick facts strip ---------------------- */}
       <section className="mb-8">
         <div className="flex flex-wrap gap-2">
-          {/*<span className="inline-flex items-center rounded-full bg-[#FFF8E7] px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-200">
-            Updated daily
-          </span>*/}
           <span className="inline-flex items-center rounded-full bg-surface px-3 py-1 text-xs font-medium text-accent ring-1 ring-gray-200">
             Plan your week by starting your own watchlist!
           </span>
@@ -93,19 +106,19 @@ function ScreeningsPageInner() {
         </div>
       </section>
 
-      {/* --------- #4 Divider + “Now Playing” title--------- */}
+      {/* --------- Divider + “Now Playing” title --------- */}
       <div className="h-px w-full bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100" />
       <h2 className="mb-4 text-[18px] font-semibold text-primary">Now Playing</h2>
 
       {/* ---------------------- Two-column layout ---------------------- */}
       <div className="flex flex-col gap-4 md:flex-row">
         {/* Left sidebar */}
-        <aside className="md:w-[275px] md:flex-shrink-0 md:sticky md:top-30 self-start">
+        <aside className="self-start md:w-[275px] md:flex-shrink-0 md:sticky md:top-30">
           <Filters
             ui={screeningsUI.ui}
             setUI={screeningsUI.setUI}
             onApply={handleApplyFilters}
-            loading={screeningsData.loading}
+            loading={screeningsData.loading || cinemaLoading}
             cinemaOptions={cinemaOptions}
           />
         </aside>
