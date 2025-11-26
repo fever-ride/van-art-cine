@@ -3,13 +3,18 @@ import { getGuestSet, clearGuestSet } from '@/app/lib/guestWatchlist';
 /** 
  * Single-flight guard for token refresh.
  * Holds the in-progress refresh promise, or null when idle. 
+ * If multiple requests hit a 401 at the same time, they all await the same
+ * in-flight refresh promise instead of spamming /api/auth/refresh.
  */
 let refreshInFlight: Promise<void> | null = null;
 
 /**
- * Single-flight refresh.
- * Reuse the in-flight Promise and avoid concurrent refresh storms.
- * Always clears the sentinel when the refresh finishes.
+ * Refresh the access token using the refresh token (in cookie).
+ *
+ * - Ensures only ONE real refresh request is in flight at a time.
+ * - Other callers reuse the same Promise to avoid a “refresh storm”.
+ * - Does NOT run automatically; it is only called from fetchWithAuth
+ *   after a 401 response.
  */
 async function refreshAccessToken(): Promise<void> {
   if (!refreshInFlight) {
@@ -29,11 +34,20 @@ async function refreshAccessToken(): Promise<void> {
   return refreshInFlight!;
 }
 
+
 /**
- * Wrapper around fetch that:
- * - sends cookies
- * - on 401, attempts a single token refresh (except when calling refresh itself)
- * - retries the original request once after a successful refresh 
+ * Wrapper around fetch for authenticated API calls:
+ *
+ * - Always sends cookie.
+ * - If the response is not 401, behaves like a normal fetch.
+ * - If the response is 401 (expired/invalid access token):
+ *     1) Calls refreshAccessToken() once (unless this *is* the refresh call),
+ *     2) Then retries the original request exactly once.
+ * - If refresh fails, it returns the original 401 so the caller can treat
+ *   the user as logged out.
+ *
+ * Use this for protected APIs so the user stays “logged in”
+ * as long as their refresh token is valid, without hammering /auth/refresh.
  */
 export async function fetchWithAuth(
   input: RequestInfo | URL,
