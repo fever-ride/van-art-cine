@@ -89,30 +89,36 @@ export async function fetchScreenings(opts = {}) {
   // --- Ordering & pagination ---
   let orderBy;
   const sortKey = String(sort);
+
+  // Unified rule for rating sorting
   const ratingOrder = { sort: safeOrder, nulls: 'last' };
 
   if (sortKey === 'time') {
     orderBy = [{ start_at_utc: safeOrder }];
   } else if (sortKey === 'title') {
-    orderBy = [{ film: { title: safeOrder } }];
+    orderBy = [{ film: { title: safeOrder } }, { start_at_utc: 'asc' }];
   } else if (sortKey === 'imdb') {
     orderBy = [
       { film: { imdb_rating: ratingOrder } },
+      { film: { title: 'asc' } },
       { start_at_utc: 'asc' },
     ];
   } else if (sortKey === 'rt') {
     orderBy = [
       { film: { rt_rating_pct: ratingOrder } },
+      { film: { title: 'asc' } },
       { start_at_utc: 'asc' },
     ];
   } else if (sortKey === 'votes') {
     orderBy = [
       { film: { imdb_votes: { sort: safeOrder, nulls: 'last' } } },
+      { film: { title: 'asc' } },
       { start_at_utc: 'asc' },
     ];
   } else if (sortKey === 'year') {
     orderBy = [
       { film: { year: { sort: safeOrder, nulls: 'last' } } },
+      { film: { title: 'asc' } },
       { start_at_utc: 'asc' },
     ];
   }
