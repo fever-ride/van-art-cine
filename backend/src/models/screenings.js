@@ -89,19 +89,32 @@ export async function fetchScreenings(opts = {}) {
   // --- Ordering & pagination ---
   let orderBy;
   const sortKey = String(sort);
+  const ratingOrder = { sort: safeOrder, nulls: 'last' };
 
   if (sortKey === 'time') {
     orderBy = [{ start_at_utc: safeOrder }];
   } else if (sortKey === 'title') {
     orderBy = [{ film: { title: safeOrder } }];
   } else if (sortKey === 'imdb') {
-    orderBy = [{ film: { imdb_rating: safeOrder } }];
+    orderBy = [
+      { film: { imdb_rating: ratingOrder } },
+      { start_at_utc: 'asc' },
+    ];
   } else if (sortKey === 'rt') {
-    orderBy = [{ film: { rt_rating_pct: safeOrder } }];
+    orderBy = [
+      { film: { rt_rating_pct: ratingOrder } },
+      { start_at_utc: 'asc' },
+    ];
   } else if (sortKey === 'votes') {
-    orderBy = [{ film: { imdb_votes: safeOrder } }];
+    orderBy = [
+      { film: { imdb_votes: { sort: safeOrder, nulls: 'last' } } },
+      { start_at_utc: 'asc' },
+    ];
   } else if (sortKey === 'year') {
-    orderBy = [{ film: { year: safeOrder } }];
+    orderBy = [
+      { film: { year: { sort: safeOrder, nulls: 'last' } } },
+      { start_at_utc: 'asc' },
+    ];
   }
 
   const rowsRaw = await prisma.screening.findMany({
