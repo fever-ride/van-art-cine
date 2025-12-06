@@ -55,8 +55,8 @@ export default function NavBar() {
             <Image
               src="/logo-no-title.svg"
               alt="The Cinephile’s Van logo"
-              width={50}
-              height={50}
+              width={40}
+              height={40}
               className="shrink-0"
               priority
             />
