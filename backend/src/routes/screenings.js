@@ -56,7 +56,7 @@ router.get('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-/* -------- Bulk by IDs (new) --------
+/* -------- Bulk by IDs --------
    Body: { ids: number[] }
    Returns: { items: Screening[] } in the same order as input IDs (unknown IDs omitted)
 */
