@@ -68,7 +68,11 @@ function ScreeningsPageInner() {
         const items = await apiListCinemas();
         if (cancelled) return;
 
-        const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name));
+        const sorted = [...items]
+          // Hide the parent "VIFF Centre" location which has no own screenings
+          .filter((c) => c.name !== 'VIFF Centre')
+          .sort((a, b) => a.name.localeCompare(b.name));
+
         setCinemaOptions(sorted);
       } catch (e) {
         console.warn('Failed to load cinemas', e);
@@ -88,21 +92,17 @@ function ScreeningsPageInner() {
   return (
     <main className={`${noto.className} mx-auto max-w-[1400px] px-4 py-8`}>
       {/* ---------------------- #1 Hero (only title) ---------------------- */}
-      <section className="mb-6">
-        <h1 className="font-serif text-2xl font-semibold text-primary md:text-[28px]">
+      <section className="mb-3">
+        <h1 className="text-2xl font-bold text-primary md:text-[24px]">
           Vancouver’s indie screenings, all in one place.
         </h1>
       </section>
 
-      {/* ---------------------- #2 Quick facts strip ---------------------- */}
+      {/* ---------------------- #2 Quick facts ---------------------- */}
       <section className="mb-8">
-        <div className="flex flex-wrap gap-2">
-          <span className="inline-flex items-center rounded-full bg-surface px-3 py-1 text-xs font-medium text-accent ring-1 ring-gray-200">
-            Plan your week by starting your own watchlist!
-          </span>
-          <span className="inline-flex items-center rounded-full bg-surface px-3 py-1 text-xs font-medium text-accent ring-1 ring-gray-200">
-            Films outside mainstream releases
-          </span>
+        <div className="flex flex-col gap-1 border-l-2 border-gray-200 pl-3 text-sm text-muted">
+          <span>Plan your week by starting your own watchlist!</span>
+          <span>Films outside mainstream releases</span>
         </div>
       </section>
 
