@@ -132,11 +132,13 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                 {/* title + meta + genre pills */}
                 <td className="px-3 py-3">
                   <div className="text-[15px] font-semibold leading-6 text-gray-900">
-                    {s.film_id ? (
+                    { s.film_id ? (
                       <Link
                         href={`/films/${s.film_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="hover:underline"
-                        aria-label={`View details for ${s.title}`}
+                        aria-label={`View details for ${s.title} in a new tab`}
                       >
                         {s.title}{year}
                       </Link>
