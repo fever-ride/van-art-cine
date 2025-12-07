@@ -22,6 +22,7 @@ export interface Film {
   directors: string[];
   writers: string[];
   cast: string[];
+  poster_url?: string | null; 
 }
 
 // Each upcoming screening for this film
