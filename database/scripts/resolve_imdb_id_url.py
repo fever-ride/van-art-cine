@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
 """
-Backfill TMDB/IMDb IDs and IMDb URLs for films (PostgreSQL version).
+Backfill TMDB/IMDb IDs, IMDb URLs, and poster paths for films (PostgreSQL version).
 
 - Reads TMDB via API, caches results to data/tmdb_cache.json
-- Updates film.imdb_id, film.tmdb_id, film.imdb_url
+- Updates film.imdb_id, film.tmdb_id, film.imdb_url, film.poster_path
 - Safe to run multiple times (idempotent with cache)
 """
 
@@ -59,6 +58,7 @@ except Exception as e:
 
 
 def save_cache():
+    """Persist the in-memory TMDB lookup cache to disk as JSON."""
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
         json.dump(CACHE, f, ensure_ascii=False, indent=2)
 
@@ -69,6 +69,10 @@ def backoff_sleep():
 
 
 def tmdb_get(path: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Call a TMDB API endpoint with the shared API key and basic error handling.
+    Returns the parsed JSON response on HTTP 200, or None on any error/non-200 status.
+    """
     url = f"{TMDB_BASE}/{path}"
     params = dict(params or {})
     params["api_key"] = TMDB_API_KEY
@@ -85,6 +89,10 @@ def tmdb_get(path: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 
 def search_tmdb_movies(query: str, year: Optional[int]) -> List[Dict[str, Any]]:
+    """
+    Search TMDB's movie catalog by title (and optional year) using /search/movie.
+    Returns the raw 'results' list from TMDB, or an empty list if the call fails.
+    """
     params = {"query": query, "include_adult": True}
     if year is not None:
         params["year"] = year
@@ -94,6 +102,10 @@ def search_tmdb_movies(query: str, year: Optional[int]) -> List[Dict[str, Any]]:
 
 
 def extract_year(item: Dict[str, Any]) -> Optional[int]:
+    """
+    Extract the release year (YYYY) from a TMDB movie result's 'release_date' field.
+    Returns an int year or None if the date is missing or malformed.
+    """
     rd = item.get("release_date")
     if not rd:
         return None
@@ -104,6 +116,11 @@ def extract_year(item: Dict[str, Any]) -> Optional[int]:
 
 
 def pick_result(results: List[Dict[str, Any]], year: Optional[int]) -> Optional[Dict[str, Any]]:
+    """
+    Choose the best TMDB search result for a film.
+    If a target year is provided, prefer the first result whose release year matches.
+    Otherwise, fall back to the first result in TMDB's ranked list.
+    """
     if not results:
         return None
     if year is not None:
@@ -115,6 +132,14 @@ def pick_result(results: List[Dict[str, Any]], year: Optional[int]) -> Optional[
 
 
 def find_tmdb_and_imdb(title: str, year: Optional[int]) -> Optional[Dict[str, Optional[str]]]:
+    """
+    Resolve a film's TMDB ID, IMDb ID, and poster_path using the TMDB API with caching.
+    Workflow:
+    - Normalize (title, year) into a cache key; return the cached result if present.
+    - Search TMDB by title (and year), retrying with parentheses removed on no results.
+    - Pick the best candidate and fetch full details to obtain imdb_id.
+    - Return and cache a dict: { 'tmdb_id', 'imdb_id', 'poster_path' }.
+    """
     key = f"{norm_title(title)}|{year or ''}"
     if key in CACHE:
         return CACHE[key]
@@ -129,24 +154,33 @@ def find_tmdb_and_imdb(title: str, year: Optional[int]) -> Optional[Dict[str, Op
     # 3) choose best candidate
     chosen = pick_result(results, year)
     if not chosen:
-        out = {"tmdb_id": None, "imdb_id": None}
+        out = {"tmdb_id": None, "imdb_id": None, "poster_path": None}
         CACHE[key] = out
         save_cache()
         return out
 
     tmdb_id = chosen.get("id")
+    poster_path = chosen.get("poster_path")
+
     details = tmdb_get(f"movie/{tmdb_id}", {}) if tmdb_id is not None else None
     backoff_sleep()
     imdb_id = details.get("imdb_id") if details else None
 
-    out = {"tmdb_id": str(
-        tmdb_id) if tmdb_id is not None else None, "imdb_id": imdb_id}
+    out = {
+        "tmdb_id": str(tmdb_id) if tmdb_id is not None else None,
+        "imdb_id": imdb_id,
+        "poster_path": poster_path,
+    }
     CACHE[key] = out
     save_cache()
     return out
 
 
 def make_imdb_url(imdb_id: Optional[str]) -> Optional[str]:
+    """
+    Build a canonical IMDb title URL from an IMDb ID (e.g. 'tt1234567').
+    Returns the URL string if the ID matches the 'tt' + digits pattern, otherwise None.
+    """
     if not imdb_id:
         return None
     imdb_id = imdb_id.strip()
@@ -156,17 +190,37 @@ def make_imdb_url(imdb_id: Optional[str]) -> Optional[str]:
     return f"https://www.imdb.com/title/{imdb_id}/"
 
 
-def update_film_ids(conn, film_id: int, imdb_id: Optional[str], tmdb_id: Optional[str]):
+def update_film_ids(
+    conn,
+    film_id: int,
+    imdb_id: Optional[str],
+    tmdb_id: Optional[str],
+    poster_path: Optional[str],
+):
+    """
+    Update a single film row with its IMDb/TMDB identifiers, IMDb URL, and TMDB poster_path.
+    This is used after a successful TMDB lookup to persist external IDs and poster metadata.
+    """
     imdb_url = make_imdb_url(imdb_id)
     with conn.cursor() as cursor:
         cursor.execute(
-            "UPDATE film SET imdb_id = %s, tmdb_id = %s, imdb_url = %s WHERE id = %s",
-            (imdb_id, tmdb_id, imdb_url, film_id),
+            """
+            UPDATE film
+            SET imdb_id = %s,
+                tmdb_id = %s,
+                imdb_url = %s,
+                poster_path = %s
+            WHERE id = %s
+            """,
+            (imdb_id, tmdb_id, imdb_url, poster_path, film_id),
         )
 
 
 def backfill_imdb_urls(conn) -> int:
-    """Fill imdb_url wherever imdb_id exists but imdb_url is missing/empty."""
+    """
+    Populate imdb_url for films that already have imdb_id but a missing/empty imdb_url.
+    Returns the number of rows updated.
+    """
     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
         cursor.execute(
             """
@@ -196,14 +250,15 @@ def main():
         # Read films as dictionaries
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
-                "SELECT id, title, year, imdb_id, tmdb_id FROM film")
+                "SELECT id, title, year, imdb_id, tmdb_id, poster_path FROM film"
+            )
             films = cursor.fetchall()
 
         updated, not_found = 0, 0
 
         for film in films:
-            # If already has both IDs, at least ensure imdb_url exists
-            if film["imdb_id"] and film["tmdb_id"]:
+            # If already has both IDs and a poster, just ensure imdb_url exists
+            if film["imdb_id"] and film["tmdb_id"] and film["poster_path"]:
                 with conn.cursor() as cursor:
                     url = make_imdb_url(film["imdb_id"])
                     if url:
@@ -215,10 +270,17 @@ def main():
 
             ids = find_tmdb_and_imdb(film["title"], film["year"])
             if ids and (ids["imdb_id"] or ids["tmdb_id"]):
-                update_film_ids(conn, film["id"],
-                                ids["imdb_id"], ids["tmdb_id"])
+                update_film_ids(
+                    conn,
+                    film["id"],
+                    ids.get("imdb_id"),
+                    ids.get("tmdb_id"),
+                    ids.get("poster_path"),
+                )
                 print(
-                    f"Updated: {film['title']} ({film['year']}) → IMDb: {ids['imdb_id']}, TMDB: {ids['tmdb_id']}"
+                    f"Updated: {film['title']} ({film['year']}) "
+                    f"→ IMDb: {ids.get('imdb_id')}, TMDB: {ids.get('tmdb_id')}, "
+                    f"poster_path: {ids.get('poster_path')}"
                 )
                 updated += 1
             else:
