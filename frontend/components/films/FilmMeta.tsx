@@ -10,8 +10,6 @@ type Props = {
   };
 };
 
-const dash = '—';
-
 function isMissingText(value?: string | null): boolean {
   const t = value?.trim();
   if (!t) return true;
@@ -24,16 +22,18 @@ function missing(text: string) {
 }
 
 export default function FilmMeta({ film }: Props) {
+  // Cast
   const topCastRaw = film.cast?.slice(0, 5) ?? [];
   const topCast = topCastRaw
     .map((c) => c.trim())
     .filter((c) => c && !isMissingText(c));
 
+  // Writers
   const writers = (film.writers ?? [])
     .map((w) => w.trim())
     .filter((w) => w && !isMissingText(w));
 
-  // Normalize languages
+  // Languages
   const rawLang = isMissingText(film.language) ? '' : film.language ?? '';
   const langs =
     rawLang && rawLang.trim()
@@ -49,41 +49,16 @@ export default function FilmMeta({ film }: Props) {
       : '';
 
   return (
-    <section className="mt-6 rounded-2xl border border-border bg-surface">
-      {/* Two-column body (right side slightly wider) */}
-      <div className="p-4 md:p-6 md:grid md:grid-cols-[1.5fr_1.5fr] md:gap-25">
-        {/* Left: Description */}
-        <div>
-          {description ? (
-            <p className="text-[15px] leading-7 text-gray-800">
-              {description}
-            </p>
-          ) : (
-            <p className="text-[15px] italic text-gray-400">
-              No description available.
-            </p>
-          )}
-        </div>
-
-        {/* Right: Info */}
-        <dl className="mt-6 grid gap-x-8 gap-y-3 md:mt-0">
+    <section className="mt-4 px-4 md:px-7">
+      {/* Wider left column, bigger gap */}
+      <div className="md:grid md:grid-cols-[minmax(0,340px)_minmax(0,1fr)] md:gap-14">
+        
+        {/* LEFT: Info table */}
+        <dl className="border-t border-border/60 text-sm text-gray-900 divide-y divide-border/60">
           <FactRow
             label="Language"
             value={
-              langs.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {langs.map((lg) => (
-                    <span
-                      key={lg}
-                      className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-800"
-                    >
-                      {lg}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                missing('No language available.')
-              )
+              langs.length > 0 ? langs.join(', ') : missing('No language available.')
             }
           />
 
@@ -114,6 +89,23 @@ export default function FilmMeta({ film }: Props) {
             }
           />
         </dl>
+
+        {/* RIGHT: Description */}
+        <div className="mt-8 md:mt-3 md:pl-8 md:pr-10">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+            Description
+          </h3>
+
+          {description ? (
+            <p className="text-[15px] leading-7 text-gray-800 max-w-[70ch]">
+              {description}
+            </p>
+          ) : (
+            <p className="text-[15px] italic text-gray-400">
+              No description available.
+            </p>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -127,9 +119,13 @@ function FactRow({
   readonly value: ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-[110px_1fr] items-start gap-3 text-sm">
-      <dt className="text-muted">{label}</dt>
-      <dd className="m-0 min-w-0 break-words text-gray-900">{value}</dd>
+    <div className="grid grid-cols-[130px_1fr] items-start gap-3 py-3">
+      <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+        {label}
+      </dt>
+      <dd className="m-0 min-w-0 break-words text-[14px] text-gray-900">
+        {value}
+      </dd>
     </div>
   );
 }
