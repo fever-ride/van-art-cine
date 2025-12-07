@@ -60,6 +60,7 @@ model film {
   imdb_id          String?         @db.VarChar(16)
   tmdb_id          Int?
   imdb_url         String?         @db.VarChar(512)
+  poster_path      String?         @db.VarChar(255)
   tags             String[]        @db.Text
   created_at       DateTime?       @default(now()) @db.Timestamp(0)
   film_person      film_person[]
