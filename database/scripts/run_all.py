@@ -1,59 +1,74 @@
 #!/usr/bin/env python3
 """
-run_all.py
+Utility script to run the data loading and enrichment pipeline.
 
-Utility script to run the data enrichment pipeline in a predictable order.
+MERGES:
+  • merge_duplicate_films    → deduplicate rows in `film`
+  • merge_duplicate_persons  → deduplicate rows in `person`
+  • merge_staging_to_live    → promote `stg_screening` → `screening`
 
-TWO KINDS OF "MERGE":
-  • merge-persons      → deduplicate rows in `person`
-                         - default: DRY RUN (no changes)
-                         - use --force to actually merge
-  • merge-screenings   → promote `stg_screening` → `screening`
-                         - default: APPLY changes
-                         - use --merge-dry-run to preview only
+Merge steps:
+  - Default: APPLY changes
+  - With --dry-run on this script: pass --dry-run down to merge_* scripts
+    so they only log what they would do (no DB changes).
 
-STEPS (hyphenated names):
-  1) load-json               Load scraped movie screening data into staging
-  2) resolve-imdb-id-url     Fetch TMDB/IMDB IDs for films
-  3) omdb-api                Fetch detailed film metadata and create person records
-  4) enrich-person-ids       Fetch TMDB/IMDB IDs for persons
-  5) merge-persons           Merge duplicate person records
-  6) merge-screenings        Promote staging data to live screening table
+ALL STEPS (step name == module name without .py):
+  1) load_json               Load scraped movie screening data into staging
+  2) resolve_imdb_id_url     Fetch TMDB/IMDB IDs for films
+  3) merge_duplicate_films   Merge duplicate film records
+  4) omdb_api                Fetch detailed film metadata and create person records
+  5) enrich_person_ids       Fetch TMDB/IMDB IDs for persons
+  6) merge_duplicate_persons Merge duplicate person records
+  7) merge_staging_to_live   Promote staging data to live screening table
 
 DEFAULT (no flags):
   python run_all.py
 
   Runs the FULL pipeline in this order:
-    load-json → resolve-imdb-id-url → omdb-api → enrich-person-ids
-    → merge-persons (DRY RUN)
-    → merge-screenings (APPLY)
+    load_json → resolve_imdb_id_url → merge_duplicate_films
+    → omdb_api → enrich_person_ids
+    → merge_duplicate_persons → merge_staging_to_live
 
 COMMON USE CASES:
 
-  # 1) Full pipeline (recommended during normal use)
+  # 1) Full pipeline (all steps, merges APPLY)
   python run_all.py
 
-  # 2) Full pipeline, but do NOT write anything to live screening table
-  #    (both merges run, but merge-screenings is dry-run)
-  python run_all.py --merge-dry-run
+  # 2) Full pipeline, but run ALL merge steps in DRY RUN mode
+  #    (merge_duplicate_films, merge_duplicate_persons, merge_staging_to_live
+  #     all run with --dry-run)
+  #
+  #    WARNING:
+  #      Dry-run merges execute inside their own transaction and roll back
+  #      afterwards. This means they do NOT leave any changes for subsequent
+  #      pipeline steps. The rest of the pipeline (load_json, resolve_imdb_id_url,
+  #      omdb_api, enrich_person_ids) *does* write normally.
+  #
+  #      As a result, this mode previews the merge logic correctly, but it is
+  #      NOT a faithful simulation of the full end-to-end pipeline, because
+  #      later steps will see the pre-merge database state.
+  #
+  #    Use this mode only when you want to inspect merge behavior without
+  #    applying it to the database.
+  python run_all.py --dry-run
 
   # 3) Only the first 4 enrichment steps (no merges at all)
   python run_all.py --no-merge
 
   # 4) Only promote staging → live (apply)
-  python run_all.py --steps merge-screenings
+  python run_all.py --steps merge_staging_to_live
 
   # 5) Only promote staging → live (dry-run)
-  python run_all.py --steps merge-screenings --merge-dry-run
+  python run_all.py --steps merge_staging_to_live --dry-run
 
-  # 6) Preview person dedup only (safe)
-  python run_all.py --steps merge-persons
+  # 6) Preview person dedup only (dry-run)
+  python run_all.py --steps merge_duplicate_persons --dry-run
 
   # 7) Apply person dedup only
-  python run_all.py --steps merge-persons --force
+  python run_all.py --steps merge_duplicate_persons
 
   # 8) Custom subset, e.g. just re-load JSON and re-merge screenings
-  python run_all.py --steps load-json,merge-screenings
+  python run_all.py --steps load_json,merge_staging_to_live
 """
 
 from __future__ import annotations
@@ -69,103 +84,75 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 # ----------------------------
-# Mapping & parsing utilities
+# Step configuration
 # ----------------------------
 
-# User-facing (hyphenated) → internal module/function (underscored)
-HY_STEP_TO_INTERNAL = {
-    "load-json": "load_json",
-    "resolve-imdb-id-url": "resolve_imdb_id_url",
-    "omdb-api": "omdb_api",
-    "enrich-person-ids": "enrich_person_ids",
-    "merge-persons": "merge_duplicate_persons",
-    # merge-screenings → merge_staging_to_live.main(...)
-    "merge-screenings": "merge_screenings",
+# Step names are exactly the module filenames without .py
+ALL_STEPS: List[str] = [
+    "load_json",
+    "resolve_imdb_id_url",
+    "merge_duplicate_films",
+    "omdb_api",
+    "enrich_person_ids",
+    "merge_duplicate_persons",
+    "merge_staging_to_live",
+]
+
+MERGE_STEPS = {
+    "merge_duplicate_films",
+    "merge_duplicate_persons",
+    "merge_staging_to_live",
 }
 
-# Back-compat / aliases accepted in --steps
-ALIASES = {
-    # "all" = full pipeline including merges
-    "all": [
-        "load-json",
-        "resolve-imdb-id-url",
-        "omdb-api",
-        "enrich-person-ids",
-        "merge-persons",
-        "merge-screenings",
-    ],
-
-    "load": ["load-json"],
-    "load_json": ["load-json"],
-
-    "resolve-imdb": ["resolve-imdb-id-url"],
-    "tmdb": ["resolve-imdb-id-url"],
-    "resolve_imdb_id_url": ["resolve-imdb-id-url"],
-
-    "omdb": ["omdb-api"],
-    "omdb_api": ["omdb-api"],
-
-    "enrich_person_ids": ["enrich-person-ids"],
-    "person-ids": ["enrich-person-ids"],
-
-    # Merges
-    "merge-persons": ["merge-persons"],
-    "merge_persons": ["merge-persons"],
-    "merge_people": ["merge-persons"],
-    "dedup_persons": ["merge-persons"],
-
-    "merge-screenings": ["merge-screenings"],
-    "merge_screenings": ["merge-screenings"],
-    "merge": ["merge-screenings"],  # short alias → screenings
-}
-
-# Default = FULL pipeline
-DEFAULT_HY_STEPS = ALIASES["all"]
-
-
-def _canon_token(tok: str) -> str:
-    """Normalize tokens: lower, strip, convert underscores→hyphens."""
-    return tok.strip().lower().replace("_", "-")
+DEFAULT_STEPS = ALL_STEPS.copy()
 
 
 def parse_steps(raw: str | None) -> List[str]:
-    """Return a list of hyphenated step names."""
-    if not raw:
-        return DEFAULT_HY_STEPS.copy()
+    """
+    Parse --steps into a list of step names.
 
-    hy_tokens = [_canon_token(p) for p in raw.split(",") if p.strip()]
-    out: List[str] = []
-    for t in hy_tokens:
-        if t in ALIASES:
-            out.extend(ALIASES[t])
-        elif t in HY_STEP_TO_INTERNAL:
-            out.append(t)
-        else:
+    Step names must exactly match module filenames without .py,
+    e.g. 'load_json', 'merge_staging_to_live'.
+    """
+    if not raw:
+        return DEFAULT_STEPS.copy()
+
+    tokens = [p.strip() for p in raw.split(",") if p.strip()]
+    if not tokens:
+        return DEFAULT_STEPS.copy()
+
+    for t in tokens:
+        if t not in ALL_STEPS:
             raise ValueError(f"Unknown step: {t}")
 
-    # de-duplicate preserving order
+    # de-duplicate while preserving order
     seen = set()
-    ordered = []
-    for s in out:
+    ordered: List[str] = []
+    for s in tokens:
         if s not in seen:
             seen.add(s)
             ordered.append(s)
     return ordered
 
 
-def ensure_merge_order(hy_steps: List[str]) -> List[str]:
-    """Guarantee merge-persons runs before merge-screenings if both present."""
-    if "merge-persons" in hy_steps and "merge-screenings" in hy_steps:
+def ensure_merge_order(steps: List[str]) -> List[str]:
+    """
+    Guarantee merge_duplicate_persons runs before merge_staging_to_live
+    if both are present.
+    """
+    if "merge_duplicate_persons" in steps and "merge_staging_to_live" in steps:
         first_idx = min(
-            hy_steps.index("merge-persons"),
-            hy_steps.index("merge-screenings"),
+            steps.index("merge_duplicate_persons"),
+            steps.index("merge_staging_to_live"),
         )
-        others = [s for s in hy_steps if s not in {
-            "merge-persons", "merge-screenings"}]
+        others = [
+            s for s in steps
+            if s not in {"merge_duplicate_persons", "merge_staging_to_live"}
+        ]
         prefix = others[:first_idx]
         suffix = others[first_idx:]
-        return prefix + ["merge-persons", "merge-screenings"] + suffix
-    return hy_steps
+        return prefix + ["merge_duplicate_persons", "merge_staging_to_live"] + suffix
+    return steps
 
 
 # ----------------------------
@@ -184,9 +171,10 @@ def import_and_run(module_name: str, extra_args: List[str] | None = None) -> Non
     sys.argv = [module_name] + (extra_args or [])
     try:
         try:
-            # some modules accept argv
+            # some modules accept argv (e.g. main(argv))
             mod.main([])
         except TypeError:
+            # others expect no arguments
             mod.main()
     finally:
         sys.argv = old_argv
@@ -203,37 +191,32 @@ def main(argv: List[str] | None = None) -> None:
     parser.add_argument(
         "--steps",
         help=(
-            "Comma-separated steps (hyphenated). Available: "
-            "load-json, resolve-imdb-id-url, omdb-api, enrich-person-ids, "
-            "merge-persons, merge-screenings. "
+            "Comma-separated step names (must match module filenames without .py). "
+            "Available: " + ", ".join(ALL_STEPS) + ". "
             "Default (no --steps): run FULL pipeline (all steps)."
         ),
     )
     parser.add_argument(
         "--no-merge",
         action="store_true",
-        help="Skip BOTH merge-persons and merge-screenings, even if they are in the default/steps.",
+        help="Skip ALL merge steps (merge_duplicate_films, merge_duplicate_persons, "
+             "merge_staging_to_live), even if they are in the default/steps.",
     )
     parser.add_argument(
         "--stop-on-error",
         action="store_true",
-        help="Stop if any step fails",
+        help="Stop if any step fails.",
     )
     parser.add_argument(
-        "--merge-dry-run",
+        "--dry-run",
         action="store_true",
-        help="Run merge-screenings in dry-run mode (preview; no changes).",
-    )
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        help="For merge-persons: actually merge (default: dry run).",
+        help="Run merge steps in DRY RUN mode (pass --dry-run to merge scripts).",
     )
     args = parser.parse_args(argv)
 
     # 1) Which steps to run?
     try:
-        steps_hy = parse_steps(args.steps)
+        steps = parse_steps(args.steps)
     except ValueError as e:
         print(f"Error: {e}")
         parser.print_help()
@@ -241,54 +224,43 @@ def main(argv: List[str] | None = None) -> None:
 
     # 2) Optionally drop all merge steps
     if args.no_merge:
-        steps_hy = [s for s in steps_hy if s not in {
-            "merge-persons", "merge-screenings"}]
+        steps = [s for s in steps if s not in MERGE_STEPS]
 
     # 3) Enforce merge order if both present
-    steps_hy = ensure_merge_order(steps_hy)
+    steps = ensure_merge_order(steps)
 
     print("=" * 60)
     print("Data Enrichment Pipeline")
     print("=" * 60)
-    print("Running steps (hyphenated):")
-    for s in steps_hy:
+    print("Running steps:")
+    for s in steps:
         print(f"  - {s}")
-    if "merge-persons" in steps_hy and not args.force:
-        print("\nNOTE: merge-persons will run in DRY RUN mode (use --force to apply).")
-    if "merge-screenings" in steps_hy and args.merge_dry_run:
-        print("NOTE: merge-screenings will run in DRY RUN mode (no changes).")
+    if args.dry_run and any(s in MERGE_STEPS for s in steps):
+        print("\nNOTE: merge steps will run in DRY RUN mode (no changes).")
     print()
 
     results = []
 
-    for step_hy in steps_hy:
-        step_internal = HY_STEP_TO_INTERNAL[step_hy]
-        print(f"\n{'=' * 60}\nStarting step: {step_hy}\n{'=' * 60}")
+    for step in steps:
+        print(f"\n{'=' * 60}\nStarting step: {step}\n{'=' * 60}")
         start = time.time()
 
         try:
-            if step_hy == "merge-persons":
-                # merge_duplicate_persons.py
-                extra = [] if args.force else ["--dry-run"]
-                import_and_run("merge_duplicate_persons", extra)
-
-            elif step_hy == "merge-screenings":
-                # merge_staging_to_live.py
-                extra = ["--dry-run"] if args.merge_dry_run else []
-                import_and_run("merge_staging_to_live", extra)
-
+            # Merge steps: pass through --dry-run when requested
+            if step in MERGE_STEPS:
+                extra = ["--dry-run"] if args.dry_run else []
+                import_and_run(step, extra)
             else:
-                # normal steps (module names match internal identifiers)
-                import_and_run(step_internal)
+                import_and_run(step)
 
             elapsed = time.time() - start
-            print(f"✅ Completed {step_hy} in {elapsed:.1f}s")
-            results.append((step_hy, "ok", None))
+            print(f"✅ Completed {step} in {elapsed:.1f}s")
+            results.append((step, "ok", None))
 
         except Exception as e:
             elapsed = time.time() - start
-            print(f"❌ Step {step_hy} failed after {elapsed:.1f}s: {e}")
-            results.append((step_hy, "error", str(e)))
+            print(f"❌ Step {step} failed after {elapsed:.1f}s: {e}")
+            results.append((step, "error", str(e)))
             if args.stop_on_error:
                 print("\nStopping due to --stop-on-error")
                 break
