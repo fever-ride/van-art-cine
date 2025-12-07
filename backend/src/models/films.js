@@ -1,8 +1,18 @@
 import { prisma } from '../lib/prismaClient.js';
 
+function buildPosterUrl(posterPath) {
+  if (!posterPath) return null;
+
+  // maybe move these to env
+  const base = 'https://image.tmdb.org/t/p/';
+  const size = 'w342'; // medium size
+
+  return `${base}${size}${posterPath}`;
+}
+
 /**
  * Get a single film by ID.
- * Returns the same shape as your SQL: a row with selected columns or null.
+ * Returns the film row plus a derived poster_url, or null if not found.
  */
 export async function getFilmById(id) {
   const row = await prisma.film.findUnique({
@@ -23,30 +33,38 @@ export async function getFilmById(id) {
       imdb_rating: true,
       rt_rating_pct: true,
       imdb_votes: true,
+      poster_path: true,
     },
   });
-  return row ?? null;
+
+  if (!row) return null;
+
+  const { poster_path, ...rest } = row;
+
+  return {
+    ...rest,
+    poster_url: buildPosterUrl(poster_path),
+  };
 }
 
 /**
  * Get people for a film grouped by role.
- * Preserves output: { directors: string[], writers: string[], cast: string[] }
+ * Output shape: { directors: string[], writers: string[], cast: string[] }
  */
 export async function getFilmPeople(id) {
-  // Fetch role + joined person name
   const rows = await prisma.film_person.findMany({
     where: { film_id: Number(id) },
     select: {
       role: true,
       person: { select: { name: true } },
     },
-    // DB-level sort by person name; we'll apply role priority below
     orderBy: [{ person: { name: 'asc' } }],
   });
 
-  // Emulate CASE-based priority: director → writer → cast → others
   const rolePriority = { director: 1, writer: 2, cast: 3 };
-  rows.sort((a, b) => (rolePriority[a.role] ?? 99) - (rolePriority[b.role] ?? 99));
+  rows.sort(
+    (a, b) => (rolePriority[a.role] ?? 99) - (rolePriority[b.role] ?? 99)
+  );
 
   const directors = [];
   const writers = [];
@@ -65,14 +83,16 @@ export async function getFilmPeople(id) {
 
 /**
  * Upcoming screenings for a film.
- * Returns the same column names/aliases as your SQL version.
+ * Returns the same column names/aliases as your old SQL version.
  */
-export async function getUpcomingForFilm(id, { limit = 200 } = {}) {
+export async function getUpcomingForFilm(id, opts = {}) {
+  const { limit = 200 } = opts;
+
   const rows = await prisma.screening.findMany({
     where: {
       film_id: Number(id),
-      is_active: true, // Prisma maps TINYINT(1) -> Boolean
-      start_at_utc: { gte: new Date() }, // UTC comparison
+      is_active: true,
+      start_at_utc: { gte: new Date() },
     },
     orderBy: { start_at_utc: 'asc' },
     take: Number(limit),
@@ -87,10 +107,9 @@ export async function getUpcomingForFilm(id, { limit = 200 } = {}) {
     },
   });
 
-  // Map to original SQL result shape
   return rows.map((r) => ({
-    id: r.id,                           // screening id
-    title: r.film?.title ?? null,       // film title
+    id: r.id,
+    title: r.film?.title ?? null,
     start_at_utc: r.start_at_utc,
     end_at_utc: r.end_at_utc,
     runtime_min: r.runtime_min,
