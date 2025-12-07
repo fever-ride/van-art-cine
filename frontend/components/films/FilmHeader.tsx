@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import type { Film } from '@/app/lib/films';
 
 type Props = {
@@ -14,9 +15,8 @@ type Props = {
     | 'rt_rating_pct'
     | 'imdb_url'
     | 'directors'
-  > & {
-    poster_url?: string | null;
-  };
+    | 'poster_url'
+  >;
 };
 
 export default function FilmHeader({ film }: Props) {
@@ -33,7 +33,7 @@ export default function FilmHeader({ film }: Props) {
     poster_url,
   } = film;
 
-  // Poster placeholder
+  // Poster
   const poster =
     poster_url && poster_url.trim() !== ''
       ? poster_url
@@ -49,7 +49,7 @@ export default function FilmHeader({ film }: Props) {
       ? genre.split(',').map((g) => g.trim()).filter(Boolean)
       : [];
 
-  // Directors line (Film['directors'] likely string[])
+  // Directors line
   const dirLine =
     Array.isArray(directors) && directors.length
       ? directors.join(', ')
@@ -70,15 +70,15 @@ export default function FilmHeader({ film }: Props) {
   const ratingNum = Number(ratingStr);
   const hasRating = ratingStr !== '' && !isNaN(ratingNum);
 
-  // Data chip (labels, not buttons)
-  const chip = (node: React.ReactNode) => (
-    <span className="inline-flex items-center rounded-full bg-surface px-3 py-1 text-xs font-semibold text-gray-900 ring-1 ring-border">
+  // Data chip
+  const chip = (node: ReactNode) => (
+    <span className="inline-flex items-center rounded-full bg-surface px-3 py-1 text-xs font-semibold text-primary ring-1 ring-border">
       {node}
     </span>
   );
 
   return (
-    <section className="rounded-3xl border border-border bg-surface">
+    <section className="rounded-3xl">
       <div className="flex flex-col gap-6 p-4 md:flex-row md:items-start md:p-6">
         {/* Poster */}
         <div className="shrink-0">
@@ -97,15 +97,13 @@ export default function FilmHeader({ film }: Props) {
           </div>
 
           {/* Meta row: Year • Country • Directors | Genres */}
-          <div className="mt-2 min-w-0 flex flex-wrap items-center gap-x-3 gap-y-2 text-[15px] text-muted">
-            {/* Year / country / directors, joined with bullets */}
+          <div className="mt-2 min-w-0 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
             {metaBits.length > 0 && (
               <span className="truncate">
                 {metaBits.join(' • ')}
               </span>
             )}
 
-            {/* Divider before genre pills */}
             {genres.length > 0 && metaBits.length > 0 && (
               <span
                 className="mx-2 h-4 w-px bg-border"
@@ -113,7 +111,6 @@ export default function FilmHeader({ film }: Props) {
               />
             )}
 
-            {/* Genres */}
             {genres.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
                 {genres.map((g) => (
@@ -130,13 +127,12 @@ export default function FilmHeader({ film }: Props) {
 
           {/* Ratings */}
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            {/* IMDb rating */}
             {hasRating
               ? chip(
                   <>
                     IMDb · {ratingNum.toFixed(1)}
                     {typeof imdb_votes === 'number' ? (
-                      <span className="pl-1 text-gray-500">
+                      <span className="pl-1 text-muted">
                         ({imdb_votes.toLocaleString()})
                       </span>
                     ) : null}
@@ -144,16 +140,15 @@ export default function FilmHeader({ film }: Props) {
                 )
               : chip(
                   <>
-                    IMDb · <span className="text-gray-400">—</span>
+                    IMDb · <span className="text-muted">—</span>
                   </>
                 )}
 
-            {/* Rotten Tomatoes % */}
             {typeof rt_rating_pct === 'number'
               ? chip(<>Rotten Tomatoes · {rt_rating_pct}%</>)
               : chip(
                   <>
-                    Rotten Tomatoes · <span className="text-gray-400">—</span>
+                    Rotten Tomatoes · <span className="text-muted">—</span>
                   </>
                 )}
           </div>
