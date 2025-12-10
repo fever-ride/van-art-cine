@@ -63,7 +63,7 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
       {/* Header band: same cream style, film-specific title */}
       <div className="rounded-t-2xl border-b border-border bg-highlight px-4 py-3 md:px-6">
         <h2 className="text-sm font-semibold text-primary md:text-[15px]">
-          Upcoming screenings of{' '}
+          Upcoming Screenings of{' '}
           <span className="font-semibold">
             {filmTitle ?? 'this film'} in Vancouver
           </span>
@@ -81,10 +81,10 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
           return (
             <li
               key={s.id}
-              className="flex flex-col gap-3 px-4 py-3 text-[13px] leading-6 md:flex-row md:items-center md:px-6 md:py-4"
+              className="flex flex-col gap-1 px-4 py-3 text-[13px] leading-6 md:flex-row md:items-center md:px-6 md:py-4"
             >
               {/* When (copy main table style) */}
-              <div className="flex flex-col items-start leading-tight text-primary md:w-[28%]">
+              <div className="flex flex-col items-start leading-tight text-primary md:w-[13%]">
                 <div className="text-[14px] font-medium text-muted">{dateStr}</div>
                 <div className="text-[16px] font-semibold text-primary">
                   {timeStr}

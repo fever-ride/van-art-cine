@@ -99,7 +99,7 @@ export default function FilmHeader({ film }: Props) {
           {/* Meta row: Year • Country • Directors | Genres */}
           <div className="mt-2 min-w-0 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
             {metaBits.length > 0 && (
-              <span className="truncate">
+              <span className="whitespace-normal break-words">
                 {metaBits.join(' • ')}
               </span>
             )}

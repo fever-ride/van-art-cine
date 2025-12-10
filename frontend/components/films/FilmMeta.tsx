@@ -43,6 +43,7 @@ export default function FilmMeta({ film }: Props) {
           .filter(Boolean)
       : [];
 
+  // Description
   const description =
     film.description && !isMissingText(film.description)
       ? film.description.trim()
@@ -50,63 +51,54 @@ export default function FilmMeta({ film }: Props) {
 
   return (
     <section className="mt-4 px-4 md:px-7">
-      {/* Wider left column, bigger gap */}
-      <div className="md:grid md:grid-cols-[minmax(0,340px)_minmax(0,1fr)] md:gap-14">
-        
-        {/* LEFT: Info table */}
-        <dl className="border-t border-border/60 text-sm text-gray-900 divide-y divide-border/60">
-          <FactRow
-            label="Language"
-            value={
-              langs.length > 0 ? langs.join(', ') : missing('No language available.')
-            }
-          />
+      <dl className="border-t border-border/60 text-sm text-gray-900 divide-y divide-border/60">
+        <FactRow
+          label="Language"
+          value={
+            langs.length > 0 ? langs.join(', ') : missing('No language available.')
+          }
+        />
 
-          <FactRow
-            label="Rated"
-            value={
-              isMissingText(film.rated)
-                ? missing('No rating available.')
-                : film.rated
-            }
-          />
+        <FactRow
+          label="Rated"
+          value={
+            isMissingText(film.rated)
+              ? missing('No rating available.')
+              : film.rated
+          }
+        />
 
-          <FactRow
-            label="Writer"
-            value={
-              writers.length > 0
-                ? writers.join(', ')
-                : missing('No writer information available.')
-            }
-          />
+        <FactRow
+          label="Writer"
+          value={
+            writers.length > 0
+              ? writers.join(', ')
+              : missing('No writer information available.')
+          }
+        />
 
-          <FactRow
-            label="Top cast"
-            value={
-              topCast.length > 0
-                ? topCast.join(', ')
-                : missing('No cast information available.')
-            }
-          />
-        </dl>
+        <FactRow
+          label="Top cast"
+          value={
+            topCast.length > 0
+              ? topCast.join(', ')
+              : missing('No cast information available.')
+          }
+        />
 
-        {/* RIGHT: Description */}
-        <div className="mt-8 md:mt-3 md:pl-8 md:pr-10">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
-            Description
-          </h3>
-
-          {description ? (
-            <p className="text-[15px] leading-7 text-gray-800 max-w-[70ch]">
-              {description}
-            </p>
-          ) : (
-            <p className="text-[15px] italic text-gray-400">
-              No description available.
-            </p>
-          )}
-        </div>
-      </div>
+        <FactRow
+          label="Description"
+          value={
+            description ? (
+              <span className="text-[15px] leading-7 text-gray-800 block">
+                {description}
+              </span>
+            ) : (
+              missing('No description available.')
+            )
+          }
+        />
+      </dl>
     </section>
   );
 }
