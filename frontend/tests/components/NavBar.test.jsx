@@ -1,15 +1,14 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import NavBar from '@/components/NavBar';
 import { apiMe, apiLogout } from '@/app/lib/auth';
 
-// Mock Next.js navigation hook
+// Mock next/navigation
 jest.mock('next/navigation', () => ({
   usePathname: jest.fn(() => '/'),
 }));
 
-// Mock Next.js Link component
+// Mock Next.js Link
 jest.mock('next/link', () => {
   return function MockLink({ href, children, ...rest }) {
     return (
@@ -20,14 +19,14 @@ jest.mock('next/link', () => {
   };
 });
 
-// Mock Next.js Image component
+// Mock Next.js Image
 jest.mock('next/image', () => {
   return function MockImage(props) {
     return <img {...props} alt={props.alt || ''} />;
   };
 });
 
-// Mock authentication API functions
+// Mock auth API
 jest.mock('@/app/lib/auth', () => ({
   apiMe: jest.fn(),
   apiLogout: jest.fn(),
@@ -38,7 +37,7 @@ describe('NavBar Component', () => {
     jest.clearAllMocks();
   });
 
-  test('displays login and register buttons when user is not authenticated', async () => {
+  test('displays login and register when user is not authenticated', async () => {
     apiMe.mockResolvedValue({ user: null });
 
     render(<NavBar />);
@@ -53,7 +52,7 @@ describe('NavBar Component', () => {
     expect(screen.queryByText('My Profile')).not.toBeInTheDocument();
   });
 
-  test('displays logout and my profile buttons when user is authenticated', async () => {
+  test('displays logout and My Profile when user is authenticated', async () => {
     apiMe.mockResolvedValue({ user: { id: 1, name: 'Test User' } });
 
     render(<NavBar />);
@@ -87,8 +86,9 @@ describe('NavBar Component', () => {
     render(<NavBar />);
 
     const logoutButton = await screen.findByText('Logout');
-    
-    await userEvent.click(logoutButton);
+
+    // fireEvent instead of userEvent
+    fireEvent.click(logoutButton);
 
     expect(apiLogout).toHaveBeenCalledTimes(1);
 
@@ -101,7 +101,7 @@ describe('NavBar Component', () => {
   test('applies active styles to current page link', async () => {
     const { usePathname } = require('next/navigation');
     usePathname.mockReturnValue('/about');
-    
+
     apiMe.mockResolvedValue({ user: null });
 
     render(<NavBar />);
