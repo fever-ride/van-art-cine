@@ -21,8 +21,12 @@ type Props = {
 };
 
 function hasNumberStatus(x: unknown): x is { status: number } {
-  return typeof x === 'object' && x !== null && 'status' in x && typeof (x as Record<string, unknown>).status === 'number';
+  return typeof x === 'object' 
+    && x !== null 
+    && 'status' in x 
+    && typeof (x as Record<string, unknown>).status === 'number';
 }
+
 function hasResponseStatus(x: unknown): x is { response: { status: number } } {
   return (
     typeof x === 'object' &&
