@@ -96,8 +96,6 @@ export default function WatchlistPage() {
       const guestIds = Array.from(getGuestSet());
 
       try {
-        // First, try to load the authenticated watchlist.
-        // This goes through fetchWithAuth and will attempt a token refresh on 401.
         const data = await apiListWatchlist({ limit: 100 });
         setAuthed(true);
         setItems(Array.isArray(data.items) ? data.items : []);
@@ -105,7 +103,6 @@ export default function WatchlistPage() {
       } catch (e: unknown) {
         const errAny = e as { status?: number } | undefined;
 
-        // If it is not a 401, treat it as a real error and handle it here.
         if (!errAny || errAny.status !== 401) {
           const msg = isErrorLike(e) ? e.message : 'Unknown error';
           setErr(msg);
@@ -113,7 +110,6 @@ export default function WatchlistPage() {
           return;
         }
 
-        // 401 means the user is effectively a guest (no valid session).
         setAuthed(false);
 
         if (guestIds.length === 0) {
@@ -122,7 +118,6 @@ export default function WatchlistPage() {
           return;
         }
 
-        // Guest fallback: look up screenings via the bulk endpoint.
         const bulkRes = await fetch('/api/screenings/bulk', {
           method: 'POST',
           credentials: 'include',
@@ -187,7 +182,6 @@ export default function WatchlistPage() {
         setLoading(false);
         return;
       } finally {
-        // Just in case we hit an unexpected path.
         setLoading(false);
       }
     }
@@ -270,7 +264,8 @@ export default function WatchlistPage() {
             </h2>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* DESKTOP / TABLET >= md: keep table layout */}
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full border-separate border-spacing-0 text-[14px]">
               <tbody>
                 {rowsToShow.map((r) => (
@@ -340,7 +335,7 @@ export default function WatchlistPage() {
                       <StatusBadge status={r.status} />
                     </td>
 
-                    {/* ACTION: ticket link + watchlist button, vertically centered */}
+                    {/* ACTION: ticket link + watchlist button */}
                     <td className="px-4 py-3 align-middle">
                       <div className="flex items-center justify-end gap-3">
                         {r.source_url ? (
@@ -376,6 +371,107 @@ export default function WatchlistPage() {
               </tbody>
             </table>
           </div>
+
+          {/* MOBILE < md: stacked layout similar to FilmShowtimes */}
+          <ul className="divide-y divide-border md:hidden">
+            {rowsToShow.map((r) => (
+              <li
+                key={r.screening_id}
+                className="flex flex-col gap-2 px-4 py-3 text-[13px] leading-6"
+              >
+                {/* When */}
+                <div className="flex flex-col items-start leading-tight text-primary">
+                  {r.start_at_utc ? (
+                    <>
+                      <div className="text-[14px] font-medium text-gray-700">
+                        {new Intl.DateTimeFormat(undefined, {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                        }).format(new Date(r.start_at_utc))}
+                      </div>
+                      <div className="text-[16px] font-semibold text-primary">
+                        {new Intl.DateTimeFormat(undefined, {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true,
+                        }).format(new Date(r.start_at_utc))}
+                      </div>
+                      {typeof r.runtime_min === 'number' && (
+                        <div className="text-[12px] text-muted">
+                          {r.runtime_min} min
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-[13px] text-muted">—</span>
+                  )}
+                </div>
+
+                {/* Title + IMDb */}
+                <div className="text-[14px] text-primary">
+                  <div className="text-[15px] font-semibold text-gray-900">
+                    {r.film_id ? (
+                      <Link
+                        href={`/films/${r.film_id}`}
+                        className="hover:underline"
+                      >
+                        {r.title} {r.year ? `(${r.year})` : ''}
+                      </Link>
+                    ) : (
+                      <>
+                        {r.title} {r.year ? `(${r.year})` : ''}
+                      </>
+                    )}
+                  </div>
+                  {typeof r.imdb_rating === 'number' && (
+                    <div className="mt-0.5 text-[12px] text-gray-500">
+                      IMDb {r.imdb_rating.toFixed(1)}
+                    </div>
+                  )}
+                </div>
+
+                {/* Cinema */}
+                <div className="text-[13px] text-primary">
+                  {r.cinema_name ?? '—'}
+                </div>
+
+                {/* Status + actions */}
+                <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+                  <StatusBadge status={r.status} />
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {r.source_url ? (
+                      <a
+                        href={r.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center rounded-full border border-border bg-highlight px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-highlight/80"
+                      >
+                        Get tickets on cinema site!
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted">
+                        No ticket link
+                      </span>
+                    )}
+
+                    <WatchlistButton
+                      screeningId={r.screening_id}
+                      initialSaved={true}
+                      onChange={(saved) =>
+                        handleSavedChange(r.screening_id, saved)
+                      }
+                      size="sm"
+                      confirmBeforeRemove
+                      confirmMessage={`Remove "${r.title}" from your watchlist?`}
+                      className="whitespace-nowrap"
+                    />
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
     </main>
