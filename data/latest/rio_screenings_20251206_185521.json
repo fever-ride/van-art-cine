@@ -1,0 +1,706 @@
+[
+  {
+    "title": "Jai",
+    "director": null,
+    "year": null,
+    "duration": "165 mins",
+    "detail_url": "https://riotheatre.ca/movie/jai/",
+    "showtimes": [
+      {
+        "date": "Sunday November 30",
+        "time": "11:00 a.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Paviljon (Pavilion): Canadian Premiere",
+    "director": null,
+    "year": null,
+    "duration": "100 mins",
+    "detail_url": "https://riotheatre.ca/movie/paviljon-pavilion-canadian-premiere/",
+    "showtimes": [
+      {
+        "date": "Sunday November 30",
+        "time": "3:15 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Green Room (10th Anniversary Screening w / Director Q&A)",
+    "director": "Jeremy Saulnier",
+    "year": "2016",
+    "duration": "95 mins",
+    "detail_url": "https://riotheatre.ca/movie/green-room/",
+    "showtimes": [
+      {
+        "date": "Sunday November 30",
+        "time": "6:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Angel’s Egg (40th Anniversary Restoration)",
+    "director": "Mamoru Oshii",
+    "year": "2025",
+    "duration": "73 mins",
+    "detail_url": "https://riotheatre.ca/movie/angels-egg-40th-anniversary-restoration/",
+    "showtimes": [
+      {
+        "date": "Sunday November 30",
+        "time": "9:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Saturday December 6",
+        "time": "1:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Okean Elzy: Stormwatch",
+    "director": null,
+    "year": null,
+    "duration": "125 mins",
+    "detail_url": "https://riotheatre.ca/movie/okean-elzy-stormwatch/",
+    "showtimes": [
+      {
+        "date": "Monday December 1",
+        "time": "6:15 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Keeper",
+    "director": "Osgood Perkins",
+    "year": "2025",
+    "duration": "99 mins",
+    "detail_url": "https://riotheatre.ca/movie/keeper/",
+    "showtimes": [
+      {
+        "date": "Monday December 1",
+        "time": "9:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Gareth Reynolds LIVE!",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/gareth-reynolds-live-2/",
+    "showtimes": [
+      {
+        "date": "Tuesday December 2",
+        "time": "6:45 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Deathstalker",
+    "director": "Steven Kostanski",
+    "year": "2025",
+    "duration": "102 mins",
+    "detail_url": "https://riotheatre.ca/movie/deathstalker/",
+    "showtimes": [
+      {
+        "date": "Tuesday December 2",
+        "time": "9:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "A John Waters Christmas: LIVE!",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/a-john-waters-christmas/",
+    "showtimes": [
+      {
+        "date": "Wednesday December 3",
+        "time": "7:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Thursday December 4",
+        "time": "7:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Palestine 36 (Advance Screening)",
+    "director": null,
+    "year": null,
+    "duration": "118 mins",
+    "detail_url": "https://riotheatre.ca/movie/palestine-36/",
+    "showtimes": [
+      {
+        "date": "Friday December 5",
+        "time": "3:15 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "The Mastermind",
+    "director": "Kelly Reichardt",
+    "year": "2025",
+    "duration": "110 mins",
+    "detail_url": "https://riotheatre.ca/movie/the-mastermind/",
+    "showtimes": [
+      {
+        "date": "Friday December 5",
+        "time": "6:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "It Was Just an Accident",
+    "director": null,
+    "year": null,
+    "duration": "104 mins",
+    "detail_url": "https://riotheatre.ca/movie/it-was-just-an-accident/",
+    "showtimes": [
+      {
+        "date": "Friday December 5",
+        "time": "8:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Friday December 19",
+        "time": "2:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Black Swan (15th Anniversary Restoration)",
+    "director": null,
+    "year": "2010",
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/movie/black-swan/",
+    "showtimes": [
+      {
+        "date": "Friday December 5",
+        "time": "11:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Bugonia",
+    "director": "Yorgos Lanthimos",
+    "year": "2025",
+    "duration": "119 mins",
+    "detail_url": "https://riotheatre.ca/movie/bugonia/",
+    "showtimes": [
+      {
+        "date": "Saturday December 6",
+        "time": "3:00 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Monday December 8",
+        "time": "9:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "The Vancouver Burlesque Co. December Student Showcase",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/vancouver-burlesque-co-presents-december-student-showcase/",
+    "showtimes": [
+      {
+        "date": "Saturday December 6",
+        "time": "9:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "State Organs: Unmasking Transplant Abuse in China",
+    "director": null,
+    "year": null,
+    "duration": "74 mins",
+    "detail_url": "https://riotheatre.ca/movie/state-organs-unmasking-transplant-abuse-in-china/",
+    "showtimes": [
+      {
+        "date": "Sunday December 7",
+        "time": "12:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Hajduk u Beogradu (Canadian Premiere)",
+    "director": null,
+    "year": null,
+    "duration": "113 mins",
+    "detail_url": "https://riotheatre.ca/movie/hajduk-u-beogradu-canadian-premiere/",
+    "showtimes": [
+      {
+        "date": "Sunday December 7",
+        "time": "3:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "The Twilight Saga: Breaking Dawn – Part 1",
+    "director": "Bill Condon",
+    "year": "2011",
+    "duration": "117 mins",
+    "detail_url": "https://riotheatre.ca/movie/the-twilight-saga-breaking-dawn-part-1-2/",
+    "showtimes": [
+      {
+        "date": "Sunday December 7",
+        "time": "6:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "The Twilight Saga: Breaking Dawn – Part 2",
+    "director": "Bill Condon",
+    "year": "2012",
+    "duration": "115 mins",
+    "detail_url": "https://riotheatre.ca/movie/the-twilight-saga-breaking-dawn-part-2-2/",
+    "showtimes": [
+      {
+        "date": "Sunday December 7",
+        "time": "9:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Nouvelle Vague",
+    "director": null,
+    "year": null,
+    "duration": "106 mins",
+    "detail_url": "https://riotheatre.ca/movie/nouvelle-vague/",
+    "showtimes": [
+      {
+        "date": "Monday December 8",
+        "time": "6:15 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Mountains on Stage: Winter 2025",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/mountains-on-stage-winter-2025/",
+    "showtimes": [
+      {
+        "date": "Tuesday December 9",
+        "time": "7:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "John Achkar",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/john-achkar/",
+    "showtimes": [
+      {
+        "date": "Wednesday December 10",
+        "time": "7:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Paul Anthony’s Talent Time: Christmas Special",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/paul-anthonys-talent-time-christmas-special-2/",
+    "showtimes": [
+      {
+        "date": "Thursday December 11",
+        "time": "8:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Dandy’s Christmas Carol",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/dandys-christmas-carol/",
+    "showtimes": [
+      {
+        "date": "Friday December 12",
+        "time": "8:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "National Lampoon’s Christmas Vacation",
+    "director": "Jeremiah S. Chechik",
+    "year": "1989",
+    "duration": "97 mins",
+    "detail_url": "https://riotheatre.ca/movie/national-lampoons-christmas-vacation-2/",
+    "showtimes": [
+      {
+        "date": "Friday December 12",
+        "time": "11:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "The Saturday Morning All-You-Can-Eat Cereal Cartoon Party: Christmas Edition",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/the-saturday-morning-all-you-can-eat-cereal-cartoon-party-christmas-edition/",
+    "showtimes": [
+      {
+        "date": "Saturday December 13",
+        "time": "10:00 a.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Saturday December 20",
+        "time": "10:00 a.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Tits the Season! 2025",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/tits-the-season-2025/",
+    "showtimes": [
+      {
+        "date": "Saturday December 13",
+        "time": "6:00 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Saturday December 13",
+        "time": "10:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Outside Voices In Stereo",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/outside-voices-in-stereo/",
+    "showtimes": [
+      {
+        "date": "Sunday December 14",
+        "time": "3:00 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Sunday December 14",
+        "time": "7:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Paran",
+    "director": null,
+    "year": null,
+    "duration": "146 mins",
+    "detail_url": "https://riotheatre.ca/movie/paran/",
+    "showtimes": [
+      {
+        "date": "Monday December 15",
+        "time": "5:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Die My Love",
+    "director": "Lynne Ramsay",
+    "year": "2025",
+    "duration": "119 mins",
+    "detail_url": "https://riotheatre.ca/movie/die-my-love/",
+    "showtimes": [
+      {
+        "date": "Monday December 15",
+        "time": "9:15 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "The Critical Hit Show: The Extra Special Holiday Special",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/the-critical-hit-show-the-extra-special-holiday-special/",
+    "showtimes": [
+      {
+        "date": "Wednesday December 17",
+        "time": "7:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Batman Returns",
+    "director": "Tim Burton",
+    "year": "1992",
+    "duration": "126 mins",
+    "detail_url": "https://riotheatre.ca/movie/batman-returns/",
+    "showtimes": [
+      {
+        "date": "Wednesday December 17",
+        "time": "9:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Private Event",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/private-event/",
+    "showtimes": [
+      {
+        "date": "Friday December 19",
+        "time": "11:00 a.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Jake Lambert: The Sunshine Kid",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/jake-lambert-the-sunshine-kid/",
+    "showtimes": [
+      {
+        "date": "Friday December 19",
+        "time": "7:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Die Hard",
+    "director": "John McTiernan",
+    "year": "1988",
+    "duration": "131 mins",
+    "detail_url": "https://riotheatre.ca/movie/die-hard/",
+    "showtimes": [
+      {
+        "date": "Friday December 19",
+        "time": "11:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "The Rio Theatre Burlesque & Variety Show: The Naughty List",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/the-rio-theatres-burlesque-variety-show/",
+    "showtimes": [
+      {
+        "date": "Saturday December 20",
+        "time": "9:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "The Muppet Christmas Carol",
+    "director": "Brian Henson",
+    "year": "1992",
+    "duration": "85 mins",
+    "detail_url": "https://riotheatre.ca/movie/the-muppet-christmas-carol/",
+    "showtimes": [
+      {
+        "date": "Sunday December 21",
+        "time": "11:15 a.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "It’s a Wonderful Life",
+    "director": "Frank Capra",
+    "year": "1947",
+    "duration": "130 mins",
+    "detail_url": "https://riotheatre.ca/movie/its-a-wonderful-life/",
+    "showtimes": [
+      {
+        "date": "Sunday December 21",
+        "time": "6:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Wednesday December 24",
+        "time": "5:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Yalla Habibi!",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/movie/yalla-habibi/",
+    "showtimes": [
+      {
+        "date": "Monday December 22",
+        "time": "6:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Monday December 22",
+        "time": "9:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Hundreds of Beavers: A Northwoods Christmas!",
+    "director": null,
+    "year": null,
+    "duration": "108 mins",
+    "detail_url": "https://riotheatre.ca/movie/hundreds-of-beavers/",
+    "showtimes": [
+      {
+        "date": "Tuesday December 23",
+        "time": "9:30 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Happy Holidays! The Rio Theatre is closed today.",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/happy-holidays-the-rio-theatre-is-closed-today/",
+    "showtimes": [
+      {
+        "date": "Thursday December 25",
+        "time": "12:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "John Carpenter’s ‘The Thing’",
+    "director": "John Carpenter",
+    "year": "1982",
+    "duration": "109 mins",
+    "detail_url": "https://riotheatre.ca/movie/the-thing/",
+    "showtimes": [
+      {
+        "date": "Friday December 26",
+        "time": "11:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "The Guardians Of Christmas",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/movie/the-guardians-of-christmas/",
+    "showtimes": [
+      {
+        "date": "Saturday December 27",
+        "time": "1:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Petunia & The Vipers",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/petunia-the-vipers/",
+    "showtimes": [
+      {
+        "date": "Saturday December 27",
+        "time": "9:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "Stranger Things 5: The Finale (Park Theatre)",
+    "director": null,
+    "year": null,
+    "duration": "125 mins",
+    "detail_url": "https://riotheatre.ca/movie/stranger-things-5-finale-park-theatre/",
+    "showtimes": [
+      {
+        "date": "Wednesday December 31",
+        "time": "5:00 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Thursday January 1",
+        "time": "12:30 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Thursday January 1",
+        "time": "4:20 p.m.",
+        "venue": "Rio Theatre"
+      },
+      {
+        "date": "Thursday January 1",
+        "time": "8:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  },
+  {
+    "title": "The Rio Theatre New Year’s Eve Party",
+    "director": null,
+    "year": null,
+    "duration": null,
+    "detail_url": "https://riotheatre.ca/event/the-rio-theatre-new-years-eve-party/",
+    "showtimes": [
+      {
+        "date": "Wednesday December 31",
+        "time": "9:00 p.m.",
+        "venue": "Rio Theatre"
+      }
+    ]
+  }
+]
