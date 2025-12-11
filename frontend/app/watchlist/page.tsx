@@ -2,9 +2,16 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { Noto_Sans } from 'next/font/google';
 import { apiListWatchlist } from '@/app/lib/watchlist';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import { getGuestSet } from '@/app/lib/guestWatchlist';
+
+// Global font for this page
+const noto = Noto_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+});
 
 // Narrow unknown errors to something with a message
 function isErrorLike(x: unknown): x is { message: string } {
@@ -67,7 +74,6 @@ export default function WatchlistPage() {
   const [err, setErr] = useState<string | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [includePast, setIncludePast] = useState(true);
-  const [guestCount, setGuestCount] = useState<number>(0);
 
   const fmt = useMemo(
     () =>
@@ -88,7 +94,6 @@ export default function WatchlistPage() {
       setErr(null);
 
       const guestIds = Array.from(getGuestSet());
-      setGuestCount(guestIds.length);
 
       try {
         // First, try to load the authenticated watchlist.
@@ -100,9 +105,12 @@ export default function WatchlistPage() {
       } catch (e: unknown) {
         const errAny = e as { status?: number } | undefined;
 
-        // If it is not a 401, treat it as a real error and let the outer catch handle it.
+        // If it is not a 401, treat it as a real error and handle it here.
         if (!errAny || errAny.status !== 401) {
-          throw e;
+          const msg = isErrorLike(e) ? e.message : 'Unknown error';
+          setErr(msg);
+          setLoading(false);
+          return;
         }
 
         // 401 means the user is effectively a guest (no valid session).
@@ -122,7 +130,13 @@ export default function WatchlistPage() {
           body: JSON.stringify({ ids: guestIds }),
         });
 
-        if (!bulkRes.ok) throw new Error(`HTTP ${bulkRes.status}`);
+        if (!bulkRes.ok) {
+          const msg = `HTTP ${bulkRes.status}`;
+          setErr(msg);
+          setLoading(false);
+          return;
+        }
+
         const bulkData: BulkResponse = await bulkRes.json();
 
         const now = Date.now();
@@ -173,6 +187,7 @@ export default function WatchlistPage() {
         setLoading(false);
         return;
       } finally {
+        // Just in case we hit an unexpected path.
         setLoading(false);
       }
     }
@@ -211,13 +226,16 @@ export default function WatchlistPage() {
   const rowsToShow = includePast ? items : items.filter((r) => r.status === 'upcoming');
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
+    <main className={`${noto.className} mx-auto max-w-7xl px-4 py-8`}>
+      {/* Header row */}
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-[22px] font-semibold text-gray-900">My Watchlist</h1>
-        <label className="flex items-center gap-2 text-sm">
+        <h1 className="text-[22px] font-semibold text-gray-900">
+          My Watchlist
+        </h1>
+        <label className="flex items-center gap-2 text-sm text-gray-700">
           <input
             type="checkbox"
-            className="h-4 w-4"
+            className="h-4 w-4 rounded border-border"
             checked={includePast}
             onChange={(e) => setIncludePast(e.target.checked)}
           />
@@ -229,10 +247,10 @@ export default function WatchlistPage() {
       {err && <p className="text-sm text-red-600">Error: {err}</p>}
 
       {authed === false && !loading && (
-        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          You’re browsing as a guest.{' '}
+        <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          You’re browsing as a guest.
           <br />
-          <Link href="/auth/login" className="text-blue-600 underline">
+          <Link href="/auth/login" className="font-semibold text-[#4A7A93] underline">
             Log in
           </Link>{' '}
           to save your watchlist and access it anytime, on any device!
@@ -244,94 +262,121 @@ export default function WatchlistPage() {
       )}
 
       {!loading && rowsToShow.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-md">
-          <table className="w-full border-separate border-spacing-0 text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 bg-[#FFF8E7] text-left">
-                <th className="w-44 px-3 py-2 font-medium text-gray-700">When</th>
-                <th className="px-3 py-2 font-medium text-gray-700">Title</th>
-                <th className="w-80 px-3 py-2 font-medium text-gray-700">Cinema</th>
-                <th className="w-32 px-3 py-2 font-medium text-gray-700">Status</th>
-                <th className="w-40 px-3 py-2 text-right font-medium text-gray-700">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rowsToShow.map((r) => (
-                <tr
-                  key={r.screening_id}
-                  className="border-b border-gray-100 transition-colors hover:bg-[#FFF8E7]/40"
-                >
-                  {/* WHEN — compact 3-line stack */}
-                  <td className="px-3 py-2">
-                    {r.start_at_utc ? (
-                      <div className="leading-5">
-                        <div className="text-[13px] text-gray-700">
-                          {new Intl.DateTimeFormat(undefined, {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric',
-                          }).format(new Date(r.start_at_utc))}
+        <section className="mt-4 overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_10px_24px_rgba(0,0,0,0.04)]">
+          {/* Header band above the list */}
+          <div className="border-b border-border bg-highlight px-4 py-3 md:px-6">
+            <h2 className="text-sm font-semibold text-primary md:text-[15px]">
+              Saved Screenings
+            </h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-separate border-spacing-0 text-[14px]">
+              <tbody>
+                {rowsToShow.map((r) => (
+                  <tr
+                    key={r.screening_id}
+                    className="border-t border-border/70 bg-surface transition-colors hover:bg-[#FFF8E7]"
+                  >
+                    {/* WHEN — compact 3-line stack */}
+                    <td className="px-4 py-3 align-middle">
+                      {r.start_at_utc ? (
+                        <div className="leading-5">
+                          <div className="text-[13px] text-gray-700">
+                            {new Intl.DateTimeFormat(undefined, {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                            }).format(new Date(r.start_at_utc))}
+                          </div>
+                          <div className="text-[15px] font-semibold text-gray-900">
+                            {new Intl.DateTimeFormat(undefined, {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true,
+                            }).format(new Date(r.start_at_utc))}
+                          </div>
+                          {typeof r.runtime_min === 'number' && (
+                            <div className="text-[12px] text-gray-500">
+                              {r.runtime_min} min
+                            </div>
+                          )}
                         </div>
-                        <div className="text-[15px] font-semibold text-gray-900">
-                          {new Intl.DateTimeFormat(undefined, {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true,
-                          }).format(new Date(r.start_at_utc))}
-                        </div>
-                        {typeof r.runtime_min === 'number' && (
-                          <div className="text-[12px] text-gray-500">{r.runtime_min} min</div>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+
+                    {/* TITLE */}
+                    <td className="px-4 py-3 align-middle">
+                      <div className="text-[15px] font-semibold text-gray-900">
+                        {r.film_id ? (
+                          <Link
+                            href={`/films/${r.film_id}`}
+                            className="hover:underline"
+                          >
+                            {r.title} {r.year ? `(${r.year})` : ''}
+                          </Link>
+                        ) : (
+                          <>
+                            {r.title} {r.year ? `(${r.year})` : ''}
+                          </>
                         )}
                       </div>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-
-                  {/* TITLE */}
-                  <td className="px-3 py-2">
-                    <div className="text-[15px] font-semibold text-gray-900">
-                      {r.film_id ? (
-                        <Link href={`/films/${r.film_id}`} className="hover:underline">
-                          {r.title} {r.year ? `(${r.year})` : ''}
-                        </Link>
-                      ) : (
-                        <>
-                          {r.title} {r.year ? `(${r.year})` : ''}
-                        </>
+                      {typeof r.imdb_rating === 'number' && (
+                        <div className="mt-0.5 text-[12px] text-gray-500">
+                          IMDb {r.imdb_rating.toFixed(1)}
+                        </div>
                       )}
-                    </div>
-                    {typeof r.imdb_rating === 'number' && (
-                      <div className="mt-0.5 text-[12px] text-gray-500">
-                        IMDb {r.imdb_rating.toFixed(1)}
+                    </td>
+
+                    {/* CINEMA */}
+                    <td className="px-4 py-3 align-middle text-[14px] text-gray-900">
+                      {r.cinema_name ?? '—'}
+                    </td>
+
+                    {/* STATUS */}
+                    <td className="px-4 py-3 align-middle">
+                      <StatusBadge status={r.status} />
+                    </td>
+
+                    {/* ACTION: ticket link + watchlist button, vertically centered */}
+                    <td className="px-4 py-3 align-middle">
+                      <div className="flex items-center justify-end gap-3">
+                        {r.source_url ? (
+                          <a
+                            href={r.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center rounded-full border border-border bg-highlight px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-highlight/80"
+                          >
+                            Get tickets on cinema site!
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted">
+                            No ticket link
+                          </span>
+                        )}
+
+                        <WatchlistButton
+                          screeningId={r.screening_id}
+                          initialSaved={true}
+                          onChange={(saved) =>
+                            handleSavedChange(r.screening_id, saved)
+                          }
+                          size="sm"
+                          confirmBeforeRemove
+                          confirmMessage={`Remove "${r.title}" from your watchlist?`}
+                          className="whitespace-nowrap"
+                        />
                       </div>
-                    )}
-                  </td>
-
-                  {/* CINEMA */}
-                  <td className="px-3 py-2">{r.cinema_name ?? '—'}</td>
-
-                  {/* STATUS */}
-                  <td className="px-3 py-2">
-                    <StatusBadge status={r.status} />
-                  </td>
-
-                  {/* ACTION */}
-                  <td className="px-3 py-2 text-right">
-                    <WatchlistButton
-                      screeningId={r.screening_id}
-                      initialSaved={true}
-                      onChange={(saved) => handleSavedChange(r.screening_id, saved)}
-                      size="sm"
-                      confirmBeforeRemove
-                      confirmMessage={`Remove "${r.title}" from your watchlist?`}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
     </main>
   );
