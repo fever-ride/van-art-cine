@@ -101,7 +101,7 @@ export default function Filters({
         <input
           type="text"
           inputMode="search"
-          placeholder="Title, director…"
+          placeholder="Enter a film title…"
           className={control}
           value={ui.q}
           onChange={(e) => handleSearchChange(e.target.value)}

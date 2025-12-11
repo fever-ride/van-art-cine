@@ -103,6 +103,8 @@ export default function NavBar() {
           <nav className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto">
             <Link
               href="/watchlist"
+              target="_blank"
+              rel="noopener noreferrer"
               className={`${pill} ${
                 isActive('/watchlist') ? 'bg-highlight text-primary' : ''
               } snap-start`}
