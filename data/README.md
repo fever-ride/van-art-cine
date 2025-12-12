@@ -1,0 +1,1 @@
+This folder is intentionally empty in the public repository. During real ingestion runs, the scraper and processing scripts generate raw screening data and cached API responses, all of which are stored here locally. These files are not committed to version control due to size and variability, but the folder is kept so the pipeline can run without modification.
