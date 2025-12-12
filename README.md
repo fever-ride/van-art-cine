@@ -122,13 +122,13 @@ frontend/
 │   └── NavBar.tsx           # Global navigation bar
 │
 ├── lib/                     # Non-React utilities and helpers
-│   ├── hooks/               # Custom React hooks (auth, watchlist, etc.)
+│   ├── hooks/               # Custom React hooks
 │   │   ├── useScreeningsData.ts
 │   │   ├── useScreeningsUI.ts
 │   │   └── useWatchlist.ts
 │   └── ...
 │
-├── public/                  # Static files served directly (images, icons)
+├── public/                  # Static files (images, icons)
 │
 ├── tests/
 │
