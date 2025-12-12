@@ -18,3 +18,9 @@ yarn-error.log*
 *.swp
 .idea/
 .vscode/
+
+# Ignore everything inside data
+data/*
+
+# Keep these files
+!data/README.md
