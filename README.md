@@ -22,16 +22,18 @@ The platform integrates:
 project-root/
 │
 ├── backend/             # Node.js + Express API
-│   ├── prisma/          # Prisma schema, migrations, seed
-│   └── src/             # Routes, controllers, services, middleware
+│   ├── prisma/          # Prisma schema
+│   └── src/             # Routes, controllers, services, models, middleware
+│
+├── data/                # Raw scraped data and cached responses
+│
+├── database/            # Data enrichment + ETL pipeline scripts
 │
 ├── frontend/            # Next.js client application
 │
 ├── scrapers/            # Python + Playwright scraping scripts
 │
-├── data/                # Raw scraped HTML and cached responses
-│
-└── database/            # Data enrichment + ETL pipeline scripts
+└── tools/               # Developer utilities and test helpers
 ```
 
 ## 3. Backend Architecture (Key Files)
@@ -40,61 +42,121 @@ project-root/
 backend/
 ├── src/
 │   ├── routes/              # API endpoints
-│   │   ├── auth.routes.ts
-│   │   ├── screening.routes.ts
-│   │   ├── user.routes.ts
-│   │   └── watchlist.routes.ts
+│   │   ├── auth.js
+│   │   ├── cinemas.js
+│   │   ├── films.js
+│   │   ├── screenings.js
+│   │   ├── user.js
+│   │   └── watchlist.js
 │   │
-│   ├── controllers/         # Request handling + response formatting
-│   │   ├── auth.controller.ts
-│   │   ├── screening.controller.ts
-│   │   ├── user.controller.ts
-│   │   └── watchlist.controller.ts
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── userController.js
+│   │   └── watchlistController.js
 │   │
-│   ├── services/            # Business logic
-│   │   ├── auth.service.ts
-│   │   ├── screening.service.ts
-│   │   ├── user.service.ts
-│   │   └── watchlist.service.ts
+│   ├── services/
+│   │   ├── authService.js
+│   │   ├── userService.js
+│   │   └── watchlistService.js
 │   │
-│   ├── repositories/        # Prisma queries and DB operations
-│   │   ├── screening.repo.ts
-│   │   ├── film.repo.ts
-│   │   └── user.repo.ts
+│   ├── models/
+│   │   ├── cinemas.js
+│   │   ├── films.js
+│   │   ├── screenings.js
+│   │   ├── userModel.js
+│   │   └── watchlistModel.js
 │   │
-│   ├── middleware/          # Auth, validation, error handling
-│   │   ├── auth.middleware.ts
-│   │   └── error.middleware.ts
+│   ├── middleware/
+│   │   └── auth.js
 │   │
-│   ├── utils/               # Shared helpers (date parsing, normalization, etc.)
+│   ├── validators/
+│   │   ├── authValidators.js
+│   │   ├── userValidators.js
+│   │   └── watchlistValidators.js
+│   │
+│   ├── utils/
 │   │   └── ...
 │   │
-│   └── app.ts               # Express app initialization
+│   ├── lib/
+│   │   └── ...
+│   │
+│   ├── db.js
+│   └── server.js
 │
 └── prisma/
     ├── schema.prisma        # Database schema
-    ├── migrations/          # Migration snapshots
-    └── seed.ts              # DB seed script
+    ├── migrations/
+    └── seed.ts
 ```
 
-## 4. Data Model (Prisma)
+## 4. Frontend Architecture (Key Files)
+
+```text
+frontend/
+├── app/                     # Next.js App Router (pages, routes, server actions)
+│   ├── about/               # About page
+│   ├── auth/                # Login + Register pages
+│   ├── films/               # Film detail pages (/films/[id])
+│   ├── lib/                 # Client-side helpers (API wrappers, utilities)
+│   ├── profile/             # User profile page
+│   ├── watchlist/           # Watchlist page
+│   ├── favicon.ico
+│   ├── globals.css          # Global styles
+│   ├── layout.tsx           # Root layout (fonts, providers, navigation)
+│   └── page.tsx             # Homepage (screenings listing + filters)
+│
+├── components/              # Reusable UI components
+│   ├── films/               # Components for film detail pages
+│   │   ├── FilmHeader.tsx   # Poster + title block
+│   │   ├── FilmMeta.tsx     # Metadata (cast, description, ...)
+│   │   └── FilmShowtimes.tsx# Upcoming screenings list for a film
+│   │
+│   ├── screenings/          # Components for homepage screening listings
+│   │   ├── Filters.tsx      # Search bar, cinemas, date filters
+│   │   ├── Pagination.tsx   # Pagination controls
+│   │   └── ResultsTable.tsx # Screening listing
+│   │
+│   ├── watchlist/           # Watchlist-related UI
+│   │   └── WatchlistButton.tsx
+│   │
+│   └── NavBar.tsx           # Global navigation bar
+│
+├── lib/                     # Non-React utilities and helpers
+│   ├── hooks/               # Custom React hooks (auth, watchlist, etc.)
+│   │   ├── useScreeningsData.ts
+│   │   ├── useScreeningsUI.ts
+│   │   └── useWatchlist.ts
+│   └── ...
+│
+├── public/                  # Static files served directly (images, icons)
+│
+├── tests/
+│
+└── package.json
+```
+
+## 5. Data Model (Prisma)
 
 ### Core Models
 
-- **app_user** — Registered users (email, hashed password, optional display name).
-- **cinema** — Cinema metadata (name, website, address).
-- **film** — Title, year, synopsis, languages, ratings, external IDs.
-- **screening** — Individual showtimes linked to a film and a cinema.
-- **watchlist_screening** — Join table linking `app_user` → saved screenings (the user's watchlist).
-- **refresh_token** — Refresh tokens for long-lived sessions and secure token rotation.
+- **app_user** — User accounts, authentication info, and related records.
+- **cinema** — Cinema metadata such as name, website, and address.
+- **film** — Film titles and enriched metadata (ratings, cast, external IDs).
+- **person** — People associated with films (directors, writers, cast).
+- **film_person** — Join table linking films and people with a role.
+- **screening** — Final normalized showtimes linked to film + cinema.
+- **watchlist_screening** — Records of screenings saved by users.
+- **refresh_token** — Session storage and token rotation.
 
-### Ingestion / Supporting Models
+### Ingestion-related models:
 
-- **raw_import** — Raw scraped payloads from source sites.
-- **stg_screening** — Staging table for screenings before they are normalized.
-- **ops_ingest_run** — Tracks ingestion runs, errors, and operational metadata.
+- **raw_import** — Raw scraped payloads before processing.
+- **stg_screening** — Staging area for processed screening data before merge.
+- **ops_ingest_run** — Metadata for each ingestion pipeline run.
+- **custom_event** — Generic event logging for user actions.
+- **user_schedule** — (Unused) placeholder for potential schedule features.
 
-## 5. Backend API Overview
+## 6. Backend API Overview
 
 ### Auth
 
@@ -129,29 +191,20 @@ backend/
 - `POST   /watchlist/toggle`
 - `POST   /watchlist/import`
 
----
-
-## 6. Frontend Features
+## 7. Frontend Features
 
 ### Homepage
 
-- Lists all upcoming screenings across cinemas.
+- Lists all upcoming screenings with key details, a source link, and relevant external references.
 - Search by film title.
 - Filter by cinema.
 - Date or date-range filtering.
-- Sorting by IMDb rating, screening time, runtime, etc.
-
-Expandable panels for each screening include:
-
-- Film description.
-- Runtime.
-- External links (cinema website, IMDb).
-- Add/remove screening to/from watchlist.
+- Sorting by ratings, screening time, etc.
+- Add-to-watchlist buttons.
 
 ### Film Detail Page
 
-- Poster, metadata, genres, ratings.
-- Full film description and additional info.
+- Poster and additional info.
 - List of all upcoming screenings for that film.
 - Add-to-watchlist buttons.
 
