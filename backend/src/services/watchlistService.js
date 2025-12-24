@@ -6,14 +6,7 @@ import {
   addManyWatchlistScreenings,
   countWatchlist,
 } from '../models/watchlistModel.js';
-
-class WatchlistError extends Error {
-  constructor(message, code = 'WATCHLIST_ERROR', status = 400) {
-    super(message);
-    this.code = code;
-    this.status = status;
-  }
-}
+import { WatchlistError } from '../utils/errors.js';
 
 export async function add({ uid, screeningId }) {
   const ok = await addWatchlistScreening({ userUid: uid, screeningId });

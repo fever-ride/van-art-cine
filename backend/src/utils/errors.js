@@ -13,3 +13,11 @@ export class NotFoundError extends Error {
     this.status = status;
   }
 }
+
+export class WatchlistError extends Error {
+  constructor(message, code = 'WATCHLIST_ERROR', status = 400) {
+    super(message);
+    this.code = code;
+    this.status = status;
+  }
+}
