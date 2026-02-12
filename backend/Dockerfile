@@ -33,9 +33,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Install OpenSSL for Prisma runtime compatibility
+# Install OpenSSL for Prisma + curl for HEALTHCHECK
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  openssl \
+  openssl curl \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy production node_modules + app files from builder
@@ -45,5 +45,8 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src ./src
 
 EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3000/readyz || exit 1
 
 CMD ["npm", "run", "start"]
