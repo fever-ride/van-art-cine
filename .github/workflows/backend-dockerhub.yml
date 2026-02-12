@@ -4,7 +4,14 @@ on:
   push:
     branches: [ "deploy/ec2-backend" ]
     paths:
-      - "backend/**"
+      # Production app code and config only (excludes tests, jest, .gitignore)
+      - "backend/src/**"
+      - "backend/package.json"
+      - "backend/package-lock.json"
+      - "backend/prisma/**"
+      - "backend/Dockerfile"
+      - "backend/.dockerignore"
+      - "backend/prisma.config.ts"
       - ".github/workflows/backend-dockerhub.yml"
 
 jobs:
