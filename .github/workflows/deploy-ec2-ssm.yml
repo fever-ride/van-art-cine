@@ -1,0 +1,30 @@
+name: Deploy Backend to EC2 via SSM
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Backend Image (DockerHub)"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'deploy/ec2-backend'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy via SSM (docker compose pull + up)
+        run: |
+          aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --comment "GitHub Actions auto deploy backend" \
+            --parameters commands="cd /home/ec2-user/vancine-deploy && docker compose pull && docker compose up -d"
