@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 
+import { prisma } from './lib/prismaClient.js';
 import screenings from './routes/screenings.js';
 import films from './routes/films.js';
 import auth from './routes/auth.js';
@@ -47,11 +48,17 @@ app.use(cors({
 app.use(express.json());
 app.use(morgan('dev'));
 
-/* -------- Ping -------- */
-app.get('/ping', (_req, res) => res.json({ "message": "pong" }))
-
-/* -------- Health -------- */
-app.get('/health', (_req, res) => res.json({ ok: true }));
+/* healthz: liveness | readyz: readiness (DB check, 503 on fail) */
+app.get('/healthz', (_req, res) => res.json({ ok: true }));
+app.get('/readyz', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ ok: true, db: 'connected' });
+  } catch (err) {
+    console.error('Readiness check DB error:', err?.message);
+    res.status(503).json({ ok: false, db: 'error' });
+  }
+});
 
 /* -------- Rate limits -------- */
 const loginLimiter = rateLimit({
