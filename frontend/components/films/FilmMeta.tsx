@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import type { Film } from '@/app/lib/films';
+import { isMissingText } from '@/app/lib/typeGuards';
 
 type Props = {
   film: Pick<Film, 'language' | 'rated' | 'description'> & {
@@ -9,13 +10,6 @@ type Props = {
     cast: Film['cast'];
   };
 };
-
-function isMissingText(value?: string | null): boolean {
-  const t = value?.trim();
-  if (!t) return true;
-  const lower = t.toLowerCase();
-  return lower === 'n/a' || lower === 'na';
-}
 
 function missing(text: string) {
   return <span className="italic text-muted">{text}</span>;

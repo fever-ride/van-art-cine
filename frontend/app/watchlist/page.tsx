@@ -7,22 +7,13 @@ import { apiListWatchlist } from '@/app/lib/watchlist';
 import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import { getGuestSet } from '@/app/lib/guestWatchlist';
+import { isErrorLike } from '@/app/lib/typeGuards';
 
 // Global font for this page
 const noto = Noto_Sans({
   subsets: ['latin'],
   display: 'swap',
 });
-
-// Narrow unknown errors to something with a message
-function isErrorLike(x: unknown): x is { message: string } {
-  return (
-    typeof x === 'object' &&
-    x !== null &&
-    'message' in x &&
-    typeof (x as Record<string, unknown>).message === 'string'
-  );
-}
 
 // Shape of the /api/screenings/bulk response items (only fields we use)
 type BulkScreening = {

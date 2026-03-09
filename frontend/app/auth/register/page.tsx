@@ -4,16 +4,7 @@ import { useState } from 'react';
 import { apiRegister } from '@/app/lib/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-
-function isErrorLike(x: unknown): x is { message: string } {
-  return (
-    typeof x === 'object' &&
-    x !== null &&
-    'message' in x &&
-    typeof (x as Record<string, unknown>).message === 'string'
-  );
-}
+import { isErrorLike } from '@/app/lib/typeGuards';
 
 export default function RegisterPage() {
   const r = useRouter();

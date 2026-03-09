@@ -8,6 +8,7 @@ import {
   formatScreeningTime,
   formatScreeningDateTime,
 } from '@/app/lib/formatDate';
+import { formatGenre } from '@/app/lib/formatGenre';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 
 type Props = {
@@ -25,32 +26,8 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
       return next;
     });
 
-  // Helper: type guard for string
-  function isNonEmptyString(x: unknown): x is string {
-    return typeof x === 'string' && x.trim() !== '';
-  }
-
-  // Read genres from either `genres: string[]` or `genre: string`
-  function toGenres(s: Screening): string[] {
-    // We only assert the *shape* we care about, without using `any`
-    const maybe = s as unknown as { genres?: unknown; genre?: unknown };
-
-    if (Array.isArray(maybe.genres)) {
-      return (maybe.genres as unknown[])
-        .filter(isNonEmptyString)
-        .map((t) => t.trim())
-        .filter(Boolean);
-    }
-
-    if (isNonEmptyString(maybe.genre)) {
-      return maybe.genre
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean);
-    }
-
-    return [];
-  }
+  const maybeWithGenres = (s: Screening) =>
+    s as Screening & { genres?: string[] };
 
   return (
     <table className="w-full bg-surface table-auto border-separate border-spacing-0 text-[14px] leading-6">
@@ -74,7 +51,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
           const startsFull = formatScreeningDateTime(dt);
 
           const year = s.year ? ` (${s.year})` : '';
-          const genres = toGenres(s);
+          const genres = formatGenre(s.genre ?? maybeWithGenres(s).genres);
 
           return (
             <Fragment key={s.id}>

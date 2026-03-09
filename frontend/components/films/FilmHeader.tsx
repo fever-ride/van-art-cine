@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import type { Film } from '@/app/lib/films';
+import { formatGenre } from '@/app/lib/formatGenre';
 
 type Props = {
   film: Pick<
@@ -43,11 +44,7 @@ export default function FilmHeader({ film }: Props) {
   const countriesText =
     typeof country === 'string' && country.trim() ? country : '';
 
-  // Genres: support comma-separated string
-  const genres =
-    typeof genre === 'string' && genre.trim()
-      ? genre.split(',').map((g) => g.trim()).filter(Boolean)
-      : [];
+  const genres = formatGenre(genre);
 
   // Directors line
   const dirLine =

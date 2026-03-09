@@ -2,17 +2,9 @@
 
 import { useState } from 'react';
 import { apiLogin } from '@/app/lib/auth';
+import { isErrorLike } from '@/app/lib/typeGuards';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-function isErrorLike(x: unknown): x is { message: string } {
-  return (
-    typeof x === 'object' &&
-    x !== null &&
-    'message' in x &&
-    typeof (x as Record<string, unknown>).message === 'string'
-  );
-}
 
 export default function LoginPage() {
   const r = useRouter();
