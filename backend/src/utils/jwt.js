@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 
 const {
@@ -29,12 +30,14 @@ export function signAccess(user) {
 }
 
 /**
- * Sign long-lived Refresh Token
+ * Sign long-lived Refresh Token.
+ * Each call uses a unique jti so the stored token hash is never duplicated (avoids P2002 on refresh_token.token).
  */
 export function signRefresh(user) {
   return jwt.sign(
     {
       uid: user.uid,
+      jti: crypto.randomUUID(),
     },
     JWT_REFRESH_SECRET,
     { expiresIn: REFRESH_TTL }
