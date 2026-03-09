@@ -113,7 +113,7 @@ export default function WatchlistButton({
       aria-pressed={saved}
       aria-label={label}
       className={[
-        'rounded-xl font-semibold transition-all duration-150 whitespace-nowrap shrink-0',
+        'rounded-btn font-semibold transition-all duration-150 whitespace-nowrap shrink-0',
         sizeClass[size],
         'min-w-[7.5rem]', // ensures stable width ("Add to Watchlist" width)
         pending ? 'opacity-60 cursor-not-allowed' : '',

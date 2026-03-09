@@ -36,6 +36,13 @@
   /* Success (e.g. upcoming status) */
   --success-bg: #F0FDF4;
   --success-text: #15803D;
+
+  /* Border radius */
+  --radius-control: 0.375rem;  /* 6px – small controls, icons */
+  --radius-input: 0.5rem;      /* 8px – inputs, form fields */
+  --radius-btn: 0.75rem;      /* 12px – buttons, nav pills */
+  --radius-card: 1rem;        /* 16px – cards, sections */
+  --radius-card-lg: 1.5rem;   /* 24px – large sections (e.g. film header) */
 }
 
 @theme inline {
@@ -65,6 +72,11 @@
   --color-warning-text: var(--warning-text);
   --color-success-bg: var(--success-bg);
   --color-success-text: var(--success-text);
+  --radius-control: var(--radius-control);
+  --radius-input: var(--radius-input);
+  --radius-btn: var(--radius-btn);
+  --radius-card: var(--radius-card);
+  --radius-card-lg: var(--radius-card-lg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

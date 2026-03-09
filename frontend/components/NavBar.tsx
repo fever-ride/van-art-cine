@@ -41,7 +41,7 @@ export default function NavBar() {
 
   const isActive = (href: string) => pathname === href;
   const pill =
-    'whitespace-nowrap rounded-[10px] px-2 py-1 text-sm font-medium text-muted hover:bg-highlight';
+    'whitespace-nowrap rounded-btn px-2 py-1 text-sm font-medium text-muted hover:bg-highlight';
 
   return (
     <header
@@ -76,13 +76,13 @@ export default function NavBar() {
               <>
                 <Link
                   href="/auth/login"
-                  className="rounded-[12px] border-[1.5px] border-border bg-surface px-3 py-1.5 text-sm font-semibold text-primary hover:bg-surface-hover"
+                  className="rounded-btn border-[1.5px] border-border bg-surface px-3 py-1.5 text-sm font-semibold text-primary hover:bg-surface-hover"
                 >
                   Log in
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="rounded-[12px] bg-accent px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-accent-hover"
+                  className="rounded-btn bg-accent px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-accent-hover"
                 >
                   Register
                 </Link>
@@ -90,7 +90,7 @@ export default function NavBar() {
             ) : (
               <button
                 onClick={handleLogout}
-                className="rounded-[12px] border-[1.5px] border-border bg-surface px-3.5 py-1.5 text-sm font-semibold text-primary hover:bg-surface-hover"
+                className="rounded-btn border-[1.5px] border-border bg-surface px-3.5 py-1.5 text-sm font-semibold text-primary hover:bg-surface-hover"
               >
                 Logout
               </button>

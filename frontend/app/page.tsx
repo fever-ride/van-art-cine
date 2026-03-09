@@ -138,7 +138,7 @@ function ScreeningsPageInner() {
             )}
 
           {screeningsData.items.length > 0 && (
-            <div className="overflow-x-auto rounded-xl border border-border bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-card border border-border bg-surface shadow-sm">
               <ResultsTable
                 items={screeningsData.items}
                 savedIds={watchlist.savedIds}

@@ -30,14 +30,14 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
 
   if (!sorted.length) {
     return (
-      <section className="mt-6 rounded-2xl border border-border bg-surface p-4 text-sm text-muted shadow-md md:p-6">
+      <section className="mt-6 rounded-card border border-border bg-surface p-4 text-sm text-muted shadow-md md:p-6">
         No upcoming screenings.
       </section>
     );
   }
 
   return (
-    <section className="mt-6 overflow-hidden rounded-2xl border border-border bg-surface">
+    <section className="mt-6 overflow-hidden rounded-card border border-border bg-surface">
       {/* Header band: same cream style, film-specific title */}
       <div className="rounded-t-2xl border-b border-border bg-highlight px-4 py-3 md:px-6">
         <h2 className="text-sm font-semibold text-primary md:text-[15px]">
@@ -114,7 +114,7 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
           <button
             type="button"
             onClick={() => setShowAll((v) => !v)}
-            className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-primary transition hover:bg-surface-subtle"
+            className="rounded-input border border-border px-3 py-1.5 text-sm font-medium text-primary transition hover:bg-surface-subtle"
           >
             {showAll ? 'Show less' : `Show more (${sorted.length - 10} more)`}
           </button>

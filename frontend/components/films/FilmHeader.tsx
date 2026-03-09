@@ -78,14 +78,14 @@ export default function FilmHeader({ film }: Props) {
   );
 
   return (
-    <section className="rounded-3xl">
+    <section className="rounded-card-lg">
       <div className="flex flex-col gap-6 p-4 md:flex-row md:items-start md:p-6">
         {/* Poster */}
         <div className="shrink-0">
           <img
             src={poster}
             alt={`${title} poster`}
-            className="h-[180px] w-[130px] rounded-2xl object-cover md:h-[176px] md:w-[128px]"
+            className="h-[180px] w-[130px] rounded-card object-cover md:h-[176px] md:w-[128px]"
           />
         </div>
 

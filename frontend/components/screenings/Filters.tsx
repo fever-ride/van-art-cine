@@ -85,10 +85,10 @@ export default function Filters({
   };
 
   // === THEMED CLASSES ===
-  const container = 'space-y-4 rounded-2xl border border-border bg-surface p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)]'
+  const container = 'space-y-4 rounded-card border border-border bg-surface p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)]'
 
   const control =
-    'w-full rounded-[12px] border-[1.5px] border-border px-3 py-2.5 text-sm ' +
+    'w-full rounded-btn border-[1.5px] border-border px-3 py-2.5 text-sm ' +
     'focus:border-border focus:outline-none focus:ring-1 focus:ring-accent/30';
 
   const labelCls = 'text-[12px] font-semibold text-accent';
@@ -127,7 +127,7 @@ export default function Filters({
             className="
               max-h-[min(50vh,420px)]   /* flexible until 50vh or 420px, whichever is smaller */
               overflow-y-auto overscroll-contain
-              rounded-[14px] border-[1.5px] border-border bg-surface
+              rounded-btn border-[1.5px] border-border bg-surface
               p-3 pr-2                   /* give room so scrollbar doesn't cover text */
               scroll-py-2
             "
@@ -142,7 +142,7 @@ export default function Filters({
               >
                 <input
                   type="checkbox"
-                  className="h-3 w-3 rounded-[4px] border-[0.5px] border-border text-accent focus:ring-1 focus:ring-accent/30"
+                  className="h-3 w-3 rounded-control border-[0.5px] border-border text-accent focus:ring-1 focus:ring-accent/30"
                   checked={checked}
                   onChange={(e) => {
                     if (e.target.checked) {
@@ -265,7 +265,7 @@ export default function Filters({
       <div className="flex gap-2 pt-1">
         <button
           type="button"
-          className="rounded-[14px] border-[1.5px] border-border bg-surface px-4 py-2 text-sm font-semibold
+          className="rounded-btn border-[1.5px] border-border bg-surface px-4 py-2 text-sm font-semibold
                      text-primary hover:bg-surface-hover"
           onClick={handleReset}
           disabled={loading}
@@ -274,7 +274,7 @@ export default function Filters({
         </button>
         <button
           type="button"
-          className="rounded-[14px] bg-accent px-4 py-2 text-sm font-semibold text-surface
+          className="rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-surface
                      hover:bg-accent-hover disabled:opacity-60"
           onClick={handleApply}
           disabled={loading}

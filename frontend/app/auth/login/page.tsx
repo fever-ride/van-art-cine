@@ -50,7 +50,7 @@ export default function LoginPage() {
       </h1>
 
       {/* Card */}
-      <section className="overflow-hidden rounded-2xl border border-border bg-surface shadow-md">
+      <section className="overflow-hidden rounded-card border border-border bg-surface shadow-md">
         {/* Cream band header */}
         <div className="border-b border-border bg-band px-5 py-3">
           <p className="text-[15px] font-semibold text-primary">Welcome back</p>
@@ -62,7 +62,7 @@ export default function LoginPage() {
           {err && (
             <div
               role="alert"
-              className="rounded-lg border border-error-border bg-error-bg px-3 py-2 text-sm text-error-text"
+              className="rounded-input border border-error-border bg-error-bg px-3 py-2 text-sm text-error-text"
             >
               {err}
             </div>
@@ -78,7 +78,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-[15px] leading-6 text-primary outline-none ring-0 transition focus:border-accent"
+              className="w-full rounded-input border border-border bg-surface px-3 py-2 text-[15px] leading-6 text-primary outline-none ring-0 transition focus:border-accent"
               placeholder="you@example.com"
               autoComplete="email"
             />
@@ -95,14 +95,14 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 pr-24 text-[15px] leading-6 text-primary outline-none ring-0 transition focus:border-accent"
+                className="w-full rounded-input border border-border bg-surface px-3 py-2 pr-24 text-[15px] leading-6 text-primary outline-none ring-0 transition focus:border-accent"
                 placeholder="••••••••"
                 autoComplete="current-password"
               />
               <button
                 type="button"
                 onClick={() => setReveal((v) => !v)}
-                className="absolute inset-y-0 right-1 my-1 rounded-md border border-border bg-surface px-2.5 text-xs font-medium text-muted hover:bg-surface-hover"
+                className="absolute inset-y-0 right-1 my-1 rounded-control border border-border bg-surface px-2.5 text-xs font-medium text-muted hover:bg-surface-hover"
                 aria-label={reveal ? 'Hide password' : 'Show password'}
               >
                 {reveal ? 'Hide' : 'Show'}
@@ -122,7 +122,7 @@ export default function LoginPage() {
             <button
               disabled={loading}
               className={[
-                'rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition',
+                'rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-white transition',
                 'hover:bg-accent-hover',
                 loading ? 'cursor-not-allowed opacity-60' : '',
               ].join(' ')}

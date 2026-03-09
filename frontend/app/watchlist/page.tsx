@@ -229,7 +229,7 @@ export default function WatchlistPage() {
       {err && <p className="text-sm text-error-text">Error: {err}</p>}
 
       {authed === false && !loading && (
-        <div className="mb-4 rounded-2xl border border-warning-border bg-warning-bg px-4 py-3 text-sm text-warning-text">
+        <div className="mb-4 rounded-card border border-warning-border bg-warning-bg px-4 py-3 text-sm text-warning-text">
           You’re browsing as a guest.
           <br />
           <Link href="/auth/login" className="font-semibold text-accent hover:text-accent-hover underline">
@@ -244,7 +244,7 @@ export default function WatchlistPage() {
       )}
 
       {!loading && rowsToShow.length > 0 && (
-        <section className="mt-4 overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_10px_24px_rgba(0,0,0,0.04)]">
+        <section className="mt-4 overflow-hidden rounded-card border border-border bg-surface shadow-[0_10px_24px_rgba(0,0,0,0.04)]">
           {/* Header band above the list */}
           <div className="border-b border-border bg-highlight px-4 py-3 md:px-6">
             <h2 className="text-sm font-semibold text-primary md:text-[15px]">

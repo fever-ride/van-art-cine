@@ -52,7 +52,7 @@ export default function RegisterPage() {
       </h1>
 
       {/* Card */}
-      <section className="overflow-hidden rounded-2xl border border-border bg-surface shadow-md">
+      <section className="overflow-hidden rounded-card border border-border bg-surface shadow-md">
         {/* Cream band header */}
         <div className="border-b border-border bg-band px-5 py-3">
           <p className="text-[15px] font-semibold text-primary">Join us</p>
@@ -64,7 +64,7 @@ export default function RegisterPage() {
           {err && (
             <div
               role="alert"
-              className="rounded-lg border border-error-border bg-error-bg px-3 py-2 text-sm text-error-text"
+              className="rounded-input border border-error-border bg-error-bg px-3 py-2 text-sm text-error-text"
             >
               {err}
             </div>
@@ -80,7 +80,7 @@ export default function RegisterPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-[15px] leading-6 text-primary outline-none ring-0 transition focus:border-accent"
+              className="w-full rounded-input border border-border bg-surface px-3 py-2 text-[15px] leading-6 text-primary outline-none ring-0 transition focus:border-accent"
               placeholder="you@example.com"
               autoComplete="email"
             />
@@ -95,7 +95,7 @@ export default function RegisterPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-[15px] leading-6 text-primary outline-none ring-0 transition focus:border-accent"
+              className="w-full rounded-input border border-border bg-surface px-3 py-2 text-[15px] leading-6 text-primary outline-none ring-0 transition focus:border-accent"
               placeholder="Your name"
             />
           </label>
@@ -111,14 +111,14 @@ export default function RegisterPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 pr-24 text-[15px] leading-6 text-primary outline-none ring-0 transition focus:border-accent"
+                className="w-full rounded-input border border-border bg-surface px-3 py-2 pr-24 text-[15px] leading-6 text-primary outline-none ring-0 transition focus:border-accent"
                 placeholder="••••••••"
                 autoComplete="new-password"
               />
               <button
                 type="button"
                 onClick={() => setReveal((v) => !v)}
-                className="absolute inset-y-0 right-1 my-1 rounded-md border border-border bg-surface px-2.5 text-xs font-medium text-muted hover:bg-surface-hover"
+                className="absolute inset-y-0 right-1 my-1 rounded-control border border-border bg-surface px-2.5 text-xs font-medium text-muted hover:bg-surface-hover"
               >
                 {reveal ? 'Hide' : 'Show'}
               </button>
@@ -137,7 +137,7 @@ export default function RegisterPage() {
             <button
               disabled={loading}
               className={[
-                'rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition',
+                'rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-white transition',
                 'hover:bg-accent-hover',
                 loading ? 'cursor-not-allowed opacity-60' : '',
               ].join(' ')}

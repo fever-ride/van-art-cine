@@ -52,7 +52,7 @@ export default function AboutPage() {
             href="https://www.linkedin.com/in/wendi-zhong/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded border border-border px-3 py-1.5 text-sm font-medium text-muted hover:bg-surface-subtle"
+            className="inline-flex items-center gap-2 rounded-input border border-border px-3 py-1.5 text-sm font-medium text-muted hover:bg-surface-subtle"
             aria-label="Visit Wendy Zhong on LinkedIn (opens in a new tab)"
           >
             <svg

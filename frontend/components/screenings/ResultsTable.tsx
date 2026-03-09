@@ -87,7 +87,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                     onClick={() => toggle(s.id)}
                     aria-expanded={isOpen}
                     aria-controls={`row-details-${s.id}`}
-                    className="grid h-7 w-7 place-items-center rounded-md border border-border bg-surface transition hover:bg-surface-subtle"
+                    className="grid h-7 w-7 place-items-center rounded-control border border-border bg-surface transition hover:bg-surface-subtle"
                     title={isOpen ? 'Hide details' : 'Show details'}
                   >
                     <svg
@@ -240,7 +240,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   href={s.source_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface/80"
+                                  className="inline-flex items-center rounded-control border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface/80"
                                 >
                                   View film on cinema site
                                 </a>
@@ -250,7 +250,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   href={s.imdb_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface/80"
+                                  className="inline-flex items-center rounded-control border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface/80"
                                 >
                                   View film on IMDb
                                 </a>

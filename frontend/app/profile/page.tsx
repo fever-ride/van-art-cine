@@ -154,7 +154,7 @@ export default function ProfilePage() {
 
   const nameChanged = (user.name ?? '') !== nameInput.trim();
   const pillButton =
-    'inline-flex items-center rounded-[10px] px-4 py-1.5 text-sm font-semibold';
+    'inline-flex items-center rounded-btn px-4 py-1.5 text-sm font-semibold';
 
   return (
     <main className={`${noto.className} mx-auto max-w-3xl px-4 py-8`}>
@@ -165,7 +165,7 @@ export default function ProfilePage() {
         </p>
       </header>
 
-      <section className="mt-6 rounded-2xl border border-border-subtle bg-surface p-6 shadow-sm">
+      <section className="mt-6 rounded-card border border-border-subtle bg-surface p-6 shadow-sm">
         {/* Account summary */}
         <div>
           <h2 className="text-base font-semibold text-primary">Account</h2>
@@ -205,7 +205,7 @@ export default function ProfilePage() {
                 type="text"
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
-                className="block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-primary shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="block w-full rounded-input border border-border bg-surface px-3 py-2 text-sm text-primary shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Your name"
               />
             </div>
@@ -247,7 +247,7 @@ export default function ProfilePage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-primary shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="block w-full rounded-input border border-border bg-surface px-3 py-2 text-sm text-primary shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 autoComplete="new-password"
               />
             </div>
@@ -263,7 +263,7 @@ export default function ProfilePage() {
                 type="password"
                 value={passwordConfirm}
                 onChange={(e) => setPasswordConfirm(e.target.value)}
-                className="block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-primary shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="block w-full rounded-input border border-border bg-surface px-3 py-2 text-sm text-primary shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 autoComplete="new-password"
               />
             </div>
@@ -314,7 +314,7 @@ export default function ProfilePage() {
                 type="text"
                 value={deleteConfirm}
                 onChange={(e) => setDeleteConfirm(e.target.value)}
-                className="block w-full rounded-lg border border-error-border bg-surface px-3 py-2 text-sm text-primary shadow-sm focus:border-error focus:outline-none focus:ring-1 focus:ring-error"
+                className="block w-full rounded-input border border-error-border bg-surface px-3 py-2 text-sm text-primary shadow-sm focus:border-error focus:outline-none focus:ring-1 focus:ring-error"
               />
             </div>
             <div className="flex items-center gap-3">
