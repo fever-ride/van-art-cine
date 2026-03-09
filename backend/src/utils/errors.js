@@ -14,6 +14,14 @@ export class NotFoundError extends Error {
   }
 }
 
+export class ValidationError extends Error {
+  constructor(message = 'Invalid input', code = 'BAD_REQUEST', status = 400) {
+    super(message);
+    this.code = code;
+    this.status = status;
+  }
+}
+
 export class WatchlistError extends Error {
   constructor(message, code = 'WATCHLIST_ERROR', status = 400) {
     super(message);

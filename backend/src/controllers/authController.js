@@ -134,11 +134,11 @@ export async function logoutHandler(req, res, next) {
 /**
  * GET /api/auth/me
  * @returns {200} {{ user: { uid, role } }}
- * @returns {401} {{ error: 'Unauthorized' }}
+ * @returns {401} {{ error: 'UNAUTHORIZED', message }}
  */
-export async function meHandler(req, res) {
+export async function meHandler(req, res, next) {
   if (!req.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return next(new AuthError('Not authenticated', 'UNAUTHORIZED', 401));
   }
   return res.json({ user: req.user });
 }
