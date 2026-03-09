@@ -5,6 +5,7 @@ import type { UpcomingScreening } from '@/app/lib/films';
 import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
+import { Button } from '@/components/ui';
 
 type Props = {
   upcoming: UpcomingScreening[];
@@ -111,13 +112,14 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
       {/* Show more / less */}
       {sorted.length > 10 && (
         <div className="border-t border-border px-4 py-3 md:px-6">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => setShowAll((v) => !v)}
-            className="rounded-input border border-border px-3 py-1.5 text-sm font-medium text-primary transition hover:bg-surface-subtle"
           >
             {showAll ? 'Show less' : `Show more (${sorted.length - 10} more)`}
-          </button>
+          </Button>
         </div>
       )}
     </section>

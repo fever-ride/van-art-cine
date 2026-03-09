@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { UIState, SetUI } from '@/lib/hooks/useScreeningsUI';
+import { Card, Input, Button } from '@/components/ui';
 
 type CinemaOption = { id: number; name: string };
 
@@ -84,27 +85,22 @@ export default function Filters({
     onApply();
   };
 
-  // === THEMED CLASSES ===
-  const container = 'space-y-4 rounded-card border border-border bg-surface p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)]'
-
+  const labelCls = 'text-[12px] font-semibold text-accent';
   const control =
     'w-full rounded-btn border-[1.5px] border-border px-3 py-2.5 text-sm ' +
     'focus:border-border focus:outline-none focus:ring-1 focus:ring-accent/30';
 
-  const labelCls = 'text-[12px] font-semibold text-accent';
-
   return (
-    <div className={container}>
-      {/* Search */}
+    <Card className="space-y-4 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
       <label className="flex flex-col gap-1">
         <span className={labelCls}>Search</span>
-        <input
+        <Input
           type="text"
           inputMode="search"
           placeholder="Enter a film title…"
-          className={control}
           value={ui.q}
           onChange={(e) => handleSearchChange(e.target.value)}
+          className="rounded-btn py-2.5"
         />
       </label>
 
@@ -113,13 +109,15 @@ export default function Filters({
         <div className="flex items-center justify-between">
           <span className={labelCls}>Cinemas</span>
           {localUI.cinemaIds.length > 0 && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               className="text-xs font-semibold text-accent hover:underline"
               onClick={() => setLocalUI({ ...localUI, cinemaIds: [] })}
             >
               Clear ({localUI.cinemaIds.length})
-            </button>
+            </Button>
           )}
         </div>
 
@@ -234,9 +232,8 @@ export default function Filters({
         </div>
 
         {localUI.mode === 'single' && (
-          <input
+          <Input
             type="date"
-            className={control}
             value={localUI.date}
             onChange={(e) => setLocalUI({ ...localUI, date: e.target.value })}
           />
@@ -244,16 +241,14 @@ export default function Filters({
 
         {localUI.mode === 'range' && (
           <div className="mt-2 flex w-full flex-wrap items-center gap-2">
-            <input
+            <Input
               type="date"
-              className={control}
               value={localUI.from}
               onChange={(e) => setLocalUI({ ...localUI, from: e.target.value })}
             />
             <span className="text-sm text-muted">to</span>
-            <input
+            <Input
               type="date"
-              className={control}
               value={localUI.to}
               onChange={(e) => setLocalUI({ ...localUI, to: e.target.value })}
             />
@@ -261,27 +256,24 @@ export default function Filters({
         )}
       </div>
 
-      {/* Actions */}
       <div className="flex gap-2 pt-1">
-        <button
+        <Button
           type="button"
-          className="rounded-btn border-[1.5px] border-border bg-surface px-4 py-2 text-sm font-semibold
-                     text-primary hover:bg-surface-hover"
+          variant="outline"
           onClick={handleReset}
           disabled={loading}
         >
           Reset
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-surface
-                     hover:bg-accent-hover disabled:opacity-60"
+          variant="primary"
           onClick={handleApply}
           disabled={loading}
         >
           {loading ? 'Applying…' : 'Apply'}
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }

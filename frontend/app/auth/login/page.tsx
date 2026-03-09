@@ -5,6 +5,7 @@ import { apiLogin } from '@/app/lib/auth';
 import { isErrorLike } from '@/app/lib/typeGuards';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Card, Input, Button } from '@/components/ui';
 
 export default function LoginPage() {
   const r = useRouter();
@@ -41,15 +42,14 @@ export default function LoginPage() {
         Log in
       </h1>
 
-      {/* Card */}
-      <section className="overflow-hidden rounded-card border border-border bg-surface shadow-md">
-        {/* Cream band header */}
-        <div className="border-b border-border bg-band px-5 py-3">
-          <p className="text-[15px] font-semibold text-primary">Welcome back</p>
-          <p className="text-[13px] text-muted">Sign in to manage your watchlist.</p>
-        </div>
-
-        {/* Form */}
+      <Card
+        band={
+          <>
+            <p className="text-[15px] font-semibold text-primary">Welcome back</p>
+            <p className="text-[13px] text-muted">Sign in to manage your watchlist.</p>
+          </>
+        }
+      >
         <form onSubmit={onSubmit} className="space-y-4 p-5">
           {err && (
             <div
@@ -60,49 +60,47 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Email */}
           <label className="block">
             <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
               Email
             </span>
-            <input
+            <Input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-input border border-border bg-surface px-3 py-2 text-[15px] leading-6 text-primary outline-none ring-0 transition focus:border-accent"
               placeholder="you@example.com"
               autoComplete="email"
             />
           </label>
 
-          {/* Password with reveal */}
           <label className="block">
             <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
               Password
             </span>
             <div className="relative">
-              <input
+              <Input
                 type={reveal ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-input border border-border bg-surface px-3 py-2 pr-24 text-[15px] leading-6 text-primary outline-none ring-0 transition focus:border-accent"
                 placeholder="••••••••"
                 autoComplete="current-password"
+                className="pr-24"
               />
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => setReveal((v) => !v)}
-                className="absolute inset-y-0 right-1 my-1 rounded-control border border-border bg-surface px-2.5 text-xs font-medium text-muted hover:bg-surface-hover"
+                className="absolute right-1 top-1/2 -translate-y-1/2"
                 aria-label={reveal ? 'Hide password' : 'Show password'}
               >
                 {reveal ? 'Hide' : 'Show'}
-              </button>
+              </Button>
             </div>
           </label>
 
-          {/* Actions */}
           <div className="mt-2 flex items-center justify-between">
             <Link
               href="/auth/register"
@@ -110,20 +108,12 @@ export default function LoginPage() {
             >
               Create an account
             </Link>
-
-            <button
-              disabled={loading}
-              className={[
-                'rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-white transition',
-                'hover:bg-accent-hover',
-                loading ? 'cursor-not-allowed opacity-60' : '',
-              ].join(' ')}
-            >
+            <Button type="submit" disabled={loading}>
               {loading ? 'Logging in…' : 'Log in'}
-            </button>
+            </Button>
           </div>
         </form>
-      </section>
+      </Card>
     </main>
   );
 }

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { apiLogout, apiMe } from '@/app/lib/auth';
 import { Noto_Sans } from 'next/font/google';
+import { Button, getButtonClassName } from '@/components/ui';
 
 const noto = Noto_Sans({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
@@ -76,24 +77,21 @@ export default function NavBar() {
               <>
                 <Link
                   href="/auth/login"
-                  className="rounded-btn border-[1.5px] border-border bg-surface px-3 py-1.5 text-sm font-semibold text-primary hover:bg-surface-hover"
+                  className={getButtonClassName({ variant: 'outline', size: 'sm' })}
                 >
                   Log in
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="rounded-btn bg-accent px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-accent-hover"
+                  className={getButtonClassName({ variant: 'primary', size: 'sm' })}
                 >
                   Register
                 </Link>
               </>
             ) : (
-              <button
-                onClick={handleLogout}
-                className="rounded-btn border-[1.5px] border-border bg-surface px-3.5 py-1.5 text-sm font-semibold text-primary hover:bg-surface-hover"
-              >
+              <Button variant="outline" size="sm" onClick={handleLogout}>
                 Logout
-              </button>
+              </Button>
             )}
           </div>
         </div>

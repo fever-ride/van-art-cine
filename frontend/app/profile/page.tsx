@@ -10,6 +10,7 @@ import {
   User
 } from '@/app/lib/profile';
 import { Noto_Sans } from 'next/font/google';
+import { Card, Input, Button } from '@/components/ui';
 
 const noto = Noto_Sans({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
@@ -153,8 +154,6 @@ export default function ProfilePage() {
   }
 
   const nameChanged = (user.name ?? '') !== nameInput.trim();
-  const pillButton =
-    'inline-flex items-center rounded-btn px-4 py-1.5 text-sm font-semibold';
 
   return (
     <main className={`${noto.className} mx-auto max-w-3xl px-4 py-8`}>
@@ -165,7 +164,7 @@ export default function ProfilePage() {
         </p>
       </header>
 
-      <section className="mt-6 rounded-card border border-border-subtle bg-surface p-6 shadow-sm">
+      <Card className="mt-6 p-6">
         {/* Account summary */}
         <div>
           <h2 className="text-base font-semibold text-primary">Account</h2>
@@ -200,23 +199,21 @@ export default function ProfilePage() {
               <label htmlFor="name" className="block font-medium text-primary">
                 Name
               </label>
-              <input
+              <Input
                 id="name"
                 type="text"
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
-                className="block w-full rounded-input border border-border bg-surface px-3 py-2 text-sm text-primary shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Your name"
               />
             </div>
             <div className="flex items-center gap-3">
-              <button
+              <Button
                 type="submit"
                 disabled={savingName || !nameChanged}
-                className={`${pillButton} bg-accent text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:bg-disabled`}
               >
                 {savingName ? 'Saving…' : 'Save changes'}
-              </button>
+              </Button>
               {nameMessage && (
                 <p className="text-sm text-muted">{nameMessage}</p>
               )}
@@ -242,12 +239,11 @@ export default function ProfilePage() {
               >
                 New password
               </label>
-              <input
+              <Input
                 id="new-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-input border border-border bg-surface px-3 py-2 text-sm text-primary shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 autoComplete="new-password"
               />
             </div>
@@ -258,23 +254,18 @@ export default function ProfilePage() {
               >
                 Confirm new password
               </label>
-              <input
+              <Input
                 id="confirm-password"
                 type="password"
                 value={passwordConfirm}
                 onChange={(e) => setPasswordConfirm(e.target.value)}
-                className="block w-full rounded-input border border-border bg-surface px-3 py-2 text-sm text-primary shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 autoComplete="new-password"
               />
             </div>
             <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                disabled={savingPassword}
-                className={`${pillButton} bg-accent text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:bg-disabled`}
-              >
+              <Button type="submit" disabled={savingPassword}>
                 {savingPassword ? 'Saving…' : 'Update password'}
-              </button>
+              </Button>
               {passwordMessage && (
                 <p
                   className={`text-sm ${
@@ -309,29 +300,25 @@ export default function ProfilePage() {
               >
                 Type <span className="font-mono">DELETE</span> to confirm
               </label>
-              <input
+              <Input
                 id="delete-confirm"
                 type="text"
                 value={deleteConfirm}
                 onChange={(e) => setDeleteConfirm(e.target.value)}
-                className="block w-full rounded-input border border-error-border bg-surface px-3 py-2 text-sm text-primary shadow-sm focus:border-error focus:outline-none focus:ring-1 focus:ring-error"
+                error
               />
             </div>
             <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                disabled={deleting}
-                className={`${pillButton} bg-error text-white hover:bg-error-hover disabled:cursor-not-allowed disabled:bg-error-border`}
-              >
+              <Button type="submit" variant="danger" disabled={deleting}>
                 {deleting ? 'Deleting…' : 'Delete my account'}
-              </button>
+              </Button>
               {deleteMessage && (
                 <p className="text-sm text-error-text">{deleteMessage}</p>
               )}
             </div>
           </form>
         </div>
-      </section>
+      </Card>
     </main>
   );
 }

@@ -1,5 +1,7 @@
 'use client';
 
+import { Button } from '@/components/ui';
+
 type PaginationProps = {
   readonly className?: string;
   readonly onPrev: () => void;
@@ -15,20 +17,17 @@ export default function Pagination({
   disablePrev,
   disableNext,
 }: PaginationProps) {
-  const baseBtn =
-    'inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-base text-muted shadow-sm transition-colors ' +
-    'hover:bg-highlight hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface disabled:hover:text-muted';
-
   return (
     <div
       className={`mt-6 flex w-full items-center justify-center gap-4 ${className}`}
     >
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={onPrev}
         disabled={disablePrev}
         aria-label="Previous page"
-        className={baseBtn}
       >
         <svg
           viewBox="0 0 20 20"
@@ -44,14 +43,15 @@ export default function Pagination({
             strokeLinejoin="round"
           />
         </svg>
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={onNext}
         disabled={disableNext}
         aria-label="Next page"
-        className={baseBtn}
       >
         <svg
           viewBox="0 0 20 20"
@@ -67,7 +67,7 @@ export default function Pagination({
             strokeLinejoin="round"
           />
         </svg>
-      </button>
+      </Button>
     </div>
   );
 }

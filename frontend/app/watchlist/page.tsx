@@ -8,6 +8,7 @@ import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import { getGuestSet } from '@/app/lib/guestWatchlist';
 import { isErrorLike } from '@/app/lib/typeGuards';
+import { Card } from '@/components/ui';
 
 // Global font for this page
 const noto = Noto_Sans({
@@ -235,14 +236,15 @@ export default function WatchlistPage() {
       )}
 
       {!loading && rowsToShow.length > 0 && (
-        <section className="mt-4 overflow-hidden rounded-card border border-border bg-surface shadow-[0_10px_24px_rgba(0,0,0,0.04)]">
-          {/* Header band above the list */}
-          <div className="border-b border-border bg-highlight px-4 py-3 md:px-6">
+        <Card
+          className="mt-4 overflow-hidden shadow-[0_10px_24px_rgba(0,0,0,0.04)]"
+          bandClassName="bg-highlight px-4 py-3 md:px-6"
+          band={
             <h2 className="text-sm font-semibold text-primary md:text-[15px]">
               Saved Screenings
             </h2>
-          </div>
-
+          }
+        >
           {/* DESKTOP / TABLET >= md: keep table layout */}
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full border-separate border-spacing-0 text-[14px]">
@@ -435,7 +437,7 @@ export default function WatchlistPage() {
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
       )}
     </main>
   );

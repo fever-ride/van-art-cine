@@ -1,3 +1,6 @@
+import Link from 'next/link';
+import { getButtonClassName } from '@/components/ui';
+
 export const metadata = {
   title: "About The Cinephile's Van",
   description: "What The Cinephile's Van is, where our data comes from, and how to reach us.",
@@ -48,11 +51,11 @@ export default function AboutPage() {
         <p className="text-muted">
           Hi, I&rsquo;m Wendy! A film-loving CS student exploring whatever types of developer opportunities.<br />
           Connect with me on{" "}
-          <a
+          <Link
             href="https://www.linkedin.com/in/wendi-zhong/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-input border border-border px-3 py-1.5 text-sm font-medium text-muted hover:bg-surface-subtle"
+            className={getButtonClassName({ variant: 'outline', size: 'sm' }) + ' inline-flex items-center gap-2'}
             aria-label="Visit Wendy Zhong on LinkedIn (opens in a new tab)"
           >
             <svg
@@ -65,7 +68,7 @@ export default function AboutPage() {
               <path d="M19 0h-14C2.239 0 0 2.239 0 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5V5c0-2.761-2.238-5-5-5zM8 19H5V9h3v10zm-1.5-11.3c-.966 0-1.75-.79-1.75-1.7s.784-1.7 1.75-1.7S8 5.1 8 6s-.784 1.7-1.75 1.7zM20 19h-3v-5.5c0-1.2-.02-2.7-1.65-2.7-1.65 0-1.9 1.3-1.9 2.6V19h-3V9h2.9v1.4h.04c.4-.7 1.37-1.4 2.82-1.4 3.02 0 3.78 2 3.78 4.7V19z" />
             </svg>
             LinkedIn
-          </a>
+          </Link>
         </p>
       </section>
 
