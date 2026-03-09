@@ -5,26 +5,66 @@
   --primary: #2B2B2B;      /* Dark gray for headings, important text */
   --background: #FAF6EF;   /* Cream background */
   --accent: #5C8EA7;       /* Blue-gray for interactive elements */
+  --accent-hover: #4A7A93; /* Darker accent for hover states */
   --highlight: #F1CB99;    /* Warm orange for emphasis */
   
   /* Semantic colors derived from palette */
   --foreground: var(--primary);
   --surface: #FFFFFF;      /* White for cards/tables */
+  --surface-hover: #F4F8FB; /* Light tint for hover (buttons, nav) */
   --border: #E5E7EB;       /* Light gray for borders */
+  --border-subtle: #E5E2D8; /* Warmer border (nav, cards) */
+  --border-light: #F0EEE8;  /* Lighter divider */
   --muted: #6B7280;        /* Gray for secondary text */
   --pill: #E9EFF3;         /* Light blue pill */
+  --band: #FFF8E7;         /* Cream band for card headers */
+  --surface-subtle: #F3F4F6; /* Light gray bg (hover, subtle areas) */
+  --disabled: #D1D5DB;     /* Disabled controls (gray-300) */
+
+  /* Error / destructive */
+  --error-bg: #FEF2F2;
+  --error-border: #FECACA;
+  --error-text: #991B1B;
+  --error: #DC2626;
+  --error-hover: #B91C1C;
+
+  /* Warning / caution */
+  --warning-bg: #FFFBEB;
+  --warning-border: #FDE68A;
+  --warning-text: #92400E;
+
+  /* Success (e.g. upcoming status) */
+  --success-bg: #F0FDF4;
+  --success-text: #15803D;
 }
 
 @theme inline {
   --color-primary: var(--primary);
   --color-background: var(--background);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
   --color-highlight: var(--highlight);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-subtle: var(--surface-subtle);
   --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-light: var(--border-light);
   --color-muted: var(--muted);
   --color-pill: var(--pill);
+  --color-band: var(--band);
+  --color-disabled: var(--disabled);
+  --color-error-bg: var(--error-bg);
+  --color-error-border: var(--error-border);
+  --color-error-text: var(--error-text);
+  --color-error: var(--error);
+  --color-error-hover: var(--error-hover);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-border: var(--warning-border);
+  --color-warning-text: var(--warning-text);
+  --color-success-bg: var(--success-bg);
+  --color-success-text: var(--success-text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

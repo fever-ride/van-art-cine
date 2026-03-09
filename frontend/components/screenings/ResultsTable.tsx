@@ -3,6 +3,11 @@
 import { useState, Fragment } from 'react';
 import Link from 'next/link';
 import type { Screening } from '@/app/lib/screenings';
+import {
+  formatScreeningDate,
+  formatScreeningTime,
+  formatScreeningDateTime,
+} from '@/app/lib/formatDate';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 
 type Props = {
@@ -64,28 +69,9 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
           const isOpen = open.has(s.id);
           const dt = new Date(s.start_at_utc);
 
-          const dateStr = new Intl.DateTimeFormat('en-US', {
-            month: 'short',
-            day: 'numeric',
-            weekday: 'short',
-            timeZone: 'America/Vancouver'
-          }).format(dt);
-          const timeStr = new Intl.DateTimeFormat('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-            timeZone: 'America/Vancouver'
-          }).format(dt);
-
-          const startsFull = new Intl.DateTimeFormat('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-            timeZone: 'America/Vancouver',
-          }).format(dt);
+          const dateStr = formatScreeningDate(dt);
+          const timeStr = formatScreeningTime(dt);
+          const startsFull = formatScreeningDateTime(dt);
 
           const year = s.year ? ` (${s.year})` : '';
           const genres = toGenres(s);
@@ -101,7 +87,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                     onClick={() => toggle(s.id)}
                     aria-expanded={isOpen}
                     aria-controls={`row-details-${s.id}`}
-                    className="grid h-7 w-7 place-items-center rounded-md border border-border bg-surface transition hover:bg-gray-50"
+                    className="grid h-7 w-7 place-items-center rounded-md border border-border bg-surface transition hover:bg-surface-subtle"
                     title={isOpen ? 'Hide details' : 'Show details'}
                   >
                     <svg
@@ -120,18 +106,18 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
 
                 {/* when */}
                 <td className="px-3 py-3">
-                  <div className="flex flex-col items-start gap-0.5 leading-tight text-gray-900">
-                    <div className="text-[14px] font-medium text-gray-600">{dateStr}</div>
+                  <div className="flex flex-col items-start gap-0.5 leading-tight text-primary">
+                    <div className="text-[14px] font-medium text-muted">{dateStr}</div>
                     <div className="text-[16px] font-semibold">{timeStr}</div>
                     {s.runtime_min != null && (
-                      <div className="text-[13px] text-gray-500">{s.runtime_min} min</div>
+                      <div className="text-[13px] text-muted">{s.runtime_min} min</div>
                     )}
                   </div>
                 </td>
 
                 {/* title + meta + genre pills */}
                 <td className="px-3 py-3">
-                  <div className="text-[15px] font-semibold leading-6 text-gray-900">
+                  <div className="text-[15px] font-semibold leading-6 text-primary">
                     { s.film_id ? (
                       <Link
                         href={`/films/${s.film_id}`}
@@ -148,7 +134,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                   </div>
 
                   {s.directors && (
-                    <div className="mt-0.5 text-[12px] text-gray-500">{s.directors}</div>
+                    <div className="mt-0.5 text-[12px] text-muted">{s.directors}</div>
                   )}
 
                   {genres.length > 0 && (
@@ -156,7 +142,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                       {genres.map((g) => (
                         <span
                           key={g}
-                          className="inline-flex items-center rounded-full bg-pill px-2.5 py-1 text-[12px] font-semibold text-[#2B2B2B]"
+                          className="inline-flex items-center rounded-full bg-pill px-2.5 py-1 text-[12px] font-semibold text-primary"
                         >
                           {g}
                         </span>
@@ -166,7 +152,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                 </td>
 
                 {/* cinema */}
-                <td className="px-3 py-3 text-gray-900">{s.cinema_name}</td>
+                <td className="px-3 py-3 text-primary">{s.cinema_name}</td>
 
                 {/* watchlist action */}
                 <td className="px-3 py-3 text-center align-middle">
@@ -191,41 +177,33 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                     ].join(' ')}
                   >
                     {isOpen && (
-                      <div className="bg-[#FFF8E7] px-4 py-4 md:px-6">
+                      <div className="bg-band px-4 py-4 md:px-6">
                         <div className="grid gap-6 md:grid-cols-2 md:items-start">
                           {/* LEFT: schedule + blurb */}
                           <div className="grid gap-2 text-[13px]">
                             <div className="flex gap-3">
-                              <span className="w-16 shrink-0 text-gray-500">Starts</span>
-                              <span className="text-gray-900">{startsFull}</span>
+                              <span className="w-16 shrink-0 text-muted">Starts</span>
+                              <span className="text-primary">{startsFull}</span>
                             </div>
 
                             {s.end_at_utc && (
                               <div className="flex gap-3">
-                                <span className="w-16 shrink-0 text-gray-500">Ends</span>
-                                <span className="text-gray-900">
-                                  {new Intl.DateTimeFormat('en-US', {
-                                    weekday: 'short',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: 'numeric',
-                                    minute: '2-digit',
-                                    hour12: true,
-                                    timeZone: 'America/Vancouver',
-                                  }).format(new Date(s.end_at_utc))}
+                                <span className="w-16 shrink-0 text-muted">Ends</span>
+                                <span className="text-primary">
+                                  {formatScreeningDateTime(new Date(s.end_at_utc))}
                                 </span>
                               </div>
                             )}
 
                             {s.runtime_min != null && (
                               <div className="flex gap-3">
-                                <span className="w-16 shrink-0 text-gray-500">Runtime</span>
-                                <span className="text-gray-900">{s.runtime_min} min</span>
+                                <span className="w-16 shrink-0 text-muted">Runtime</span>
+                                <span className="text-primary">{s.runtime_min} min</span>
                               </div>
                             )}
 
                             {s.description && (
-                              <p className="mt-2 text-[13px] text-gray-700">{s.description}</p>
+                              <p className="mt-2 text-[13px] text-muted">{s.description}</p>
                             )}
                           </div>
 
@@ -238,10 +216,10 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                 const hasRating = ratingStr !== '';
                                 const ratingNum = Number(ratingStr);
                                 return hasRating && !isNaN(ratingNum) ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-900 ring-1 ring-gray-200">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-surface px-3 py-1 text-xs font-semibold text-primary ring-1 ring-border">
                                     IMDb · {ratingNum.toFixed(1)}
                                     {s.imdb_votes ? (
-                                      <span className="pl-0.5 text-gray-500">
+                                      <span className="pl-0.5 text-muted">
                                         ({s.imdb_votes})
                                       </span>
                                     ) : null}
@@ -250,7 +228,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                               })()}
 
                               {typeof s.rt_rating_pct === 'number' && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-900 ring-1 ring-gray-200">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-surface px-3 py-1 text-xs font-semibold text-primary ring-1 ring-border">
                                   Rotten Tomatoes · {s.rt_rating_pct}%
                                 </span>
                               )}
@@ -262,7 +240,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   href={s.source_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-[#5C8EA7] transition-colors hover:bg-white/80"
+                                  className="inline-flex items-center rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface/80"
                                 >
                                   View film on cinema site
                                 </a>
@@ -272,7 +250,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   href={s.imdb_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-[#5C8EA7] transition-colors hover:bg-white/80"
+                                  className="inline-flex items-center rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface/80"
                                 >
                                   View film on IMDb
                                 </a>

@@ -41,11 +41,11 @@ export default function NavBar() {
 
   const isActive = (href: string) => pathname === href;
   const pill =
-    'whitespace-nowrap rounded-[10px] px-2 py-1 text-sm font-medium text-[#5e6a6d] hover:bg-highlight';
+    'whitespace-nowrap rounded-[10px] px-2 py-1 text-sm font-medium text-muted hover:bg-highlight';
 
   return (
     <header
-      className={`${noto.className} sticky top-0 z-50 border-b border-[#E5E2D8] bg-surface backdrop-blur supports-[backdrop-filter]:bg-surface/75 shadow-[0_10px_24px_rgba(0,0,0,0.04)]`}
+      className={`${noto.className} sticky top-0 z-50 border-b border-border-subtle bg-surface backdrop-blur supports-[backdrop-filter]:bg-surface/75 shadow-[0_10px_24px_rgba(0,0,0,0.04)]`}
     >
       <div className="mx-auto max-w-7xl">
         {/* Row 1: Brand (left) + Auth (right) */}
@@ -61,10 +61,10 @@ export default function NavBar() {
               priority
             />
             <div className="min-w-0">
-              <div className="text-[20px] font-semibold leading-none tracking-tight text-gray-900">
+              <div className="text-[20px] font-semibold leading-none tracking-tight text-primary">
                 The Cinephile’s Van
               </div>
-              <div className="mt-1 text-[12px] leading-tight text-[#6b7280]">
+              <div className="mt-1 text-[12px] leading-tight text-muted">
                 Rolling through Vancouver’s film scene
               </div>
             </div>
@@ -76,13 +76,13 @@ export default function NavBar() {
               <>
                 <Link
                   href="/auth/login"
-                  className="rounded-[12px] border-[1.5px] border-border bg-surface px-3 py-1.5 text-sm font-semibold text-primary hover:bg-[#F4F8FB]"
+                  className="rounded-[12px] border-[1.5px] border-border bg-surface px-3 py-1.5 text-sm font-semibold text-primary hover:bg-surface-hover"
                 >
                   Log in
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="rounded-[12px] bg-accent px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-[#4A7A93]"
+                  className="rounded-[12px] bg-accent px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-accent-hover"
                 >
                   Register
                 </Link>
@@ -90,7 +90,7 @@ export default function NavBar() {
             ) : (
               <button
                 onClick={handleLogout}
-                className="rounded-[12px] border-[1.5px] border-border bg-surface px-3.5 py-1.5 text-sm font-semibold text-[#2B2B2B] hover:bg-[#F4F8FB]"
+                className="rounded-[12px] border-[1.5px] border-border bg-surface px-3.5 py-1.5 text-sm font-semibold text-primary hover:bg-surface-hover"
               >
                 Logout
               </button>
@@ -99,7 +99,7 @@ export default function NavBar() {
         </div>
 
         {/* Row 2: Section menu */}
-        <div className="-mx-4 border-t border-[#F0EEE8] px-4">
+        <div className="-mx-4 border-t border-border-light px-4">
           <nav className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto">
             <Link
               href="/watchlist"

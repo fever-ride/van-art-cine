@@ -16,8 +16,8 @@ export default function Pagination({
   disableNext,
 }: PaginationProps) {
   const baseBtn =
-    'inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-base text-[#4b5563] shadow-sm transition-colors ' +
-    'hover:bg-highlight hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface disabled:hover:text-[#4b5563]';
+    'inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-base text-muted shadow-sm transition-colors ' +
+    'hover:bg-highlight hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface disabled:hover:text-muted';
 
   return (
     <div

@@ -138,7 +138,7 @@ export default function Filters({
             return (
               <label
                 key={c.id}
-                className="flex items-center gap-2 rounded px-1 py-2 hover:bg-gray-50 cursor-pointer"
+                className="flex items-center gap-2 rounded px-1 py-2 hover:bg-surface-subtle cursor-pointer"
               >
                 <input
                   type="checkbox"
@@ -158,7 +158,7 @@ export default function Filters({
                     }
                   }}
                 />
-                <span className="text-xs text-[#2B2B2B]">{c.name}</span>
+                <span className="text-xs text-primary">{c.name}</span>
               </label>
             );
           })}
@@ -214,7 +214,7 @@ export default function Filters({
               type="radio"
               name="mode"
               className="h-4 w-4 appearance-none rounded-full border-[1.5px] border-border
-                         checked:border-accent checked:shadow-[inset_0_0_0_4px_#5C8EA7] transition"
+                         checked:border-accent checked:shadow-[inset_0_0_0_4px_var(--accent)] transition"
               checked={localUI.mode === 'single'}
               onChange={() => setLocalUI({ ...localUI, mode: 'single' })}
             />
@@ -225,7 +225,7 @@ export default function Filters({
               type="radio"
               name="mode"
               className="h-4 w-4 appearance-none rounded-full border-[1.5px] border-border
-                         checked:border-accent checked:shadow-[inset_0_0_0_4px_#5C8EA7] transition"
+                         checked:border-accent checked:shadow-[inset_0_0_0_4px_var(--accent)] transition"
               checked={localUI.mode === 'range'}
               onChange={() => setLocalUI({ ...localUI, mode: 'range' })}
             />
@@ -266,7 +266,7 @@ export default function Filters({
         <button
           type="button"
           className="rounded-[14px] border-[1.5px] border-border bg-surface px-4 py-2 text-sm font-semibold
-                     text-primary hover:bg-[#F4F8FB]"
+                     text-primary hover:bg-surface-hover"
           onClick={handleReset}
           disabled={loading}
         >
@@ -274,8 +274,8 @@ export default function Filters({
         </button>
         <button
           type="button"
-          className="rounded-[14px] bg-[#5C8EA7] px-4 py-2 text-sm font-semibold text-surface
-                     hover:bg-[#4A7A93] disabled:opacity-60"
+          className="rounded-[14px] bg-accent px-4 py-2 text-sm font-semibold text-surface
+                     hover:bg-accent-hover disabled:opacity-60"
           onClick={handleApply}
           disabled={loading}
         >

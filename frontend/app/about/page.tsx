@@ -9,7 +9,7 @@ export default function AboutPage() {
       <h1 className="mb-6 text-3xl font-semibold">About The Cinephile&rsquo;s Van</h1>
 
       <section className="mb-8 space-y-3">
-        <p className="text-gray-700">
+        <p className="text-muted">
           The Cinephile&rsquo;s Van helps you keep up with Vancouver&rsquo;s independent cinemas: browse what&rsquo;s on,
           filter by what you care about, and plan your night out. Add screenings to a personal
           watchlist, then come back when you&rsquo;re ready to go. 🎬
@@ -18,7 +18,7 @@ export default function AboutPage() {
 
       <section className="mb-8 space-y-3">
         <h2 className="text-xl font-medium">Data &amp; Attribution</h2>
-        <p className="text-gray-700">
+        <p className="text-muted">
           Screening times are collected from cinemas&rsquo; public websites. Film details (years,
           ratings, etc.) are enriched via third-party APIs (e.g., TMDB, OMDb). We&rsquo;re grateful to the
           community that maintains these resources. All trademarks belong to their respective owners.
@@ -27,14 +27,14 @@ export default function AboutPage() {
 
       <section className="mb-8 space-y-3">
         <h2 className="text-xl font-medium">Tech Stack</h2>
-        <p className="text-gray-700">
+        <p className="text-muted">
           Next.js + React, Tailwind CSS, Node.js/Express API, Prisma ORM, and PostgreSQL.
         </p>
       </section>
 
       <section className="mb-8 space-y-3">
         <h2 className="text-xl font-medium">Contact</h2>
-        <p className="text-gray-700">
+        <p className="text-muted">
           Spot an error or have a suggestion? Email{" "}
           <a href="mailto:wendyzhong08@outlook.com" className="text-blue-600 underline">
             wendyzhong08@outlook.com
@@ -45,14 +45,14 @@ export default function AboutPage() {
 
       <section className="mb-8 space-y-3">
         <h2 className="text-xl font-medium">Actively Seeking Internships and Part-Time Projects.</h2>
-        <p className="text-gray-700">
+        <p className="text-muted">
           Hi, I&rsquo;m Wendy! A film-loving CS student exploring whatever types of developer opportunities.<br />
           Connect with me on{" "}
           <a
             href="https://www.linkedin.com/in/wendi-zhong/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+            className="inline-flex items-center gap-2 rounded border border-border px-3 py-1.5 text-sm font-medium text-muted hover:bg-surface-subtle"
             aria-label="Visit Wendy Zhong on LinkedIn (opens in a new tab)"
           >
             <svg
@@ -69,7 +69,7 @@ export default function AboutPage() {
         </p>
       </section>
 
-      <footer className="mt-10 border-t pt-4 text-sm text-gray-500">
+      <footer className="mt-10 border-t pt-4 text-sm text-muted">
         Version 0.1.0 • Last updated {new Date().toLocaleDateString()}
       </footer>
     </main>

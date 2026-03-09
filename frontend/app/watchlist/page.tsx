@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Noto_Sans } from 'next/font/google';
 import { apiListWatchlist } from '@/app/lib/watchlist';
+import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import { getGuestSet } from '@/app/lib/guestWatchlist';
 
@@ -74,19 +75,6 @@ export default function WatchlistPage() {
   const [err, setErr] = useState<string | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [includePast, setIncludePast] = useState(true);
-
-  const fmt = useMemo(
-    () =>
-      new Intl.DateTimeFormat(undefined, {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      }),
-    []
-  );
 
   useEffect(() => {
     async function load() {
@@ -197,10 +185,10 @@ export default function WatchlistPage() {
 
   function StatusBadge({ status }: { status: WatchlistRow['status'] }) {
     const map: Record<WatchlistRow['status'], string> = {
-      upcoming: 'bg-green-50 text-green-700',
-      past: 'bg-gray-100 text-gray-700',
-      inactive: 'bg-amber-50 text-amber-800',
-      missing: 'bg-red-50 text-red-700',
+      upcoming: 'bg-success-bg text-success-text',
+      past: 'bg-surface-subtle text-muted',
+      inactive: 'bg-warning-bg text-warning-text',
+      missing: 'bg-error-bg text-error-text',
     };
     const label: Record<WatchlistRow['status'], string> = {
       upcoming: 'Upcoming',
@@ -223,10 +211,10 @@ export default function WatchlistPage() {
     <main className={`${noto.className} mx-auto max-w-7xl px-4 py-8`}>
       {/* Header row */}
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-[22px] font-semibold text-gray-900">
+        <h1 className="text-[22px] font-semibold text-primary">
           My Watchlist
         </h1>
-        <label className="flex items-center gap-2 text-sm text-gray-700">
+        <label className="flex items-center gap-2 text-sm text-muted">
           <input
             type="checkbox"
             className="h-4 w-4 rounded border-border"
@@ -237,14 +225,14 @@ export default function WatchlistPage() {
         </label>
       </div>
 
-      {loading && <p className="text-sm text-gray-500">Loading…</p>}
-      {err && <p className="text-sm text-red-600">Error: {err}</p>}
+      {loading && <p className="text-sm text-muted">Loading…</p>}
+      {err && <p className="text-sm text-error-text">Error: {err}</p>}
 
       {authed === false && !loading && (
-        <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="mb-4 rounded-2xl border border-warning-border bg-warning-bg px-4 py-3 text-sm text-warning-text">
           You’re browsing as a guest.
           <br />
-          <Link href="/auth/login" className="font-semibold text-[#4A7A93] underline">
+          <Link href="/auth/login" className="font-semibold text-accent hover:text-accent-hover underline">
             Log in
           </Link>{' '}
           to save your watchlist and access it anytime, on any device!
@@ -252,7 +240,7 @@ export default function WatchlistPage() {
       )}
 
       {!loading && rowsToShow.length === 0 && (
-        <p className="text-sm text-gray-600">Your watchlist is empty.</p>
+        <p className="text-sm text-muted">Your watchlist is empty.</p>
       )}
 
       {!loading && rowsToShow.length > 0 && (
@@ -271,28 +259,20 @@ export default function WatchlistPage() {
                 {rowsToShow.map((r) => (
                   <tr
                     key={r.screening_id}
-                    className="border-t border-border/70 bg-surface transition-colors hover:bg-[#FFF8E7]"
+                    className="border-t border-border/70 bg-surface transition-colors hover:bg-band"
                   >
                     {/* WHEN — compact 3-line stack */}
                     <td className="px-4 py-3 align-middle">
                       {r.start_at_utc ? (
                         <div className="leading-5">
-                          <div className="text-[13px] text-gray-700">
-                            {new Intl.DateTimeFormat(undefined, {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric',
-                            }).format(new Date(r.start_at_utc))}
+                          <div className="text-[13px] text-muted">
+                            {formatScreeningDate(new Date(r.start_at_utc))}
                           </div>
-                          <div className="text-[15px] font-semibold text-gray-900">
-                            {new Intl.DateTimeFormat(undefined, {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                              hour12: true,
-                            }).format(new Date(r.start_at_utc))}
+                          <div className="text-[15px] font-semibold text-primary">
+                            {formatScreeningTime(new Date(r.start_at_utc))}
                           </div>
                           {typeof r.runtime_min === 'number' && (
-                            <div className="text-[12px] text-gray-500">
+                            <div className="text-[12px] text-muted">
                               {r.runtime_min} min
                             </div>
                           )}
@@ -304,7 +284,7 @@ export default function WatchlistPage() {
 
                     {/* TITLE */}
                     <td className="px-4 py-3 align-middle">
-                      <div className="text-[15px] font-semibold text-gray-900">
+                      <div className="text-[15px] font-semibold text-primary">
                         {r.film_id ? (
                           <Link
                             href={`/films/${r.film_id}`}
@@ -319,14 +299,14 @@ export default function WatchlistPage() {
                         )}
                       </div>
                       {typeof r.imdb_rating === 'number' && (
-                        <div className="mt-0.5 text-[12px] text-gray-500">
+                        <div className="mt-0.5 text-[12px] text-muted">
                           IMDb {r.imdb_rating.toFixed(1)}
                         </div>
                       )}
                     </td>
 
                     {/* CINEMA */}
-                    <td className="px-4 py-3 align-middle text-[14px] text-gray-900">
+                    <td className="px-4 py-3 align-middle text-[14px] text-primary">
                       {r.cinema_name ?? '—'}
                     </td>
 
@@ -383,19 +363,11 @@ export default function WatchlistPage() {
                 <div className="flex flex-col items-start leading-tight text-primary">
                   {r.start_at_utc ? (
                     <>
-                      <div className="text-[14px] font-medium text-gray-700">
-                        {new Intl.DateTimeFormat(undefined, {
-                          weekday: 'short',
-                          month: 'short',
-                          day: 'numeric',
-                        }).format(new Date(r.start_at_utc))}
+                      <div className="text-[14px] font-medium text-muted">
+                        {formatScreeningDate(new Date(r.start_at_utc))}
                       </div>
                       <div className="text-[16px] font-semibold text-primary">
-                        {new Intl.DateTimeFormat(undefined, {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true,
-                        }).format(new Date(r.start_at_utc))}
+                        {formatScreeningTime(new Date(r.start_at_utc))}
                       </div>
                       {typeof r.runtime_min === 'number' && (
                         <div className="text-[12px] text-muted">
@@ -410,7 +382,7 @@ export default function WatchlistPage() {
 
                 {/* Title + IMDb */}
                 <div className="text-[14px] text-primary">
-                  <div className="text-[15px] font-semibold text-gray-900">
+                  <div className="text-[15px] font-semibold text-primary">
                     {r.film_id ? (
                       <Link
                         href={`/films/${r.film_id}`}
@@ -425,7 +397,7 @@ export default function WatchlistPage() {
                     )}
                   </div>
                   {typeof r.imdb_rating === 'number' && (
-                    <div className="mt-0.5 text-[12px] text-gray-500">
+                    <div className="mt-0.5 text-[12px] text-muted">
                       IMDb {r.imdb_rating.toFixed(1)}
                     </div>
                   )}

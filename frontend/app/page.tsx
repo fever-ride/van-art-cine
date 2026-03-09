@@ -100,14 +100,14 @@ function ScreeningsPageInner() {
 
       {/* ---------------------- #2 Quick facts ---------------------- */}
       <section className="mb-8">
-        <div className="flex flex-col gap-1 border-l-2 border-gray-200 pl-3 text-sm text-muted">
+        <div className="flex flex-col gap-1 border-l-2 border-border pl-3 text-sm text-muted">
           <span>Plan your week by starting your own watchlist!</span>
           <span>Films outside mainstream releases</span>
         </div>
       </section>
 
       {/* --------- Divider + “Now Playing” title --------- */}
-      <div className="h-px w-full bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100" />
+      <div className="h-px w-full bg-gradient-to-r from-surface-subtle via-border to-surface-subtle" />
       <h2 className="mb-4 text-[18px] font-semibold text-primary">Now Playing</h2>
 
       {/* ---------------------- Two-column layout ---------------------- */}
