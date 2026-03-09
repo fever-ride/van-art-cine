@@ -1,6 +1,10 @@
 import * as svc from '../services/userService.js';
 import { clearCookieOptions } from '../utils/jwt.js';
 
+/**
+ * GET /api/user/me
+ * @returns {200} {{ user: { uid, name, email, role, created_at } }}
+ */
 export async function getMyProfile(req, res, next) {
   try {
     const { uid, role } = req.user;
@@ -11,6 +15,11 @@ export async function getMyProfile(req, res, next) {
   }
 }
 
+/**
+ * PATCH /api/user/me
+ * @body {{ name: string }}
+ * @returns {200} {{ user: { uid, name, email, role, created_at } }}
+ */
 export async function updateMyName(req, res, next) {
   try {
     const { uid } = req.user;
@@ -24,6 +33,11 @@ export async function updateMyName(req, res, next) {
   }
 }
 
+/**
+ * PATCH /api/user/me/password
+ * @body {{ password: string }}
+ * @returns {200} {{ ok: true }}
+ */
 export async function updateMyPassword(req, res, next) {
   try {
     const { uid } = req.user;
@@ -31,23 +45,26 @@ export async function updateMyPassword(req, res, next) {
 
     await svc.updateUserPassword(uid, { password });
 
-    return res.json({ success: true });
+    return res.json({ ok: true });
   } catch (err) {
     return next(err);
   }
 }
 
+/**
+ * DELETE /api/user/me
+ * @returns {200} {{ ok: true }} — clears auth cookies
+ */
 export async function deleteMyAccount(req, res, next) {
   try {
     const { uid } = req.user;
 
     await svc.deleteUserAccount(uid);
 
-    // Clear auth cookies so the client is logged out
     res.clearCookie('access_token', clearCookieOptions);
     res.clearCookie('refresh_token', clearCookieOptions);
 
-    return res.json({ success: true });
+    return res.json({ ok: true });
   } catch (err) {
     return next(err);
   }

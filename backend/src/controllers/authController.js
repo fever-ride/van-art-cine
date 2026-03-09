@@ -6,7 +6,11 @@ import {
   clearCookieOptions,
 } from '../utils/jwt.js';
 
-
+/**
+ * POST /api/auth/register
+ * @body {{ email: string, password: string, name?: string }}
+ * @returns {201} {{ user, message }} — sets access_token + refresh_token cookies
+ */
 export async function registerHandler(req, res, next) {
   try {
     const { email, password, name } = req.body;
@@ -32,17 +36,23 @@ export async function registerHandler(req, res, next) {
       message: 'Registered successfully',
     });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
+/**
+ * POST /api/auth/login
+ * @body {{ email: string, password: string }}
+ * @returns {200} {{ user, message }} — sets access_token + refresh_token cookies
+ * @returns {401} {{ error: 'INVALID_CREDENTIALS', message }} — bad email or password
+ */
 export async function loginHandler(req, res, next) {
   try {
     const { email, password } = req.body;
     const userAgent = req.get('user-agent') || null;
     const ip = req.ip || req.connection?.remoteAddress || null;
 
-    const { user, accessToken, refreshToken, refreshExpiresAt } =
+    const { user, accessToken, refreshToken } =
       await svc.login({ email, password, userAgent, ip });
 
     res.cookie('access_token', accessToken, accessCookieOptions);
@@ -54,7 +64,6 @@ export async function loginHandler(req, res, next) {
     });
   } catch (err) {
     if (err instanceof AuthError) {
-      // Normalize anything credential-related to one public error
       if (err.code === 'EMAIL_NOT_EXIST' || err.code === 'BAD_CREDENTIALS') {
         return res.status(401).json({
           error: 'INVALID_CREDENTIALS',
@@ -67,17 +76,21 @@ export async function loginHandler(req, res, next) {
   }
 }
 
+/**
+ * POST /api/auth/refresh
+ * @cookie refresh_token — used to rotate tokens
+ * @returns {200} {{ user, message }} — sets new access_token + refresh_token cookies
+ */
 export async function refreshHandler(req, res, next) {
   try {
     const refreshToken = req.cookies?.refresh_token || '';
     const userAgent = req.get('user-agent') || null;
     const ip = req.ip || req.connection?.remoteAddress || null;
 
-    const { 
-      user, 
-      accessToken: newAccessToken, 
-      refreshToken: newRefreshToken, 
-      refreshExpiresAt 
+    const {
+      user,
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
     } = await svc.refresh({ refreshToken, userAgent, ip });
 
     res.cookie('access_token', newAccessToken, accessCookieOptions);
@@ -92,16 +105,20 @@ export async function refreshHandler(req, res, next) {
   }
 }
 
+/**
+ * POST /api/auth/logout
+ * @cookie refresh_token — revoked server-side
+ * @returns {200} {{ ok: true, message }} — clears access_token + refresh_token cookies
+ */
 export async function logoutHandler(req, res, next) {
   try {
     const refreshToken = req.cookies?.refresh_token || null;
 
-    // Try to revoke, but don't let failures block cookie clearing
     if (refreshToken) {
       try {
         await svc.logout({ refreshToken });
-      } catch (e) {
-        console.warn('revoke failed', e);
+      } catch (err) {
+        console.warn('revoke failed', err);
       }
     }
 
@@ -114,7 +131,11 @@ export async function logoutHandler(req, res, next) {
   }
 }
 
-/** GET /api/auth/me */
+/**
+ * GET /api/auth/me
+ * @returns {200} {{ user: { uid, role } }}
+ * @returns {401} {{ error: 'Unauthorized' }}
+ */
 export async function meHandler(req, res) {
   if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized' });

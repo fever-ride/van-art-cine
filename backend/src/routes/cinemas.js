@@ -7,7 +7,7 @@ router.get('/', async (_req, res, next) => {
   try {
     const items = await listCinemas();
     res.json({ items });
-  } catch (e) { next(e); }
+  } catch (err) { return next(err); }
 });
 
 export default router;
