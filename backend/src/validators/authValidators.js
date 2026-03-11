@@ -79,21 +79,3 @@ export const refreshValidator = [
   optionalUA,
   optionalIP,
 ];
-
-/** Logout: same requirement as refresh (need the refresh token to revoke) */
-export const logoutValidator = [
-  oneOf([
-    body('refreshToken')
-      .exists().withMessage('refreshToken is required when not using cookie')
-      .bail()
-      .isString().withMessage('refreshToken must be a string')
-      .bail()
-      .isLength({ min: 20 }).withMessage('refreshToken looks too short'),
-    cookie('refresh_token')
-      .exists().withMessage('refresh_token cookie is required when not using body')
-      .bail()
-      .isString().withMessage('refresh_token cookie must be a string')
-      .bail()
-      .isLength({ min: 20 }).withMessage('refresh_token cookie looks too short'),
-  ], 'Provide refreshToken in body or refresh_token cookie'),
-];

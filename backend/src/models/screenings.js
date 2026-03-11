@@ -5,8 +5,7 @@ import { localDayToUtcRange, localRangeToUtc } from '../utils/time.js';
 export async function fetchScreenings(opts = {}) {
   const {
     date, from, to,
-    cinemaId,      // keep
-    cinemaIds,     // added
+    cinemaIds,
     filmId,
     q,
     sort = 'time',
@@ -37,14 +36,9 @@ export async function fetchScreenings(opts = {}) {
     is_active: true,
     ...(gte || lt ? { start_at_utc: { ...(gte ? { gte } : {}), ...(lt ? { lt } : {}) } } : {}),
     
-    ...((() => {
-      if (cinemaIds && Array.isArray(cinemaIds) && cinemaIds.length > 0) {
-        return { cinema_id: { in: cinemaIds.map(Number) } };
-      } else if (Number.isFinite(cinemaId)) {
-        return { cinema_id: Number(cinemaId) };
-      }
-      return {};
-    })()),
+    ...(cinemaIds?.length > 0
+      ? { cinema_id: { in: cinemaIds.map(Number) } }
+      : {}),
     
     ...(Number.isFinite(filmId) ? { film_id: Number(filmId) } : {}),
     ...(q ? { film: { normalized_title: { contains: q } } } : {}),
