@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import type { UpcomingScreening } from '@/app/lib/films';
+import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
+import { Button } from '@/components/ui';
 
 type Props = {
   upcoming: UpcomingScreening[];
@@ -27,39 +29,16 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
   const [showAll, setShowAll] = useState(false);
   const visible = showAll ? sorted : sorted.slice(0, 10);
 
-  // Match homepage: separate date + time formatters, Vancouver tz
-  const dateFmt = useMemo(
-    () =>
-      new Intl.DateTimeFormat(undefined, {
-        timeZone: 'America/Vancouver',
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      }),
-    [],
-  );
-
-  const timeFmt = useMemo(
-    () =>
-      new Intl.DateTimeFormat(undefined, {
-        timeZone: 'America/Vancouver',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      }),
-    [],
-  );
-
   if (!sorted.length) {
     return (
-      <section className="mt-6 rounded-2xl border border-border bg-surface p-4 text-sm text-muted shadow-md md:p-6">
+      <section className="mt-6 rounded-card border border-border bg-surface p-4 text-sm text-muted shadow-md md:p-6">
         No upcoming screenings.
       </section>
     );
   }
 
   return (
-    <section className="mt-6 overflow-hidden rounded-2xl border border-border bg-surface">
+    <section className="mt-6 overflow-hidden rounded-card border border-border bg-surface">
       {/* Header band: same cream style, film-specific title */}
       <div className="rounded-t-2xl border-b border-border bg-highlight px-4 py-3 md:px-6">
         <h2 className="text-sm font-semibold text-primary md:text-[15px]">
@@ -74,8 +53,8 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
       <ul className="divide-y divide-border">
         {visible.map((s) => {
           const dt = new Date(s.start_at_utc);
-          const dateStr = dateFmt.format(dt);
-          const timeStr = timeFmt.format(dt);
+          const dateStr = formatScreeningDate(dt);
+          const timeStr = formatScreeningTime(dt);
           const initiallySaved = savedIds.has(s.id);
 
           return (
@@ -133,13 +112,14 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
       {/* Show more / less */}
       {sorted.length > 10 && (
         <div className="border-t border-border px-4 py-3 md:px-6">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => setShowAll((v) => !v)}
-            className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-primary transition hover:bg-gray-50"
           >
             {showAll ? 'Show less' : `Show more (${sorted.length - 10} more)`}
-          </button>
+          </Button>
         </div>
       )}
     </section>

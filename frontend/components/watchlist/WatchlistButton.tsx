@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiToggleWatchlist } from '@/app/lib/watchlist';
 import { getGuestSet, saveGuestSet } from '@/app/lib/guestWatchlist';
+import { hasNumberStatus, hasResponseStatus } from '@/app/lib/typeGuards';
 
 type Props = {
   readonly screeningId: number;
@@ -19,25 +20,6 @@ type Props = {
   /** Custom confirm text (optional) */
   confirmMessage?: string;
 };
-
-function hasNumberStatus(x: unknown): x is { status: number } {
-  return typeof x === 'object' 
-    && x !== null 
-    && 'status' in x 
-    && typeof (x as Record<string, unknown>).status === 'number';
-}
-
-function hasResponseStatus(x: unknown): x is { response: { status: number } } {
-  return (
-    typeof x === 'object' &&
-    x !== null &&
-    'response' in x &&
-    typeof (x as Record<string, unknown>).response === 'object' &&
-    (x as { response: unknown }).response !== null &&
-    'status' in (x as { response: Record<string, unknown> }).response! &&
-    typeof (x as { response: { status: unknown } }).response.status === 'number'
-  );
-}
 
 export default function WatchlistButton({
   screeningId,
@@ -113,13 +95,13 @@ export default function WatchlistButton({
       aria-pressed={saved}
       aria-label={label}
       className={[
-        'rounded-xl font-semibold transition-all duration-150 whitespace-nowrap shrink-0',
+        'rounded-btn font-semibold transition-all duration-150 whitespace-nowrap shrink-0',
         sizeClass[size],
         'min-w-[7.5rem]', // ensures stable width ("Add to Watchlist" width)
         pending ? 'opacity-60 cursor-not-allowed' : '',
         saved
           ? 'border border-dashed border-slate-300 text-slate-500 bg-slate-50 hover:bg-slate-100'
-          : 'bg-accent text-surface hover:bg-[#5b7c93]',
+          : 'bg-accent text-surface hover:bg-accent-hover',
         className,
       ].join(' ')}
     >

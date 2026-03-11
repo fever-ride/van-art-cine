@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import type { Film } from '@/app/lib/films';
+import { formatGenre } from '@/app/lib/formatGenre';
 
 type Props = {
   film: Pick<
@@ -43,11 +44,7 @@ export default function FilmHeader({ film }: Props) {
   const countriesText =
     typeof country === 'string' && country.trim() ? country : '';
 
-  // Genres: support comma-separated string
-  const genres =
-    typeof genre === 'string' && genre.trim()
-      ? genre.split(',').map((g) => g.trim()).filter(Boolean)
-      : [];
+  const genres = formatGenre(genre);
 
   // Directors line
   const dirLine =
@@ -78,14 +75,14 @@ export default function FilmHeader({ film }: Props) {
   );
 
   return (
-    <section className="rounded-3xl">
+    <section className="rounded-card-lg">
       <div className="flex flex-col gap-6 p-4 md:flex-row md:items-start md:p-6">
         {/* Poster */}
         <div className="shrink-0">
           <img
             src={poster}
             alt={`${title} poster`}
-            className="h-[180px] w-[130px] rounded-2xl object-cover md:h-[176px] md:w-[128px]"
+            className="h-[180px] w-[130px] rounded-card object-cover md:h-[176px] md:w-[128px]"
           />
         </div>
 
@@ -116,7 +113,7 @@ export default function FilmHeader({ film }: Props) {
                 {genres.map((g) => (
                   <span
                     key={g}
-                    className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-800"
+                    className="inline-flex items-center rounded-full bg-surface-subtle px-3 py-1 text-xs font-semibold text-primary"
                   >
                     {g}
                   </span>
@@ -160,7 +157,7 @@ export default function FilmHeader({ film }: Props) {
                 href={imdb_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center rounded-full bg-accent px-4 py-1.5 text-xs font-semibold border-border text-surface transition-colors hover:bg-[#5b7c93]"
+                className="inline-flex items-center rounded-full bg-accent px-4 py-1.5 text-xs font-semibold border-border text-surface transition-colors hover:bg-accent-hover"
               >
                 View film on IMDb
               </a>

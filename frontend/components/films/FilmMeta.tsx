@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import type { Film } from '@/app/lib/films';
+import { isMissingText } from '@/app/lib/typeGuards';
 
 type Props = {
   film: Pick<Film, 'language' | 'rated' | 'description'> & {
@@ -10,15 +11,8 @@ type Props = {
   };
 };
 
-function isMissingText(value?: string | null): boolean {
-  const t = value?.trim();
-  if (!t) return true;
-  const lower = t.toLowerCase();
-  return lower === 'n/a' || lower === 'na';
-}
-
 function missing(text: string) {
-  return <span className="italic text-gray-400">{text}</span>;
+  return <span className="italic text-muted">{text}</span>;
 }
 
 export default function FilmMeta({ film }: Props) {
@@ -51,7 +45,7 @@ export default function FilmMeta({ film }: Props) {
 
   return (
     <section className="mt-4 px-4 md:px-7">
-      <dl className="border-t border-border/60 text-sm text-gray-900 divide-y divide-border/60">
+      <dl className="border-t border-border/60 text-sm text-primary divide-y divide-border/60">
         <FactRow
           label="Language"
           value={
@@ -90,7 +84,7 @@ export default function FilmMeta({ film }: Props) {
           label="Description"
           value={
             description ? (
-              <span className="text-[15px] leading-7 text-gray-800 block">
+              <span className="text-[15px] leading-7 text-primary block">
                 {description}
               </span>
             ) : (
@@ -115,7 +109,7 @@ function FactRow({
       <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
         {label}
       </dt>
-      <dd className="m-0 min-w-0 break-words text-[14px] text-gray-900">
+      <dd className="m-0 min-w-0 break-words text-[14px] text-primary">
         {value}
       </dd>
     </div>

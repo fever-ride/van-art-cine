@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fetchScreenings, findByIds } from '../models/screenings.js';
-// import { normalizeTz } from '../utils/validateTz.js';
+import { ValidationError } from '../utils/errors.js';
 
 const router = Router();
 
@@ -8,7 +8,7 @@ const router = Router();
 // kept for possible future multi-timezone support.
 const DEFAULT_TZ = 'America/Vancouver';
 
-/* -------- List/search screenings (existing) -------- */
+/* -------- List/search screenings -------- */
 router.get('/', async (req, res, next) => {
   try {
     const date = req.query.date?.trim();
@@ -26,7 +26,6 @@ router.get('/', async (req, res, next) => {
       if (cinemaIds.length === 0) cinemaIds = null;
     }
 
-    // still support the old cinema_id
     const cinemaId = req.query.cinema_id ? Number(req.query.cinema_id) : null;
     
     const filmId = req.query.film_id ? Number(req.query.film_id) : null;
@@ -45,29 +44,29 @@ router.get('/', async (req, res, next) => {
 
     const rows = await fetchScreenings({
       date, from, to,
-      cinemaIds,  // array
-      cinemaId,   // old param
+      cinemaIds,
+      cinemaId,
       filmId,
       q, sort, order, limit, offset,
       tz,
     });
 
     res.json({ total: rows.length, items: rows });
-  } catch (err) { next(err); }
+  } catch (err) { return next(err); }
 });
 
-/* -------- Bulk by IDs --------
-   Body: { ids: number[] }
-   Returns: { items: Screening[] } in the same order as input IDs (unknown IDs omitted)
-*/
+/**
+ * POST /api/screenings/bulk
+ * @body {{ ids: number[] }}
+ * @returns {200} {{ items: Screening[] }} — same order as input IDs; unknown IDs omitted
+ */
 router.post('/bulk', async (req, res, next) => {
   try {
     const raw = req.body?.ids;
     if (!Array.isArray(raw)) {
-      return res.status(400).json({ error: 'ids must be an array' });
+      throw new ValidationError('ids must be an array', 'BAD_REQUEST');
     }
 
-    // to numbers, filter valid, de-dupe, cap size
     const seen = new Set();
     const ids = [];
     for (const x of raw) {
@@ -76,7 +75,7 @@ router.post('/bulk', async (req, res, next) => {
         seen.add(n);
         ids.push(n);
       }
-      if (ids.length >= 500) break; // safety cap
+      if (ids.length >= 500) break;
     }
 
     if (ids.length === 0) {
@@ -85,12 +84,11 @@ router.post('/bulk', async (req, res, next) => {
 
     const rows = await findByIds({ ids });
 
-    // preserve input order, skip missing
     const byId = new Map(rows.map(r => [Number(r.id), r]));
     const ordered = ids.map(id => byId.get(id)).filter(Boolean);
 
     return res.json({ items: ordered });
-  } catch (err) { next(err); }
+  } catch (err) { return next(err); }
 });
 
 export default router;

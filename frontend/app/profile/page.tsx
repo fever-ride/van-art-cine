@@ -10,6 +10,7 @@ import {
   User
 } from '@/app/lib/profile';
 import { Noto_Sans } from 'next/font/google';
+import { Card, Input, Button } from '@/components/ui';
 
 const noto = Noto_Sans({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
@@ -135,8 +136,8 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <main className={`${noto.className} mx-auto max-w-3xl px-4 py-8`}>
-        <h1 className="text-2xl font-semibold text-gray-900">My Profile</h1>
-        <p className="mt-4 text-sm text-gray-600">Loading your profile…</p>
+        <h1 className="text-2xl font-semibold text-primary">My Profile</h1>
+        <p className="mt-4 text-sm text-muted">Loading your profile…</p>
       </main>
     );
   }
@@ -144,8 +145,8 @@ export default function ProfilePage() {
   if (loadError || !user) {
     return (
       <main className={`${noto.className} mx-auto max-w-3xl px-4 py-8`}>
-        <h1 className="text-2xl font-semibold text-gray-900">My Profile</h1>
-        <p className="mt-4 text-sm text-red-600">
+        <h1 className="text-2xl font-semibold text-primary">My Profile</h1>
+        <p className="mt-4 text-sm text-error-text">
           {loadError || 'You are not logged in.'}
         </p>
       </main>
@@ -153,32 +154,30 @@ export default function ProfilePage() {
   }
 
   const nameChanged = (user.name ?? '') !== nameInput.trim();
-  const pillButton =
-    'inline-flex items-center rounded-[10px] px-4 py-1.5 text-sm font-semibold';
 
   return (
     <main className={`${noto.className} mx-auto max-w-3xl px-4 py-8`}>
       <header>
-        <h1 className="text-2xl font-semibold text-gray-900">My Profile</h1>
-        <p className="mt-2 text-sm text-gray-600">
+        <h1 className="text-2xl font-semibold text-primary">My Profile</h1>
+        <p className="mt-2 text-sm text-muted">
           Manage your account details, password, and profile.
         </p>
       </header>
 
-      <section className="mt-6 rounded-2xl border border-[#E5E2D8] bg-white p-6 shadow-sm">
+      <Card className="mt-6 p-6">
         {/* Account summary */}
         <div>
-          <h2 className="text-base font-semibold text-gray-900">Account</h2>
+          <h2 className="text-base font-semibold text-primary">Account</h2>
           <dl className="mt-4 space-y-3 text-sm">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-              <dt className="w-32 text-gray-500">Email</dt>
-              <dd className="font-medium text-gray-900 break-all">
+              <dt className="w-32 text-muted">Email</dt>
+              <dd className="font-medium text-primary break-all">
                 {user.email}
               </dd>
             </div>
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-              <dt className="w-32 text-gray-500">Member since</dt>
-              <dd className="text-gray-800">
+              <dt className="w-32 text-muted">Member since</dt>
+              <dd className="text-primary">
                 {new Date(user.created_at).toLocaleDateString()}
               </dd>
             </div>
@@ -186,51 +185,49 @@ export default function ProfilePage() {
         </div>
 
         {/* Divider */}
-        <div className="my-6 border-t border-dashed border-[#E5E2D8]" />
+        <div className="my-6 border-t border-dashed border-border-subtle" />
 
         {/* Name section */}
         <div>
-          <h2 className="text-base font-semibold text-gray-900">Profile</h2>
-          <p className="mt-1 text-sm text-gray-600">
+          <h2 className="text-base font-semibold text-primary">Profile</h2>
+          <p className="mt-1 text-sm text-muted">
             Update the name shown in your account.
           </p>
 
           <form onSubmit={handleSaveName} className="mt-4 space-y-4">
             <div className="space-y-1 text-sm">
-              <label htmlFor="name" className="block font-medium text-gray-800">
+              <label htmlFor="name" className="block font-medium text-primary">
                 Name
               </label>
-              <input
+              <Input
                 id="name"
                 type="text"
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
-                className="block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Your name"
               />
             </div>
             <div className="flex items-center gap-3">
-              <button
+              <Button
                 type="submit"
                 disabled={savingName || !nameChanged}
-                className={`${pillButton} bg-accent text-white hover:bg-[#4A7A93] disabled:cursor-not-allowed disabled:bg-gray-300`}
               >
                 {savingName ? 'Saving…' : 'Save changes'}
-              </button>
+              </Button>
               {nameMessage && (
-                <p className="text-sm text-gray-700">{nameMessage}</p>
+                <p className="text-sm text-muted">{nameMessage}</p>
               )}
             </div>
           </form>
         </div>
 
         {/* Divider */}
-        <div className="my-6 border-t border-dashed border-[#E5E2D8]" />
+        <div className="my-6 border-t border-dashed border-border-subtle" />
 
         {/* Password section */}
         <div>
-          <h2 className="text-base font-semibold text-gray-900">Password</h2>
-          <p className="mt-1 text-sm text-gray-600">
+          <h2 className="text-base font-semibold text-primary">Password</h2>
+          <p className="mt-1 text-sm text-muted">
             Set a new password for your account.
           </p>
 
@@ -238,49 +235,43 @@ export default function ProfilePage() {
             <div className="space-y-1 text-sm">
               <label
                 htmlFor="new-password"
-                className="block font-medium text-gray-800"
+                className="block font-medium text-primary"
               >
                 New password
               </label>
-              <input
+              <Input
                 id="new-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 autoComplete="new-password"
               />
             </div>
             <div className="space-y-1 text-sm">
               <label
                 htmlFor="confirm-password"
-                className="block font-medium text-gray-800"
+                className="block font-medium text-primary"
               >
                 Confirm new password
               </label>
-              <input
+              <Input
                 id="confirm-password"
                 type="password"
                 value={passwordConfirm}
                 onChange={(e) => setPasswordConfirm(e.target.value)}
-                className="block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 autoComplete="new-password"
               />
             </div>
             <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                disabled={savingPassword}
-                className={`${pillButton} bg-accent text-white hover:bg-[#4A7A93] disabled:cursor-not-allowed disabled:bg-gray-300`}
-              >
+              <Button type="submit" disabled={savingPassword}>
                 {savingPassword ? 'Saving…' : 'Update password'}
-              </button>
+              </Button>
               {passwordMessage && (
                 <p
                   className={`text-sm ${
                     passwordMessage.includes('updated')
-                      ? 'text-gray-700'
-                      : 'text-red-600'
+                      ? 'text-muted'
+                      : 'text-error-text'
                   }`}
                 >
                   {passwordMessage}
@@ -291,12 +282,12 @@ export default function ProfilePage() {
         </div>
 
         {/* Divider */}
-        <div className="my-6 border-t border-dashed border-red-200" />
+        <div className="my-6 border-t border-dashed border-error-border" />
 
         {/* Danger zone (inside same card, but red emphasis) */}
         <div>
-          <h2 className="text-base font-semibold text-red-700">Danger zone</h2>
-          <p className="mt-1 text-sm text-red-700">
+          <h2 className="text-base font-semibold text-error-text">Danger zone</h2>
+          <p className="mt-1 text-sm text-error-text">
             Deleting your account will remove your profile and watchlist. This action
             cannot be undone.
           </p>
@@ -305,33 +296,29 @@ export default function ProfilePage() {
             <div className="space-y-1 text-sm">
               <label
                 htmlFor="delete-confirm"
-                className="block font-medium text-red-800"
+                className="block font-medium text-error-text"
               >
                 Type <span className="font-mono">DELETE</span> to confirm
               </label>
-              <input
+              <Input
                 id="delete-confirm"
                 type="text"
                 value={deleteConfirm}
                 onChange={(e) => setDeleteConfirm(e.target.value)}
-                className="block w-full rounded-lg border border-red-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                error
               />
             </div>
             <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                disabled={deleting}
-                className={`${pillButton} bg-red-600 text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300`}
-              >
+              <Button type="submit" variant="danger" disabled={deleting}>
                 {deleting ? 'Deleting…' : 'Delete my account'}
-              </button>
+              </Button>
               {deleteMessage && (
-                <p className="text-sm text-red-700">{deleteMessage}</p>
+                <p className="text-sm text-error-text">{deleteMessage}</p>
               )}
             </div>
           </form>
         </div>
-      </section>
+      </Card>
     </main>
   );
 }

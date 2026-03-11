@@ -21,8 +21,8 @@ export async function remove({ uid, screeningId }) {
   return { ok: true };
 }
 
-export async function list({ uid, limit, offset }) {
-  const items = await listWatchlist({ userUid: uid, limit, offset });
+export async function list({ uid, limit, offset, includePast = true }) {
+  const items = await listWatchlist({ userUid: uid, limit, offset, includePast });
   return items;
 }
 
