@@ -1,6 +1,6 @@
 import { query, body } from 'express-validator';
 
-const ALLOWED_SORTS  = ['time', 'title'];
+const ALLOWED_SORTS  = ['time', 'title', 'imdb', 'rt', 'votes', 'year'];
 const ALLOWED_ORDERS = ['asc', 'desc'];
 
 export const listScreeningsValidator = [
