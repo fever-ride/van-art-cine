@@ -3,6 +3,7 @@ export class AuthError extends Error {
     super(message);
     this.code = code;
     this.status = status;
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
@@ -11,6 +12,7 @@ export class NotFoundError extends Error {
     super(message);
     this.code = code;
     this.status = status;
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
@@ -19,6 +21,7 @@ export class ValidationError extends Error {
     super(message);
     this.code = code;
     this.status = status;
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
@@ -27,5 +30,6 @@ export class WatchlistError extends Error {
     super(message);
     this.code = code;
     this.status = status;
+    Error.captureStackTrace(this, this.constructor);
   }
 }

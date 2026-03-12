@@ -35,7 +35,6 @@ export interface Screening {
 }
 
 export interface ScreeningsResponse {
-  total: number;
   items: Screening[];
 }
 

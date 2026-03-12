@@ -45,8 +45,7 @@ export async function register({ email, password, name, userAgent, ip }) {
     });
   }
 
-  const { password_hash, ...safeUser } = user;
-  return { user: safeUser, accessToken, refreshToken, refreshExpiresAt };
+  return { user, accessToken, refreshToken };
 }
 
 export async function login({ email, password, userAgent, ip }) {
@@ -78,7 +77,7 @@ export async function login({ email, password, userAgent, ip }) {
   }
 
   const { password_hash, ...safeUser } = user;
-  return { user: safeUser, accessToken, refreshToken, refreshExpiresAt };
+  return { user: safeUser, accessToken, refreshToken };
 }
 
 export async function refresh({ refreshToken, userAgent, ip }) {
@@ -121,7 +120,7 @@ export async function refresh({ refreshToken, userAgent, ip }) {
   }
 
   const { password_hash, ...safeUser } = user;
-  return { user: safeUser, accessToken, refreshToken: newRefreshToken, refreshExpiresAt };
+  return { user: safeUser, accessToken, refreshToken: newRefreshToken };
 }
 
 export async function logout({ refreshToken }) {

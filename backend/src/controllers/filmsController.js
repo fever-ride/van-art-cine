@@ -1,5 +1,5 @@
 import { getFilmById, getFilmPeople, getUpcomingForFilm } from '../models/films.js';
-import { NotFoundError, ValidationError } from '../utils/errors.js';
+import { NotFoundError } from '../utils/errors.js';
 
 /**
  * GET /api/films/:id
@@ -8,8 +8,7 @@ import { NotFoundError, ValidationError } from '../utils/errors.js';
  */
 export async function getByIdHandler(req, res, next) {
   try {
-    const id = Number(req.params.id);
-    if (!Number.isFinite(id)) throw new ValidationError('Invalid id', 'BAD_ID');
+    const id = req.params.id;
 
     const film = await getFilmById(id);
     if (!film) throw new NotFoundError('Film not found');

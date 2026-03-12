@@ -1,12 +1,11 @@
 import { fetchScreenings, findByIds } from '../models/screenings.js';
-import { ValidationError } from '../utils/errors.js';
 
 const DEFAULT_TZ = 'America/Vancouver';
 
 /**
  * GET /api/screenings
  * @query {{ date?, from?, to?, cinema_ids?, film_id?, q?, sort?, order?, limit?, offset? }}
- * @returns {200} {{ total: number, items: Screening[] }}
+ * @returns {200} {{ items: Screening[] }}
  */
 export async function listHandler(req, res, next) {
   try {
@@ -25,17 +24,12 @@ export async function listHandler(req, res, next) {
       if (cinemaIds.length === 0) cinemaIds = null;
     }
 
-    const filmId = req.query.film_id ? Number(req.query.film_id) : null;
-
-    const q = (req.query.q || '').toString().trim().toLowerCase();
-
-    const limitParam  = parseInt(req.query.limit  ?? '50', 10);
-    const offsetParam = parseInt(req.query.offset ?? '0',  10);
-    const limit  = Math.min(isNaN(limitParam)  || limitParam  <= 0 ? 50 : limitParam, 200);
-    const offset = Math.max(isNaN(offsetParam) || offsetParam <  0 ?  0 : offsetParam, 0);
-
-    const sort  = (req.query.sort  || 'time').toString();
-    const order = (req.query.order || 'asc').toString();
+    const filmId  = req.query.film_id ?? null;
+    const q       = (req.query.q || '').toString().trim().toLowerCase();
+    const limit   = req.query.limit  ?? 50;
+    const offset  = req.query.offset ?? 0;
+    const sort    = req.query.sort   || 'time';
+    const order   = req.query.order  || 'asc';
 
     const rows = await fetchScreenings({
       date, from, to,
@@ -45,7 +39,7 @@ export async function listHandler(req, res, next) {
       tz: DEFAULT_TZ,
     });
 
-    return res.json({ total: rows.length, items: rows });
+    return res.json({ items: rows });
   } catch (err) { return next(err); }
 }
 
@@ -56,21 +50,7 @@ export async function listHandler(req, res, next) {
  */
 export async function bulkHandler(req, res, next) {
   try {
-    const raw = req.body?.ids;
-    if (!Array.isArray(raw)) {
-      throw new ValidationError('ids must be an array', 'BAD_REQUEST');
-    }
-
-    const seen = new Set();
-    const ids = [];
-    for (const x of raw) {
-      const n = Number(x);
-      if (Number.isFinite(n) && n > 0 && !seen.has(n)) {
-        seen.add(n);
-        ids.push(n);
-      }
-      if (ids.length >= 500) break;
-    }
+    const ids = [...new Set(req.body.ids)];
 
     if (ids.length === 0) {
       return res.json({ items: [] });

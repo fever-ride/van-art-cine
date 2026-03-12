@@ -95,9 +95,16 @@ app.use((err, _req, res, _next) => {
     err.error ||         // Validation, other structured errors
     'SERVER_ERROR';
 
+  const isKnownError = err.status != null;
+  const message = isKnownError
+    ? err.message
+    : (process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : err.message || 'Server error');
+
   res.status(status).json({
     error: code,
-    message: err.message || 'Server error',
+    message,
     details: err.details || undefined,
   });
 });
