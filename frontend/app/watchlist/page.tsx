@@ -58,7 +58,7 @@ type WatchlistRow = {
 
   source_url?: string | null;
 
-  status: 'upcoming' | 'past' | 'inactive' | 'missing';
+  status: 'upcoming' | 'past' | 'unavailable';
 };
 
 export default function WatchlistPage() {
@@ -78,7 +78,13 @@ export default function WatchlistPage() {
       try {
         const data = await apiListWatchlist({ limit: 100 });
         setAuthed(true);
-        setItems(Array.isArray(data.items) ? data.items : []);
+        const raw = Array.isArray(data.items) ? data.items : [];
+        setItems(raw.map((r) => {
+          const s = r.status as string;
+          const status: WatchlistRow['status'] =
+            s === 'inactive' || s === 'missing' ? 'unavailable' : s as WatchlistRow['status'];
+          return { ...r, status };
+        }));
         return;
       } catch (e: unknown) {
         const errAny = e as { status?: number } | undefined;
@@ -129,7 +135,7 @@ export default function WatchlistPage() {
               title: '(no longer available)',
               cinema_id: null,
               cinema_name: null,
-              status: 'missing',
+              status: 'unavailable',
             } as WatchlistRow;
           }
 
@@ -179,14 +185,12 @@ export default function WatchlistPage() {
     const map: Record<WatchlistRow['status'], string> = {
       upcoming: 'bg-success-bg text-success-text',
       past: 'bg-surface-subtle text-muted',
-      inactive: 'bg-warning-bg text-warning-text',
-      missing: 'bg-error-bg text-error-text',
+      unavailable: 'bg-warning-bg text-warning-text',
     };
     const label: Record<WatchlistRow['status'], string> = {
       upcoming: 'Upcoming',
       past: 'Past',
-      inactive: 'Inactive',
-      missing: 'Missing',
+      unavailable: 'Unavailable',
     };
     return (
       <span
@@ -213,7 +217,7 @@ export default function WatchlistPage() {
             checked={includePast}
             onChange={(e) => setIncludePast(e.target.checked)}
           />
-          Show past / inactive
+          Show past & unavailable
         </label>
       </div>
 
