@@ -1,3 +1,19 @@
+/**
+ * Data-fetching hook for the screenings page.
+ *
+ * - Accepts the current `UIState` (from `useScreeningsUI`) and an `offset`
+ *   derived from the `page` query parameter.
+ * - Builds a `ScreeningsQuery` with a fixed timezone (`America/Vancouver`)
+ *   so showtimes align with local cinema schedules.
+ * - Performs a simple client-side guard for invalid date ranges:
+ *   if `mode === 'range'` and `from > to`, it sets an error instead of
+ *   calling the API.
+ * - Tracks `items`, `loading`, `error`, and `hasMore`, and exposes a
+ *   `reload(nextOffset?)` function so callers can imperatively refresh data.
+ *
+ * This hook isolates data-fetching concerns from UI state management. It does
+ * not know how filters are rendered or how pagination is displayed.
+ */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
