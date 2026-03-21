@@ -1,3 +1,19 @@
+/**
+ * Authentication service layer.
+ *
+ * Responsibilities:
+ *  - user registration and login (email/password)
+ *  - issuing access/refresh JWTs
+ *  - persisting refresh tokens (hashed in the model layer)
+ *  - validating and rotating refresh tokens
+ *
+ * Important details:
+ *  - emails are normalized (trimmed + lowercased) before lookup and insert
+ *  - passwords are always stored as bcrypt hashes (via password utils)
+ *  - refresh tokens are validated both cryptographically (verifyRefresh)
+ *    and against the DB (findValidRefreshToken), then rotated on use
+ *  - all error conditions throw AuthError with stable error codes/statuses
+ */
 import {
   findByEmail,
   createUser,
@@ -11,6 +27,14 @@ import { signAccess, signRefresh, verifyRefresh } from '../utils/jwt.js';
 import jwt from 'jsonwebtoken';
 import { AuthError } from '../utils/errors.js';
 
+/**
+ * Register a new user account and issue initial access/refresh tokens.
+ *
+ * - normalizes email
+ * - rejects if an account already exists for that email
+ * - hashes the password before persisting
+ * - stores the refresh token (hashed in the model) with expiry and metadata
+ */
 export async function register({ email, password, name, userAgent, ip }) {
   const normalizedEmail = email.trim().toLowerCase();
 
@@ -45,10 +69,18 @@ export async function register({ email, password, name, userAgent, ip }) {
     });
   }
 
-  const { password_hash, ...safeUser } = user;
-  return { user: safeUser, accessToken, refreshToken, refreshExpiresAt };
+  return { user, accessToken, refreshToken };
 }
 
+/**
+ * Log a user in with email + password and issue fresh access/refresh tokens.
+ *
+ * - normalizes email
+ * - uses bcrypt to verify the password
+ * - throws AuthError with specific codes for \"email not found\" and
+ *   \"bad credentials\" so controllers/front-end can map friendly messages
+ * - returns a safe user shape with password_hash stripped
+ */
 export async function login({ email, password, userAgent, ip }) {
   const normalizedEmail = email.trim().toLowerCase();
 
@@ -78,9 +110,24 @@ export async function login({ email, password, userAgent, ip }) {
   }
 
   const { password_hash, ...safeUser } = user;
-  return { user: safeUser, accessToken, refreshToken, refreshExpiresAt };
+  return { user: safeUser, accessToken, refreshToken };
 }
 
+/**
+ * Refresh tokens using a long-lived refresh token.
+ *
+ * Flow:
+ *  1. Cryptographically validate the refresh JWT (signature, expiry).
+ *  2. Look up a matching, non-revoked, non-expired row in the DB
+ *     (findValidRefreshToken) — tokens are stored hashed there.
+ *  3. Ensure the DB row user_id matches the JWT payload uid.
+ *  4. Load the user, issue a new access token and a new refresh token.
+ *  5. Revoke the old refresh token and persist the new one (rotation),
+ *     preserving user-agent and IP metadata.
+ *
+ * On any validation failure, an AuthError with a specific code is thrown
+ * so controllers can surface 401/404 appropriately.
+ */
 export async function refresh({ refreshToken, userAgent, ip }) {
   let payload;
   try {
@@ -121,9 +168,15 @@ export async function refresh({ refreshToken, userAgent, ip }) {
   }
 
   const { password_hash, ...safeUser } = user;
-  return { user: safeUser, accessToken, refreshToken: newRefreshToken, refreshExpiresAt };
+  return { user: safeUser, accessToken, refreshToken: newRefreshToken };
 }
 
+/**
+ * Log a user out by revoking the provided refresh token.
+ *
+ * Access tokens are short-lived and not explicitly revoked; once the
+ * refresh token is revoked, no new access tokens can be minted.
+ */
 export async function logout({ refreshToken }) {
   await revokeRefreshToken(refreshToken);
   return { ok: true };

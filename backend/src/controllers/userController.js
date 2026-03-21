@@ -5,7 +5,7 @@ import { clearCookieOptions } from '../utils/jwt.js';
  * GET /api/user/me
  * @returns {200} {{ user: { uid, name, email, role, created_at } }}
  */
-export async function getMyProfile(req, res, next) {
+export async function profileHandler(req, res, next) {
   try {
     const { uid, role } = req.user;
     const user = await svc.findUserByIdAndRole(uid, role);
@@ -20,7 +20,7 @@ export async function getMyProfile(req, res, next) {
  * @body {{ name: string }}
  * @returns {200} {{ user: { uid, name, email, role, created_at } }}
  */
-export async function updateMyName(req, res, next) {
+export async function updateNameHandler(req, res, next) {
   try {
     const { uid } = req.user;
     const { name } = req.body;
@@ -38,7 +38,7 @@ export async function updateMyName(req, res, next) {
  * @body {{ password: string }}
  * @returns {200} {{ ok: true }}
  */
-export async function updateMyPassword(req, res, next) {
+export async function updatePasswordHandler(req, res, next) {
   try {
     const { uid } = req.user;
     const { password } = req.body;
@@ -55,7 +55,7 @@ export async function updateMyPassword(req, res, next) {
  * DELETE /api/user/me
  * @returns {200} {{ ok: true }} — clears auth cookies
  */
-export async function deleteMyAccount(req, res, next) {
+export async function deleteAccountHandler(req, res, next) {
   try {
     const { uid } = req.user;
 

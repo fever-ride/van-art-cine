@@ -55,7 +55,6 @@ function ScreeningsPageInner() {
 
   const handleApplyFilters = () => {
     goToPage(1);
-    screeningsData.reload(0);
   };
 
   // Fetch all cinemas once, sort alphabetically

@@ -1,4 +1,4 @@
-import express from 'express';
+import { Router } from 'express';
 import {
   addToWatchlistValidator,
   removeFromWatchlistValidator,
@@ -9,59 +9,24 @@ import {
 } from '../validators/watchlistValidators.js';
 import { handleValidationErrors } from '../utils/validators.js';
 import { requireAuth } from '../middleware/auth.js';
-import * as ctrl from '../controllers/watchlistController.js';
+import {
+  listHandler,
+  addHandler,
+  removeHandler,
+  statusHandler,
+  toggleHandler,
+  importHandler,
+} from '../controllers/watchlistController.js';
 
-const router = express.Router();
+const router = Router();
 
-// All watchlist routes require authentication
 router.use(requireAuth);
 
-// Add a screening to the watchlist
-router.post(
-  '/',
-  addToWatchlistValidator,
-  handleValidationErrors,
-  ctrl.addHandler
-);
-
-// Remove a screening from the watchlist
-router.delete(
-  '/:screeningId',
-  removeFromWatchlistValidator,
-  handleValidationErrors,
-  ctrl.removeHandler
-);
-
-// List all screenings in the user’s watchlist
-router.get(
-  '/',
-  listWatchlistValidator,
-  handleValidationErrors,
-  ctrl.listHandler
-);
-
-// Check status (is this screening saved?)
-router.get(
-  '/status',
-  statusWatchlistValidator,
-  handleValidationErrors,
-  ctrl.statusHandler
-);
-
-// Toggle save/remove
-router.post(
-  '/toggle',
-  toggleWatchlistValidator,
-  handleValidationErrors,
-  ctrl.toggleHandler
-);
-
-// Merge guest localStorage IDs into server watchlist
-router.post(
-  '/import',
-  importWatchlistValidator,
-  handleValidationErrors,
-  ctrl.importHandler
-);
+router.post('/',            addToWatchlistValidator,      handleValidationErrors, addHandler);
+router.delete('/:screeningId', removeFromWatchlistValidator, handleValidationErrors, removeHandler);
+router.get('/',             listWatchlistValidator,       handleValidationErrors, listHandler);
+router.get('/status',       statusWatchlistValidator,     handleValidationErrors, statusHandler);
+router.post('/toggle',      toggleWatchlistValidator,     handleValidationErrors, toggleHandler);
+router.post('/import',      importWatchlistValidator,     handleValidationErrors, importHandler);
 
 export default router;

@@ -5,9 +5,25 @@ import type { SortKey, Order } from '@/app/lib/screenings';
 
 /**
  * Screenings UI State Management
- * 
+ *
  * Custom hook for managing filter, sort, and display state for the screenings page.
- * Supports both single-date and date-range modes with flexible state updates.
+ *
+ * Responsibilities:
+ * - Owns all UI-related fields:
+ *   - `mode`: 'single' vs 'range' date mode
+ *   - `date` / `from` / `to`: single date or date range
+ *   - `q`: search query
+ *   - `cinemaIds`: selected cinema IDs
+ *   - `filmId`: specific film filter
+ *   - `sort`: sort key (time, title, imdb, rt, votes, year)
+ *   - `order`: sort direction
+ *   - `limit`: page size
+ * - Exposes a single `setUI` helper that accepts either:
+ *   - a partial patch object
+ *   - a functional updater `(prev: UIState) => UIState`
+ *
+ * This hook is intentionally UI-only: it does not perform any data fetching
+ * and is composed with `useScreeningsData` to actually load screenings.
  */
 
 // ============================================================================

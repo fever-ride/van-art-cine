@@ -17,12 +17,21 @@ const app = express();
 
 /* -------- Core setup -------- */
 
+// Trust first proxy (e.g. Nginx, load balancer) so X-Forwarded-* and rate-limit IP are correct.
 app.set('trust proxy', 1);
 
-// Parse cookies before anything that relies on them
+// Cookie parsing must run before any middleware or routes that read req.cookies (e.g. auth).
 app.use(cookieParser());
 
-// CORS
+/**
+ * CORS (Cross-Origin Resource Sharing)
+ *
+ * - ALLOWED_ORIGIN: Comma-separated list of origins (e.g. "https://app.example.com,https://admin.example.com").
+ *   When set, only these origins may make credentialed cross-origin requests.
+ * - When ALLOWED_ORIGIN is unset or empty: allow any origin (convenient for local dev; avoid in production).
+ * - Requests with no Origin header (same-origin, curl, server-to-server) are always allowed.
+ * - credentials: true is required so the browser sends cookies (e.g. access_token) on cross-origin requests.
+ */
 const allowed = (process.env.ALLOWED_ORIGIN || '')
   .split(',')
   .map(s => s.trim())
@@ -30,7 +39,6 @@ const allowed = (process.env.ALLOWED_ORIGIN || '')
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow server-to-server / curl (no Origin header)
     if (!origin) return cb(null, true);
 
     if (allowed.length > 0) {
@@ -39,17 +47,17 @@ app.use(cors({
         : cb(new Error('CORS: origin not allowed'));
     }
 
-    // If not configured, be permissive in dev
     return cb(null, true);
   },
-  credentials: true, // send/set cookies
+  credentials: true,
 }));
 
-// Body parsing & logging
+// JSON body parsing and request logging (after CORS so logs reflect actual client).
 app.use(express.json());
 app.use(morgan('dev'));
 
-/* healthz: liveness | readyz: readiness (DB check, 503 on fail) */
+/* -------- Health & readiness -------- */
+// healthz: liveness only. readyz: includes DB check; returns 503 if DB unreachable.
 app.get('/healthz', (_req, res) => res.json({ ok: true }));
 app.get('/readyz', async (_req, res) => {
   try {
@@ -61,16 +69,16 @@ app.get('/readyz', async (_req, res) => {
   }
 });
 
-/* -------- Rate limits -------- */
+/* -------- Rate limiting -------- */
 const loginLimiter = rateLimit({
-  windowMs: 60 * 1000,   // 1 minute
-  max: 10,               // 10 attempts per minute per IP
+  windowMs: 60 * 1000,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use('/api/auth/login', loginLimiter);
 
-/* -------- Routes -------- */
+/* -------- API routes -------- */
 app.use('/api/auth', auth); 
 app.use('/api/screenings', screenings);
 app.use('/api/films', films);
@@ -78,26 +86,35 @@ app.use('/api/watchlist', watchlist);
 app.use('/api/cinemas', cinemas);
 app.use('/api/user', user);
 
-/* -------- 404 -------- */
+/* -------- 404 and preflight -------- */
+// Unmatched routes: respond 204 to OPTIONS (CORS preflight); otherwise 404.
 app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') return res.sendStatus(204); // preflight safety
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
   next({ status: 404, message: 'Not Found' });
 });
 
-/* -------- Final error handler -------- */
+/* -------- Global error handler -------- */
+// Normalizes all errors to { error, message, details? } and sets status (default 500).
 app.use((err, _req, res, _next) => {
   console.error(err);
 
   const status = err.status || 500;
 
   const code =
-    err.code ||          // AuthError, custom errors
-    err.error ||         // Validation, other structured errors
+    err.code ||
+    err.error ||
     'SERVER_ERROR';
+
+  const isKnownError = err.status != null;
+  const message = isKnownError
+    ? err.message
+    : (process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : err.message || 'Server error');
 
   res.status(status).json({
     error: code,
-    message: err.message || 'Server error',
+    message,
     details: err.details || undefined,
   });
 });
@@ -109,6 +126,6 @@ app.listen(port, () => {
   if (allowed.length) {
     console.log('CORS allowed origins:', allowed.join(', '));
   } else {
-    console.log('CORS allowed origins: (permissive/dev)');
+    console.log('CORS allowed origins: (permissive — set ALLOWED_ORIGIN in production)');
   }
 });

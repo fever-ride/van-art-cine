@@ -1,14 +1,11 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 
-const {
-  JWT_ACCESS_SECRET,
-  JWT_REFRESH_SECRET,
-  ACCESS_TTL = '15m',
-  REFRESH_TTL = '30d',
-  COOKIE_DOMAIN,
-  NODE_ENV,
-} = process.env;
+function env(key) {
+  const val = process.env[key];
+  if (!val) throw new Error(`Missing env var: ${key}`);
+  return val;
+}
 
 /**
  * Issues a short-lived Access JWT.
@@ -19,12 +16,12 @@ const {
  */
 export function signAccess(user) {
   return jwt.sign(
-    { uid: user.uid, 
+    { uid: user.uid,
       role: user.role },
-    JWT_ACCESS_SECRET,
-    { expiresIn: ACCESS_TTL, 
-      issuer: 'cinephilesvan', 
-      subject: String(user.uid), 
+    env('JWT_ACCESS_SECRET'),
+    { expiresIn: process.env.ACCESS_TTL || '15m',
+      issuer: 'cinephilesvan',
+      subject: String(user.uid),
       audience: 'web' }
   );
 }
@@ -39,8 +36,8 @@ export function signRefresh(user) {
       uid: user.uid,
       jti: crypto.randomUUID(),
     },
-    JWT_REFRESH_SECRET,
-    { expiresIn: REFRESH_TTL }
+    env('JWT_REFRESH_SECRET'),
+    { expiresIn: process.env.REFRESH_TTL || '30d' }
   );
 }
 
@@ -48,41 +45,41 @@ export function signRefresh(user) {
  * Verify Access Token (throws if invalid)
  */
 export function verifyAccess(token) {
-  return jwt.verify(token, JWT_ACCESS_SECRET);
+  return jwt.verify(token, env('JWT_ACCESS_SECRET'));
 }
 
 /**
  * Verify Refresh Token (throws if invalid)
  */
 export function verifyRefresh(token) {
-  return jwt.verify(token, JWT_REFRESH_SECRET);
+  return jwt.verify(token, env('JWT_REFRESH_SECRET'));
 }
 
 /**
- * Base cookie options
+ * Cookie options — read at call time so NODE_ENV / COOKIE_DOMAIN
+ * are always resolved after dotenv has loaded.
  */
-const baseCookie = {
-  httpOnly: true,
-  sameSite: 'strict',
-  secure: NODE_ENV === 'production',  // only over HTTPS in prod
-  domain: COOKIE_DOMAIN || undefined, // set your domain, skip in dev
-  path: '/',
-};
+function baseCookie() {
+  return {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    domain: process.env.COOKIE_DOMAIN || undefined,
+    path: '/',
+  };
+}
 
-/**
- * Token-specific cookie options
- */
 export const accessCookieOptions = {
-  ...baseCookie,
+  ...baseCookie(),
   maxAge: 15 * 60 * 1000, // 15 minutes
 };
 
 export const refreshCookieOptions = {
-  ...baseCookie,
+  ...baseCookie(),
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
 };
 
 export const clearCookieOptions = {
-  ...baseCookie,
+  ...baseCookie(),
   expires: new Date(0),
 };

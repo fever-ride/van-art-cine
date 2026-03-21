@@ -1,6 +1,6 @@
 import { fetchWithAuth } from '@/app/lib/auth';
 
-export type WatchStatus = 'upcoming' | 'past' | 'inactive' | 'missing';
+export type WatchStatus = 'upcoming' | 'past' | 'unavailable';
 
 export interface WatchlistItem {
   screening_id: number;

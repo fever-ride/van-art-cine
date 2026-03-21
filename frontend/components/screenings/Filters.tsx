@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { UIState, SetUI } from '@/lib/hooks/useScreeningsUI';
 import { Card, Input, Button } from '@/components/ui';
 
@@ -47,24 +47,35 @@ export default function Filters({
     });
   }, [ui]);
 
+  const [localQ, setLocalQ] = useState(ui.q);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = (value: string) => {
+    setLocalQ(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setUI({ q: value });
+      onApply();
+    }, 350);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    setLocalQ(ui.q);
+  }, [ui.q]);
+
   const handleApply = () => {
-    setUI({ ...localUI, q: ui.q });
+    setUI({ ...localUI, q: localQ });
     onApply();
   };
 
   const handleReset = () => {
-    const resetState: UIState = {
-      q: '',
-      cinemaIds: [],
-      filmId: '',
-      date: '',
-      from: '',
-      to: '',
-      sort: 'time',
-      order: 'asc',
-      mode: 'single',
-      limit: ui.limit,
-    };
+    setLocalQ('');
     setLocalUI({
       cinemaIds: [],
       filmId: '',
@@ -76,12 +87,18 @@ export default function Filters({
       mode: 'single',
       limit: ui.limit,
     });
-    setUI(resetState);
-    onApply();
-  };
-
-  const handleSearchChange = (value: string) => {
-    setUI({ ...ui, q: value });
+    setUI({
+      q: '',
+      cinemaIds: [],
+      filmId: '',
+      date: '',
+      from: '',
+      to: '',
+      sort: 'time',
+      order: 'asc',
+      mode: 'single',
+      limit: ui.limit,
+    });
     onApply();
   };
 
@@ -98,7 +115,7 @@ export default function Filters({
           type="text"
           inputMode="search"
           placeholder="Enter a film title…"
-          value={ui.q}
+          value={localQ}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="rounded-btn py-2.5"
         />

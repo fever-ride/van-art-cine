@@ -1,38 +1,34 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import {
-  getMyProfile,
-  updateMyName,
-  updateMyPassword,
-  deleteMyAccount,
+  profileHandler,
+  updateNameHandler,
+  updatePasswordHandler,
+  deleteAccountHandler,
 } from '../controllers/userController.js';
 import { updateNameValidator, updatePasswordValidator } from '../validators/userValidators.js';
 import { handleValidationErrors } from '../utils/validators.js';
 
 const router = Router();
 
-// get profile
-router.get('/me', requireAuth, getMyProfile);
+router.get('/me', requireAuth, profileHandler);
 
-// update name
 router.patch(
   '/me',
   requireAuth,
   updateNameValidator,
   handleValidationErrors,
-  updateMyName,
+  updateNameHandler,
 );
 
-// update password
 router.patch(
-  '/me/password', 
-  requireAuth, 
-  updatePasswordValidator, 
+  '/me/password',
+  requireAuth,
+  updatePasswordValidator,
   handleValidationErrors,
-  updateMyPassword
+  updatePasswordHandler,
 );
 
-// delete account
-router.delete('/me', requireAuth, deleteMyAccount);
+router.delete('/me', requireAuth, deleteAccountHandler);
 
 export default router;

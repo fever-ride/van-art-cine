@@ -15,7 +15,7 @@ import {
 } from '../validators/authValidators.js';
 
 import { handleValidationErrors } from '../utils/validators.js';
-import { requireAuth, optionalAuth } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
