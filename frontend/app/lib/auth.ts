@@ -133,6 +133,8 @@ export async function apiRegister(body: { email: string; password: string; name?
       friendly = 'This email is already registered.';
     } else if (error === 'VALIDATION_ERROR') {
       friendly = 'Your email, password, or name looks invalid. Please check and try again.';
+    } else if (error === 'RATE_LIMIT' || res.status === 429) {
+      friendly = 'Too many requests. Please try again in a moment.';
     } else if (res.status >= 500) {
       friendly = 'We’re experiencing a technical issue. Please try again shortly.';
     }
@@ -163,6 +165,8 @@ export async function apiLogin(body: { email: string; password: string }) {
       friendly = 'Incorrect email or password. Please check and try again.';
     } else if (error === 'VALIDATION_ERROR') {
       friendly = 'Your email or password format is invalid. Please check and try again.';
+    } else if (error === 'RATE_LIMIT' || res.status === 429) {
+      friendly = 'Too many requests. Please try again in a moment.';
     } else if (res.status >= 500) {
       friendly = 'We’re experiencing a technical issue. Please try again shortly.';
     }
