@@ -69,14 +69,26 @@ app.get('/readyz', async (_req, res) => {
   }
 });
 
-/* -------- Rate limiting -------- */
-const loginLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/auth/login', loginLimiter);
+/* -------- Rate limiting (auth endpoints; separate counters per path) -------- */
+const RATE_LIMIT_MESSAGE = 'Too many requests. Please try again in a moment.';
+
+function createAuthEndpointLimiter() {
+  return rateLimit({
+    windowMs: 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (_req, res) => {
+      res.status(429).json({
+        error: 'RATE_LIMIT',
+        message: RATE_LIMIT_MESSAGE,
+      });
+    },
+  });
+}
+
+app.use('/api/auth/login', createAuthEndpointLimiter());
+app.use('/api/auth/register', createAuthEndpointLimiter());
 
 /* -------- API routes -------- */
 app.use('/api/auth', auth); 
