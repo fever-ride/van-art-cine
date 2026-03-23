@@ -6,6 +6,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 
 import { prisma } from './lib/prismaClient.js';
+import { AuthError } from './utils/errors.js';
 import screenings from './routes/screenings.js';
 import films from './routes/films.js';
 import auth from './routes/auth.js';
@@ -108,7 +109,18 @@ app.use((req, res, next) => {
 /* -------- Global error handler -------- */
 // Normalizes all errors to { error, message, details? } and sets status (default 500).
 app.use((err, _req, res, _next) => {
-  console.error(err);
+  // Expected anonymous access to requireAuth routes: avoid noisy stack traces in dev logs.
+  const quietAuth =
+    err instanceof AuthError &&
+    err.status === 401 &&
+    (err.code === 'NO_ACCESS_TOKEN' || err.code === 'BAD_ACCESS_TOKEN');
+  if (quietAuth) {
+    if (process.env.AUTH_DEBUG === '1') {
+      console.error(err);
+    }
+  } else {
+    console.error(err);
+  }
 
   const status = err.status || 500;
 

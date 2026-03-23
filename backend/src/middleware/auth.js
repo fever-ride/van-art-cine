@@ -71,16 +71,18 @@ export function requireAuth(req, res, next) {
  * Do NOT use for:
  *  Any write/mutation endpoints.
  *
- * Currently unused; 
- * kept for future read endpoints to reduce 401 noise and enable optional personalization.
+ * Wire this only on routes where anonymous access is allowed but you may want
+ * req.user when a valid token is present (not currently used on any route).
  */
 export function optionalAuth(req, _res, next) {
   const token = extractAccessToken(req);
   if (!token) return next();
   try {
     const payload = verifyAccess(token);
-    req.user = { uid: payload.uid, 
-      role: payload.role };
+    req.user = {
+      uid: payload.uid,
+      role: payload.role ?? 'user',
+    };
   } catch {
     // ignore invalid/expired token; proceed as anonymous
   }
