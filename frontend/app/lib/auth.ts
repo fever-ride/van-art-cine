@@ -74,17 +74,43 @@ export async function fetchWithAuth(
   return res;
 }
 
+type ValidationDetail = { field?: string; msg?: string; location?: string };
+
 /* Parse of backend error payload (safe if body isn’t JSON). */
-async function readErrorPayload(res: Response): Promise<{ error?: string; message?: string }> {
+async function readErrorPayload(
+  res: Response
+): Promise<{ error?: string; message?: string; details?: ValidationDetail[] }> {
   try {
     const data = await res.json();
+    const details = Array.isArray(data?.details) ? data.details : undefined;
     return {
       error: typeof data?.error === 'string' ? data.error : undefined,
       message: typeof data?.message === 'string' ? data.message : undefined,
+      details: details as ValidationDetail[] | undefined,
     };
   } catch {
     return {};
   }
+}
+
+const FIELD_LABEL: Record<string, string> = {
+  email: 'Email',
+  password: 'Password',
+  name: 'Name',
+};
+
+/** Turn express-validator `details` into a short multi-line message for the UI. */
+function formatValidationDetails(details: ValidationDetail[] | undefined): string | null {
+  if (!details?.length) return null;
+  const lines: string[] = [];
+  for (const d of details) {
+    const field = typeof d.field === 'string' ? d.field : '';
+    const label = FIELD_LABEL[field] ?? field;
+    const msg = typeof d.msg === 'string' ? d.msg.trim() : '';
+    if (!msg) continue;
+    lines.push(label ? `${label}: ${msg}` : msg);
+  }
+  return lines.length ? lines.join('\n') : null;
 }
 
 /*
@@ -126,13 +152,15 @@ export async function apiRegister(body: { email: string; password: string; name?
   });
 
   if (!res.ok) {
-    const { error, message } = await readErrorPayload(res);
+    const { error, message, details } = await readErrorPayload(res);
 
     let friendly = 'Registration failed. Please try again.';
     if (error === 'EMAIL_TAKEN') {
       friendly = 'This email is already registered.';
     } else if (error === 'VALIDATION_ERROR') {
-      friendly = 'Your email, password, or name looks invalid. Please check and try again.';
+      friendly =
+        formatValidationDetails(details) ??
+        'Some fields are invalid. Please check the form and try again.';
     } else if (error === 'RATE_LIMIT' || res.status === 429) {
       friendly = 'Too many requests. Please try again in a moment.';
     } else if (res.status >= 500) {
@@ -157,14 +185,16 @@ export async function apiLogin(body: { email: string; password: string }) {
   });
 
   if (!res.ok) {
-    const { error, message } = await readErrorPayload(res);
+    const { error, message, details } = await readErrorPayload(res);
 
     // Inline, op-specific friendly mapping (no shared helper)
     let friendly = 'Login failed. Let’s try that scene again.';
     if (error === 'INVALID_CREDENTIALS') {
       friendly = 'Incorrect email or password. Please check and try again.';
     } else if (error === 'VALIDATION_ERROR') {
-      friendly = 'Your email or password format is invalid. Please check and try again.';
+      friendly =
+        formatValidationDetails(details) ??
+        'Some fields are invalid. Please check the form and try again.';
     } else if (error === 'RATE_LIMIT' || res.status === 429) {
       friendly = 'Too many requests. Please try again in a moment.';
     } else if (res.status >= 500) {

@@ -6,28 +6,28 @@ import { body, cookie, oneOf } from 'express-validator';
 
 /** Shared rules */
 const emailRule = body('email')
-  .exists().withMessage('email is required')
+  .exists().withMessage('Required')
   .bail()
-  .isString().withMessage('email must be a string')
+  .isString().withMessage('Must be text')
   .bail()
   .trim()
-  .isEmail().withMessage('email must be a valid email')
+  .isEmail().withMessage('Must be a valid email address')
   .bail()
   .normalizeEmail();
 
 const passwordRule = body('password')
-  .exists().withMessage('password is required')
+  .exists().withMessage('Required')
   .bail()
-  .isString().withMessage('password must be a string')
+  .isString().withMessage('Must be text')
   .bail()
-  .isLength({ min: 8, max: 200 }).withMessage('password must be at least 8 characters');
+  .isLength({ min: 8, max: 200 }).withMessage('Must be at least 8 characters');
 
 const optionalNameRule = body('name')
   .optional({ nullable: true })
-  .isString().withMessage('name must be a string')
+  .isString().withMessage('Must be text')
   .bail()
   .trim()
-  .isLength({ max: 100 }).withMessage('name must be ≤ 100 chars');
+  .isLength({ max: 100 }).withMessage('Must be at most 100 characters');
 
 const optionalUA = body('userAgent')
   .optional({ nullable: true })
