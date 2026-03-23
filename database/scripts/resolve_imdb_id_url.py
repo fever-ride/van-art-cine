@@ -68,6 +68,29 @@ def backoff_sleep():
     time.sleep(random.uniform(0.35, 0.75))
 
 
+# Incremented by tmdb_get; reset at the start of main() for a clean per-run summary.
+_TMDB_HTTP_STATS = {
+    "http_429": 0,
+    "http_4xx": 0,
+    "http_5xx": 0,
+    "request_exc": 0,
+}
+
+
+def _reset_tmdb_http_stats() -> None:
+    for k in _TMDB_HTTP_STATS:
+        _TMDB_HTTP_STATS[k] = 0
+
+
+def _bump_tmdb_http_stats(status_code: int) -> None:
+    if status_code == 429:
+        _TMDB_HTTP_STATS["http_429"] += 1
+    elif 400 <= status_code < 500:
+        _TMDB_HTTP_STATS["http_4xx"] += 1
+    elif status_code >= 500:
+        _TMDB_HTTP_STATS["http_5xx"] += 1
+
+
 def tmdb_get(path: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
     Call a TMDB API endpoint with the shared API key and basic error handling.
@@ -80,10 +103,12 @@ def tmdb_get(path: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         resp = requests.get(url, params=params, timeout=15)
         if resp.status_code == 200:
             return resp.json()
+        _bump_tmdb_http_stats(resp.status_code)
         print(
             f"TMDB API error {resp.status_code}: {resp.text}", file=sys.stderr)
         return None
     except Exception as e:
+        _TMDB_HTTP_STATS["request_exc"] += 1
         print(f"TMDB API request failed: {e}", file=sys.stderr)
         return None
 
@@ -245,6 +270,7 @@ def backfill_imdb_urls(conn) -> int:
 
 
 def main():
+    _reset_tmdb_http_stats()
     conn = conn_open()
     try:
         # Read films as dictionaries
@@ -292,6 +318,13 @@ def main():
 
         print(
             f"Done. Updated IDs: {updated}, Not found: {not_found}, IMDb URLs filled: {filled}")
+        print("--- TMDB API (HTTP) summary ---")
+        print(
+            f"  429 rate limit: {_TMDB_HTTP_STATS['http_429']}  |  "
+            f"4xx (other): {_TMDB_HTTP_STATS['http_4xx']}  |  "
+            f"5xx: {_TMDB_HTTP_STATS['http_5xx']}  |  "
+            f"request errors: {_TMDB_HTTP_STATS['request_exc']}"
+        )
         conn.commit()
     finally:
         conn.close()

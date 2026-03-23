@@ -49,6 +49,27 @@ TMDB_BASE = "https://api.themoviedb.org/3"
 HTTP = requests.Session()
 HTTP.headers.update({"Accept": "application/json"})
 
+_TMDB_HTTP_STATS = {
+    "http_429": 0,
+    "http_4xx": 0,
+    "http_5xx": 0,
+    "request_exc": 0,
+}
+
+
+def _reset_tmdb_http_stats() -> None:
+    for k in _TMDB_HTTP_STATS:
+        _TMDB_HTTP_STATS[k] = 0
+
+
+def _bump_tmdb_http_stats(status_code: int) -> None:
+    if status_code == 429:
+        _TMDB_HTTP_STATS["http_429"] += 1
+    elif 400 <= status_code < 500:
+        _TMDB_HTTP_STATS["http_4xx"] += 1
+    elif status_code >= 500:
+        _TMDB_HTTP_STATS["http_5xx"] += 1
+
 
 # ---------- TMDB helpers ----------
 def _tmdb_get(path: str, params: Dict) -> Optional[Dict]:
@@ -58,11 +79,12 @@ def _tmdb_get(path: str, params: Dict) -> Optional[Dict]:
         r = HTTP.get(f"{TMDB_BASE}/{path}", params=p, timeout=15)
         if r.status_code == 200:
             return r.json()
-        # Log non-200 but keep going
+        _bump_tmdb_http_stats(r.status_code)
         print(
             f"TMDB error {r.status_code} for {path}: {r.text[:200]}", file=sys.stderr)
         return None
     except Exception as e:
+        _TMDB_HTTP_STATS["request_exc"] += 1
         print(f"TMDB request failed for {path}: {e}", file=sys.stderr)
         return None
 
@@ -110,6 +132,7 @@ def enrich_person_ids(name: str) -> Dict[str, Optional[str]]:
 
 # ---------- Main ----------
 def main():
+    _reset_tmdb_http_stats()
     conn = conn_open()
     try:
         # Fetch people without external IDs
@@ -154,6 +177,13 @@ def main():
         print("Done.")
         print(f"  Updated:   {updated}")
         print(f"  Not found: {not_found}")
+        print("--- TMDB API (HTTP) summary ---")
+        print(
+            f"  429 rate limit: {_TMDB_HTTP_STATS['http_429']}  |  "
+            f"4xx (other): {_TMDB_HTTP_STATS['http_4xx']}  |  "
+            f"5xx: {_TMDB_HTTP_STATS['http_5xx']}  |  "
+            f"request errors: {_TMDB_HTTP_STATS['request_exc']}"
+        )
     finally:
         conn.close()
 
