@@ -11,14 +11,14 @@
  *  - emails are normalized (trimmed + lowercased) before lookup and insert
  *  - passwords are always stored as bcrypt hashes (via password utils)
  *  - refresh tokens are validated both cryptographically (verifyRefresh)
- *    and against the DB (findValidRefreshToken), then rotated on use
+ *    and consumed atomically in the DB (consumeRefreshToken), then rotated on use
  *  - all error conditions throw AuthError with stable error codes/statuses
  */
 import {
   findByEmail,
   createUser,
   storeRefreshToken,
-  findValidRefreshToken,
+  consumeRefreshToken,
   revokeRefreshToken,
   findById,
 } from '../models/userModel.js';
@@ -118,12 +118,11 @@ export async function login({ email, password, userAgent, ip }) {
  *
  * Flow:
  *  1. Cryptographically validate the refresh JWT (signature, expiry).
- *  2. Look up a matching, non-revoked, non-expired row in the DB
- *     (findValidRefreshToken) — tokens are stored hashed there.
- *  3. Ensure the DB row user_id matches the JWT payload uid.
- *  4. Load the user, issue a new access token and a new refresh token.
- *  5. Revoke the old refresh token and persist the new one (rotation),
- *     preserving user-agent and IP metadata.
+ *  2. Atomically consume the refresh row (consumeRefreshToken): updateMany with a strict
+ *     WHERE; success only if count === 1 (revokes only if hash + user_id match, still valid).
+ *     Concurrent refreshes: at most one succeeds per token; others get REFRESH_REJECTED.
+ *  3. Load the user, issue a new access token and a new refresh token.
+ *  4. Persist the new refresh token (rotation), preserving user-agent and IP metadata.
  *
  * On any validation failure, an AuthError with a specific code is thrown
  * so controllers can surface 401/404 appropriately.
@@ -136,13 +135,9 @@ export async function refresh({ refreshToken, userAgent, ip }) {
     throw new AuthError('Invalid refresh token', 'BAD_REFRESH_TOKEN', 401);
   }
 
-  const row = await findValidRefreshToken(refreshToken);
-  if (!row) {
+  const consumed = await consumeRefreshToken(refreshToken, payload.uid);
+  if (!consumed) {
     throw new AuthError('Refresh token not found or revoked', 'REFRESH_REJECTED', 401);
-  }
-
-  if (row.user_id !== payload.uid) {
-    throw new AuthError('Refresh token/user mismatch', 'REFRESH_MISMATCH', 401);
   }
 
   const user = await findById(payload.uid);
@@ -156,7 +151,6 @@ export async function refresh({ refreshToken, userAgent, ip }) {
   const decoded = jwt.decode(newRefreshToken);
   const refreshExpiresAt = decoded?.exp ? new Date(decoded.exp * 1000) : null;
 
-  await revokeRefreshToken(refreshToken);
   if (refreshExpiresAt) {
     await storeRefreshToken({
       userId: user.uid,

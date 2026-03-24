@@ -112,6 +112,7 @@ export default function RegisterPage() {
                 {reveal ? 'Hide' : 'Show'}
               </Button>
             </div>
+            <p className="mt-1 text-xs text-muted">Use at least 8 characters.</p>
           </label>
 
           <div className="mt-2 flex items-center justify-between">

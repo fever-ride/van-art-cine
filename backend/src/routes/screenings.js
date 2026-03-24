@@ -5,7 +5,17 @@ import { handleValidationErrors } from '../utils/validators.js';
 
 const router = Router();
 
-router.get('/',      listScreeningsValidator, handleValidationErrors, listHandler);
-router.post('/bulk', bulkScreeningsValidator, handleValidationErrors, bulkHandler);
+router.get(
+  '/',
+  listScreeningsValidator,
+  handleValidationErrors,
+  listHandler,
+);
+router.post(
+  '/bulk',
+  bulkScreeningsValidator,
+  handleValidationErrors,
+  bulkHandler,
+);
 
 export default router;

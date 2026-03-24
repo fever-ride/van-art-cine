@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>The Cinephile's Van</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #FAF6EF;
+    --surface:   #FFFFFF;
+    --primary:   #2B2B2B;
+    --accent:    #5C8EA7;
+    --accent-lt: #EBF3F8;
+    --highlight: #F1CB99;
+    --hi-lt:     #FFF8E7;
+    --muted:     #6B7280;
+    --border:    #E5E7EB;
+    --border-s:  #E5E2D8;
+    --pill:      #E9EFF3;
+    --green:     #4A9B6A;
+    --green-lt:  #EDF7F0;
+    --amber:     #C89040;
+  }
+
+  body {
+    font-family: 'Geist', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--primary);
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .deck { width: 100vw; height: 100vh; position: relative; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    padding: 36px 60px 52px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .slide.active { display: flex; opacity: 1; }
+  .slide.top    { justify-content: flex-start; }
+
+  /* Nav */
+  .nav {
+    position: fixed;
+    bottom: 18px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px;
+    z-index: 100;
+  }
+  .nav button {
+    background: var(--surface);
+    border: 1px solid var(--border-s);
+    color: var(--primary);
+    padding: 6px 18px; border-radius: 10px;
+    cursor: pointer; font-family: inherit;
+    font-size: 12px; font-weight: 500;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    transition: background 0.15s;
+  }
+  .nav button:hover { background: var(--hi-lt); }
+  .nav button:disabled { opacity: 0.3; cursor: default; }
+  .counter { font-size: 11px; color: var(--muted); min-width: 36px; text-align: center; }
+
+  /* Shared */
+  .eyebrow {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 8px;
+  }
+  h1 { font-size: 40px; font-weight: 700; letter-spacing: -1px; line-height: 1.05; }
+  h1 em { font-style: normal; color: var(--accent); }
+  h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 14px; }
+  .subtitle { font-size: 13.5px; color: var(--muted); line-height: 1.55; margin-top: 8px; max-width: 360px; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 14px; }
+  .tag {
+    font-size: 10.5px; font-weight: 500;
+    padding: 2px 9px; border-radius: 20px;
+    background: var(--pill); color: var(--accent);
+    border: 1px solid #D3E3ED;
+  }
+
+  code {
+    font-family: 'Geist Mono', monospace;
+    font-size: 10.5px; background: var(--pill);
+    color: var(--accent); padding: 1px 5px;
+    border-radius: 4px; border: 1px solid #D3E3ED;
+  }
+
+  /* ── SLIDE 0: Intro ── */
+  .intro-stack {
+    display: flex;
+    flex-direction: column;
+    margin-top: 12px;
+    max-width: 640px;
+  }
+  .intro-section {
+    padding: 12px 0 10px;
+  }
+  .intro-section:first-of-type {
+    padding-top: 4px;
+  }
+  .intro-section h4 {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.85px;
+    color: var(--accent);
+    margin-bottom: 7px;
+  }
+  .intro-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .intro-list li {
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.52;
+    position: relative;
+    padding-left: 13px;
+    margin-bottom: 5px;
+  }
+  .intro-list li:last-child {
+    margin-bottom: 0;
+  }
+  .intro-list li::before {
+    content: '·';
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .intro-list li strong { color: var(--primary); font-weight: 600; }
+  .intro-divider {
+    border: none;
+    height: 0;
+    margin: 0;
+    border-top: 1px solid var(--border-s);
+  }
+  .intro-thanks {
+    font-size: 12.5px;
+    color: var(--primary);
+    line-height: 1.45;
+    max-width: 720px;
+    margin-top: 4px;
+  }
+  #s0 {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 56px;
+  }
+
+  /* ── SLIDE 1 ── */
+  .s1-layout { display: grid; grid-template-columns: 1fr 1.8fr; gap: 40px; align-items: center; }
+  .s1-cards  { display: flex; flex-direction: column; gap: 10px; }
+
+  .feat-card {
+    background: var(--surface); border: 1px solid var(--border-s);
+    border-radius: 12px; padding: 13px 14px 13px 16px;
+    display: flex; gap: 13px; align-items: flex-start;
+  }
+  .feat-icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .feat-icon.blue  { background: var(--accent-lt); }
+  .feat-icon.amber { background: var(--hi-lt); }
+  .feat-icon.green { background: var(--green-lt); }
+  .feat-body h3 { font-size: 12.5px; font-weight: 600; margin-bottom: 4px; color: var(--primary); }
+  .feat-body p  { font-size: 11.5px; color: var(--muted); line-height: 1.55; }
+
+  /* ── SLIDE 2: Pipeline ── */
+  .pipeline-wrap {
+    display: flex; align-items: flex-start;
+    gap: 0;
+    margin: auto 0;
+  }
+
+  .pipe-stage {
+    flex: 1; min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border-s);
+    border-radius: 12px;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+
+  .pipe-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-s);
+  }
+  .pipe-stage.s-blue  .pipe-head { background: var(--accent-lt); }
+  .pipe-stage.s-green .pipe-head { background: var(--green-lt); }
+  .pipe-stage.s-amber .pipe-head { background: var(--hi-lt); }
+
+  .pipe-num {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+  }
+  .pipe-num.blue  { background: var(--accent); }
+  .pipe-num.green { background: var(--green); }
+  .pipe-num.amber { background: var(--amber); }
+
+  .pipe-title {
+    font-size: 13px; font-weight: 700; line-height: 1.2;
+    color: var(--primary);
+  }
+
+  .pipe-body {
+    padding: 11px 14px;
+    flex: 1; display: flex; flex-direction: column; gap: 0;
+  }
+
+  .pipe-desc {
+    font-size: 12px; color: var(--muted); line-height: 1.6;
+    margin-bottom: 9px;
+  }
+  .pipe-desc strong { color: var(--primary); font-weight: 600; }
+
+  .pipe-details-inner { display: flex; flex-direction: column; gap: 3px; margin-bottom: 10px; }
+  /* Block + absolute bullet: avoid flex splitting text nodes and <strong> into separate columns */
+  .pipe-detail-item {
+    font-size: 11px; color: var(--muted); line-height: 1.5;
+    position: relative;
+    padding-left: 11px;
+  }
+  .pipe-detail-item::before {
+    content: '·'; color: var(--accent); font-weight: 700;
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+
+  .pipe-tools-label {
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--accent); margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid var(--border-s);
+    margin-bottom: 4px;
+  }
+  .pipe-tools-val {
+    font-size: 11px; color: var(--muted); line-height: 1.5;
+  }
+
+  .pipe-connector {
+    flex-shrink: 0; width: 28px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: var(--accent); opacity: 0.35; font-weight: 700;
+  }
+
+  /* ── SLIDE 3: Backend + Frontend ── */
+  .arch-cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .col-card { background: var(--surface); border: 1px solid var(--border-s); border-radius: 12px; overflow: hidden; }
+  .col-head {
+    padding: 9px 14px; display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--border-s);
+  }
+  .col-head.be { background: var(--hi-lt); }
+  .col-head.fe { background: var(--green-lt); }
+  .col-head h3 { font-size: 11.5px; font-weight: 700; color: var(--primary); }
+  .col-body { padding: 11px 13px; }
+
+  .step { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 9px; }
+  .step:last-child { margin-bottom: 0; }
+  .step-num {
+    width: 17px; height: 17px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-size: 9.5px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .step-num.a { background: var(--amber); }
+  .step-num.g { background: var(--green); }
+  .step-text { font-size: 11px; color: var(--muted); line-height: 1.55; }
+  .step-text strong { color: var(--primary); font-weight: 600; }
+
+  /* Slide 3: stacked left + challenges column */
+  .arch-s3-layout {
+    grid-template-columns: 0.78fr 1.22fr;
+    align-items: start;
+  }
+  .arch-left-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  /* Left stack: light dashed panels, no heavy card chrome */
+  .s3-left-panel {
+    border: 1px dashed #D4CFC6;
+    border-radius: 10px;
+    padding: 10px 12px 11px;
+    background: rgba(255, 255, 255, 0.65);
+  }
+  .s3-left-panel h4 {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #5A5A5A;
+    margin: 0 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed #E5E1D9;
+    letter-spacing: -0.01em;
+  }
+  .s3-left-panel .pipe-detail-item {
+    font-size: 10.5px;
+    color: #6F7580;
+  }
+  .s3-left-panel .pipe-detail-item strong {
+    color: #454545;
+    font-weight: 600;
+  }
+  /* Right: number outside left of dashed panel; row reclaims width for the badge column */
+  .s3-cs-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .s3-cs-row:last-child {
+    margin-bottom: 0;
+  }
+  .s3-cs-block {
+    flex: 1;
+    min-width: 0;
+    border: 1px dashed #C5C1B8;
+    border-radius: 10px;
+    padding: 9px 10px 7px;
+    background: var(--surface);
+  }
+  .s3-cs-badge {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0;
+    padding: 0;
+    background: var(--green);
+    margin-top: 8px;
+  }
+  .s3-cs-card .col-body {
+    padding-top: 12px;
+  }
+  /* Vertical stack inside A/B/C: subsection heads without full-width rules */
+  .s3-cs-vstack {
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+  }
+  .s3-cs-h {
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.65px;
+    color: var(--accent);
+    margin: 0 0 3px;
+  }
+  .s3-cs-vstack .pipe-details-inner {
+    margin-bottom: 0;
+    gap: 4px;
+  }
+  .s3-left-panel .pipe-details-inner {
+    margin-bottom: 0;
+    gap: 4px;
+  }
+  .col-head.cs { background: var(--accent-lt); }
+
+  /* ── SLIDE 4: Future (two blocks) ── */
+  .future-split {
+    margin-top: 8px;
+    gap: 16px;
+  }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- ── Slide 0: About me ── -->
+  <section class="slide active top" id="s0">
+    <div class="eyebrow">Introduction</div>
+    <h1 style="font-size:34px;">Hi, I'm <em>Wendy</em></h1>
+    <p class="subtitle" style="max-width:520px; margin-bottom:6px;">Northeastern University (Vancouver Campus🇨🇦) · Master of Computer Science · Graduating December 2026</p>
+    <p class="intro-thanks">Especially interested in <strong>web development</strong> and full-stack work.</p>
+
+    <div class="intro-stack">
+      <div class="intro-section">
+        <h4>Project</h4>
+        <ul class="intro-list">
+          <li>Started web dev in a course last year; shipped a small site first.</li>
+          <li>Grew it into <strong><em>The Cinephile's Van</em></strong>: a guide for Vancouver film lovers to browse indie cinema screenings (more on the next slides).</li>
+        </ul>
+      </div>
+      <hr class="intro-divider" />
+      <div class="intro-section">
+        <h4>Part-time internship</h4>
+        <ul class="intro-list">
+          <li><strong>BiotechAnalyzer</strong> (early-stage startup): I help build <strong>backend services</strong> for their web app in Node.js.</li>
+        </ul>
+      </div>
+      <hr class="intro-divider" />
+      <div class="intro-section">
+        <h4>Tech landscape</h4>
+        <ul class="intro-list">
+          <li><strong>Frontend:</strong> React. I enjoy building UIs with it.</li>
+          <li><strong>Databases:</strong> SQL and NoSQL; at work also Neo4j (still learning).</li>
+          <li><strong>Also:</strong> <strong>Java & Go</strong> in my distributed systems class. Planning a concurrent, microservices style project.</li>
+        </ul>
+      </div>
+      <hr class="intro-divider" />
+      <div class="intro-section">
+        <h4>Before CS</h4>
+        <ul class="intro-list">
+          <li>6 years in <strong>Beijing</strong>, for both university and work.</li>
+          <li><strong>Account executive</strong> at a marketing agency (international clients); then <strong>SEO</strong> at uhomes.com, focusing on website visibility for the UK market; some collaboration alongside developers.</li>
+          <li>Those roles were not engineering, but they helped me build communication and collaboration skills and the ability to work effectively with diverse, global teams, which I bring into my work in tech.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Slide 1: Title + Features ── -->
+  <section class="slide" id="s1">
+    <div class="s1-layout">
+      <div>
+        <div class="eyebrow">Project Overview</div>
+        <h1>The<br/>Cinephile's<br/><em>Van</em></h1>
+        <p class="subtitle">Full stack web app aggregating film screenings from Vancouver's indie cinemas and film festivals.</p>
+        <div class="tags">
+          <span class="tag">Node.js</span>
+          <span class="tag">PostgreSQL</span>
+          <span class="tag">Python</span>
+          <span class="tag">React.js</span>
+        </div>
+      </div>
+      <div class="s1-cards">
+        <div class="feat-card">
+          <div class="feat-icon blue">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" fill="#5C8EA7"/><rect x="9" y="2" width="5" height="5" rx="1" fill="#5C8EA7" opacity=".5"/><rect x="2" y="9" width="5" height="5" rx="1" fill="#5C8EA7" opacity=".5"/><rect x="9" y="9" width="5" height="5" rx="1" fill="#5C8EA7" opacity=".3"/></svg>
+          </div>
+          <div class="feat-body">
+            <h3>Browse &amp; Filter</h3>
+            <p>Search by title, filter by cinema and date range, sort by different criteria.</p>
+            <p>Paginated results across all venues.</p>
+          </div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon green">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M3 8h7M3 12h5" stroke="#4A9B6A" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="11" r="2.5" fill="#4A9B6A" opacity=".7"/><path d="M11 11l.8.8 1.5-1.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="feat-body">
+            <h3>Personal Watchlist</h3>
+            <p>No account required to start. </p>
+            <p>Guest watchlist lives in localStorage and imports automatically on login. </p>
+            <p>Shows screening status with direct ticket links.</p>
+          </div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon amber">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="7" height="9" rx="1.5" fill="#C89040" opacity=".6"/><rect x="5" y="5" width="9" height="9" rx="1.5" fill="#C89040"/></svg>
+          </div>
+          <div class="feat-body">
+            <h3>Enriched Film Details</h3>
+            <p>Poster, genre, country, language, directors, cast, IMDb and Rotten Tomatoes ratings.</p>
+            <p>All metadata fetched automatically by the data pipeline.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Slide 2: Data Pipeline (redesigned) ── -->
+  <section class="slide" id="s2">
+    <div class="eyebrow" style="margin-bottom:4px;">Part 2 · Architecture</div>
+    <h2 style="margin-bottom:14px;">Data Pipeline</h2>
+
+    <div class="pipeline-wrap">
+
+      <!-- 1 Collect -->
+      <div class="pipe-stage s-blue">
+        <div class="pipe-head">
+          <div class="pipe-num blue">1</div>
+          <div class="pipe-title">Collect</div>
+        </div>
+        <div class="pipe-body">
+          <div class="pipe-desc">Scrapes each cinema site and extract screenings into <strong>structured JSON</strong>.</div>
+          <div class="pipe-tools-label">Challenges</div>
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item">Finding elements we want and using selectors to extract data</div>
+            <div class="pipe-detail-item">Inconsistent HTML across sites</div>
+          </div>
+          <div class="pipe-tools-label">Solution</div>
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item">Headless Playwright with per-site parsers</div>
+          </div>
+          <div class="pipe-tools-label">Tools</div>
+          <div class="pipe-tools-val">Playwright, Python</div>
+        </div>
+      </div>
+
+      <div class="pipe-connector">→</div>
+
+      <!-- 2 Normalise & Stage -->
+      <div class="pipe-stage s-blue">
+        <div class="pipe-head">
+          <div class="pipe-num blue">2</div>
+          <div class="pipe-title">Normalise &amp; Stage</div>
+        </div>
+        <div class="pipe-body">
+          <div class="pipe-desc">Unify time and title formatting. Written to <strong>staging table</strong> for safe re-runs.</div>
+          <div class="pipe-tools-label">Challenges</div>
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item">Noisy titles (Q&amp;A, 4K, guests)</div>
+            <div class="pipe-detail-item">Safe re-runs without duplicating rows</div>
+          </div>
+          <div class="pipe-tools-label">Solution</div>
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item">Regex and rules</div>
+            <div class="pipe-detail-item">LLM integration for noisy titles</div>
+            <div class="pipe-detail-item">Staging table keyed by content hash</div>
+          </div>
+          <div class="pipe-tools-label">Tools</div>
+          <div class="pipe-tools-val">Regex, OpenAI GPT</div>
+        </div>
+      </div>
+
+      <div class="pipe-connector">→</div>
+
+      <!-- 3 Enrich -->
+      <div class="pipe-stage s-green">
+        <div class="pipe-head">
+          <div class="pipe-num green">3</div>
+          <div class="pipe-title">Enrich</div>
+        </div>
+        <div class="pipe-body">
+          <div class="pipe-desc">Resolve <strong>IMDb / TMDB IDs</strong> as stable keys, then enrich rows with poster, ratings, credits, and metadata from external APIs.</div>
+          <div class="pipe-tools-label">Challenges</div>
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item">Dependence on third-party APIs: rate limits, errors, and inconsistent availability</div>
+            <div class="pipe-detail-item">Identity resolution: same title can map to multiple candidates or none</div>
+          </div>
+          <div class="pipe-tools-label">Solution</div>
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item">Skip failures without blocking the run</div>
+            <div class="pipe-detail-item">Surface outcomes for observability</div>
+            <div class="pipe-detail-item">Throttle requests to respect provider limits</div>
+          </div>
+          <div class="pipe-tools-label">External APIs</div>
+          <div class="pipe-tools-val">TMDB API, OMDB API</div>
+        </div>
+      </div>
+
+      <div class="pipe-connector">→</div>
+
+      <!-- 4 Deduplication -->
+      <div class="pipe-stage s-green">
+        <div class="pipe-head">
+          <div class="pipe-num green">4</div>
+          <div class="pipe-title">Deduplicate</div>
+        </div>
+        <div class="pipe-body">
+          <div class="pipe-desc">Group duplicate <strong>film</strong> and <strong>person</strong> rows by external ID.</div>
+          <div class="pipe-tools-label">Challenges</div>
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item">Same logical film or person ingested multiple ways; broken FKs if rows are deleted naively.</div>
+          </div>
+          <div class="pipe-tools-label">Solution</div>
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item">Group by IMDb / TMDB ID</div>
+            <div class="pipe-detail-item">Completeness scoring</div>
+            <div class="pipe-detail-item">Foreign key re-pointing</div>
+          </div>
+          <div class="pipe-tools-label">Applies to</div>
+          <div class="pipe-tools-val">Films table, People table</div>
+        </div>
+      </div>
+
+      <div class="pipe-connector">→</div>
+
+      <!-- 5 Publish -->
+      <div class="pipe-stage s-amber">
+        <div class="pipe-head">
+          <div class="pipe-num amber">5</div>
+          <div class="pipe-title">Publish</div>
+        </div>
+        <div class="pipe-body">
+          <div class="pipe-desc">Promote staging into the live screenings table.</div>
+          <div class="pipe-tools-label">Challenges</div>
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item">A failed step must not leave the database half-updated</div>
+            <div class="pipe-detail-item">Showtimes from an older scrape may vanish from the latest feed</div>
+            <div class="pipe-detail-item">Inactive screenings should not be deleted</div>
+          </div>
+          <div class="pipe-tools-label">Solution</div>
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item">Promote in single transaction to ensure atomicity</div>
+            <div class="pipe-detail-item">Insert and update rows by stable identity keys</div>
+            <div class="pipe-detail-item">When automated ingest rows disappear from staging, <strong>soft-deactivate</strong> them instead of deleting rows outright</div>
+          </div>
+          <div class="pipe-tools-label">Target</div>
+          <div class="pipe-tools-val">PostgreSQL live screenings table</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Slide 3: Backend + Frontend + challenges ── -->
+  <section class="slide" id="s3">
+    <div class="eyebrow">Part 2 · Architecture</div>
+    <h2>Backend &amp; Frontend</h2>
+    <div class="arch-cols-2 arch-s3-layout">
+      <div class="arch-left-stack">
+        <div class="s3-left-panel">
+          <h4>Backend: Node.js + Express + PostgreSQL + Prisma ORM</h4>
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item"><strong>REST API:</strong> Four main resources: films, screenings, watchlist, auth. Each has its own route group with standard HTTP methods.</div>
+            <div class="pipe-detail-item"><strong>MVC layers:</strong> <code>routes</code> → <code>controllers</code> → <code>services</code> → <code>models</code>.</div>
+            <div class="pipe-detail-item"><strong>Dual-token JWT:</strong> Short-lived access token + long-lived refresh token.</div>
+            <div class="pipe-detail-item"><strong>Middleware pipeline (Express):</strong> Use Express middleware as a policy layer to handle CORS, cookies, request validation, rate limiting, and centralized error handling, so cross-cutting concerns stay consistent and routes remain simple.</div>
+          </div>
+        </div>
+        <div class="s3-left-panel">
+          <h4>Frontend: Next.js + React + Tailwind</h4>
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item"><strong>Page composition:</strong> Reuse shared UI primitives and higher-level feature components; pages are composed from these layers.</div>
+            <div class="pipe-detail-item"><strong>State without Redux:</strong> Behaviour and async state live in colocated custom hooks so concerns stay testable and the tree stays shallow</div>
+            <div class="pipe-detail-item"><strong>Next.js integration:</strong> Use App Router and rewrites to proxy /api to the backend, which avoids CORS and simplifies cookie-based auth, and use server components for SSR while keeping client components only where interactivity is needed.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-card s3-cs-card">
+        <div class="col-head cs">
+          <h3>Challenges &amp; solutions</h3>
+        </div>
+        <div class="col-body">
+          <div class="s3-cs-row">
+            <span class="s3-cs-badge" aria-hidden="true">1</span>
+            <div class="s3-cs-block">
+            <div class="s3-cs-vstack">
+              <div>
+                <div class="s3-cs-h">Challenge: Authentication</div>
+                <div class="pipe-details-inner">
+                  <div class="pipe-detail-item">Choosing between JWT, OAuth, or managed auth while balancing UX, security, and control</div>
+                </div>
+              </div>
+              <div>
+                <div class="s3-cs-h">Solution</div>
+                <div class="pipe-details-inner">
+                  <div class="pipe-detail-item">Dual-token JWT: short-lived access token in cookies, long-lived refresh token stored hashed and revocable server-side</div>
+                  <div class="pipe-detail-item">Single-flight refresh then retry on 401; rate limits on auth endpoints</div>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="s3-cs-row">
+            <span class="s3-cs-badge" aria-hidden="true">2</span>
+            <div class="s3-cs-block">
+            <div class="s3-cs-vstack">
+              <div>
+                <div class="s3-cs-h">Challenge: Guest vs signed-in user</div>
+                <div class="pipe-details-inner">
+                  <div class="pipe-detail-item">Users should be able to use the watchlist without logging in</div>
+                  <div class="pipe-detail-item">But logged-in users need persistent, server-side data</div>
+                </div>
+              </div>
+              <div>
+                <div class="s3-cs-h">Solution</div>
+                <div class="pipe-details-inner">
+                  <div class="pipe-detail-item">Single UI flow: try API first; on 401, gracefully fall back to guest mode (localStorage)</div>
+                  <div class="pipe-detail-item">After login, merge guest data into the account to keep a seamless experience</div>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="s3-cs-row">
+            <span class="s3-cs-badge" aria-hidden="true">3</span>
+            <div class="s3-cs-block">
+            <div class="s3-cs-vstack">
+              <div>
+                <div class="s3-cs-h">Challenges: Frontend structure</div>
+                <div class="pipe-details-inner">
+                  <div class="pipe-detail-item">One screen mixes filters, paging, fetching, and personal list state, which is easy to entangle</div>
+                </div>
+              </div>
+              <div>
+                <div class="s3-cs-h">Solution</div>
+                <div class="pipe-details-inner">
+                  <div class="pipe-detail-item">Separate hooks for UI state, data loading, and watchlist; page only orchestrates</div>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Slide 4: Future Improvements ── -->
+  <section class="slide" id="s4">
+    <div class="eyebrow">Part 3 · What's Next</div>
+    <h2>Future Improvements</h2>
+    <div class="arch-cols-2 future-split">
+      <div class="col-card">
+        <div class="col-head be">
+          <h3>More features</h3>
+        </div>
+        <div class="col-body">
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item">Social features (like share buttons and comments on screenings, films or cinemas)</div>
+            <div class="pipe-detail-item">Watch history tracking and recommendations</div>
+            <div class="pipe-detail-item">Watchlist reminders before showtime (email) and calendar export (ICS)</div>
+            <div class="pipe-detail-item">OAuth integration for third-party login (Google, Letterboxd, etc.)</div>
+            <div class="pipe-detail-item">SEO features (sitemap.xml, robots.txt, etc.)</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-card">
+        <div class="col-head fe">
+          <h3>More robustness</h3>
+        </div>
+        <div class="col-body">
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item">Scheduled ingestion (cron or CI) so listings refresh without manual runs</div>
+            <div class="pipe-detail-item">Introduce Redux for global state management for larger apps</div>
+            <div class="pipe-detail-item">More consideration for concurrency and scalability</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="nav">
+  <button id="prev" onclick="go(-1)" disabled>← Prev</button>
+  <span class="counter" id="counter">1 / 5</span>
+  <button id="next" onclick="go(1)">Next →</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let cur = 0;
+  function go(dir) {
+    slides[cur].classList.remove('active');
+    cur = Math.max(0, Math.min(slides.length - 1, cur + dir));
+    slides[cur].classList.add('active');
+    document.getElementById('counter').textContent = `${cur + 1} / ${slides.length}`;
+    document.getElementById('prev').disabled = cur === 0;
+    document.getElementById('next').disabled = cur === slides.length - 1;
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+  });
+</script>
+</body>
+</html>

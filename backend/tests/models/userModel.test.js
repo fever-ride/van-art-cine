@@ -59,6 +59,7 @@ const {
   updatePassword,
   storeRefreshToken,
   revokeRefreshToken,
+  consumeRefreshToken,
   findValidRefreshToken,
   revokeAllRefreshTokens,
 } = userModel;
@@ -367,6 +368,29 @@ describe('userModel: refresh token operations', () => {
       where: { token: 'hash:raw-token', revoked_at: null },
       data: { revoked_at: expect.any(Date) },
     });
+  });
+
+  test('consumeRefreshToken returns null when updateMany count is 0', async () => {
+    prismaMock.refresh_token.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(consumeRefreshToken('raw-token', 9)).resolves.toBeNull();
+
+    expect(hashTokenMock).toHaveBeenCalledWith('raw-token');
+    expect(prismaMock.refresh_token.updateMany).toHaveBeenCalledWith({
+      where: {
+        token: 'hash:raw-token',
+        user_id: 9n,
+        revoked_at: null,
+        expires_at: { gt: expect.any(Date) },
+      },
+      data: { revoked_at: expect.any(Date) },
+    });
+  });
+
+  test('consumeRefreshToken returns true when exactly one row is updated', async () => {
+    prismaMock.refresh_token.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(consumeRefreshToken('raw-token', 9)).resolves.toBe(true);
   });
 
   test('findValidRefreshToken returns null when no row', async () => {

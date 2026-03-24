@@ -213,6 +213,30 @@ export async function revokeRefreshToken(token) {
   });
 }
 
+/**
+ * Atomically revokes one refresh-token row for rotation: updates `revoked_at` only when
+ * the SHA-256 of `token`, `user_id`, `revoked_at IS NULL`, and `expires_at` are satisfied.
+ * Under concurrency, at most one caller observes `updateMany({ count: 1 })`; others get `0`.
+ *
+ * @param {string} token Raw refresh JWT from the client
+ * @param {number|string} expectedUserId Must match JWT `uid` and the stored row’s `user_id`
+ * @returns {Promise<true | null>} `true` if exactly one row was updated; `null` otherwise
+ */
+export async function consumeRefreshToken(token, expectedUserId) {
+  const tokenHash = hashToken(token);
+  const result = await prisma.refresh_token.updateMany({
+    where: {
+      token: tokenHash,
+      user_id: BigInt(expectedUserId),
+      revoked_at: null,
+      expires_at: { gt: new Date() },
+    },
+    data: { revoked_at: new Date() },
+  });
+  if (result.count !== 1) return null;
+  return true;
+}
+
 export async function findValidRefreshToken(token) {
   const tokenHash = hashToken(token);
   const row = await prisma.refresh_token.findFirst({

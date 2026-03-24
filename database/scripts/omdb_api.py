@@ -16,7 +16,7 @@ import os
 import sys
 import re
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, MutableMapping
 
 import requests
 from dotenv import load_dotenv
@@ -52,10 +52,23 @@ HTTP.headers.update({"Accept": "application/json"})
 
 
 # ---------- OMDb helpers ----------
-def fetch_omdb_data(film: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _bump_omdb_http_stats(stats: MutableMapping[str, int], status_code: int) -> None:
+    if status_code == 429:
+        stats["http_429"] += 1
+    elif 400 <= status_code < 500:
+        stats["http_4xx"] += 1
+    elif status_code >= 500:
+        stats["http_5xx"] += 1
+
+
+def fetch_omdb_data(
+    film: Dict[str, Any],
+    stats: Optional[MutableMapping[str, int]] = None,
+) -> Optional[Dict[str, Any]]:
     """
     Prefer IMDb ID (exact), fallback to title/year.
     Returns parsed JSON or None.
+    If `stats` is provided, increments HTTP / transport counters for the run summary.
     """
     if film.get("imdb_id"):
         params = {"apikey": OMDB_API_KEY, "i": film["imdb_id"]}
@@ -68,10 +81,14 @@ def fetch_omdb_data(film: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         resp = HTTP.get(OMDB_URL, params=params, timeout=15)
         if resp.status_code == 200:
             return resp.json()
+        if stats is not None:
+            _bump_omdb_http_stats(stats, resp.status_code)
         print(
             f"[OMDb] HTTP {resp.status_code}: {resp.text[:200]}", file=sys.stderr)
         return None
     except requests.RequestException as e:
+        if stats is not None:
+            stats["request_exc"] += 1
         print(f"[OMDb] request failed: {e}", file=sys.stderr)
         return None
 
@@ -151,10 +168,23 @@ def main():
         # returns list of dicts (id, title, year, imdb_id, tmdb_id)
         films = fetch_all_films(conn)
         found, not_found = 0, 0
+        omdb_response_false = 0  # HTTP 200 but OMDb says no match
+        omdb_stats = {
+            "http_429": 0,
+            "http_4xx": 0,
+            "http_5xx": 0,
+            "request_exc": 0,
+        }
 
         for film in films:
-            omdb_data = fetch_omdb_data(film)
-            if not omdb_data or omdb_data.get("Response") == "False":
+            omdb_data = fetch_omdb_data(film, omdb_stats)
+            if not omdb_data:
+                print(
+                    f"[MISS] {film['title']} ({film.get('year') or ''})  imdb_id={film.get('imdb_id') or '-'}")
+                not_found += 1
+                continue
+            if omdb_data.get("Response") == "False":
+                omdb_response_false += 1
                 print(
                     f"[MISS] {film['title']} ({film.get('year') or ''})  imdb_id={film.get('imdb_id') or '-'}")
                 not_found += 1
@@ -189,7 +219,17 @@ def main():
                     )
 
         conn.commit()
-        print(f"\nDone. OMDb updated: {found}  |  Not found: {not_found}")
+        print(f"\nDone. OMDb updated: {found}  |  Rows without metadata: {not_found}")
+        print("--- OMDb API summary ---")
+        print(
+            f"  HTTP 429: {omdb_stats['http_429']}  |  "
+            f"4xx (other): {omdb_stats['http_4xx']}  |  "
+            f"5xx: {omdb_stats['http_5xx']}  |  "
+            f"request errors: {omdb_stats['request_exc']}"
+        )
+        print(
+            f"  OMDb Response=False (no match in catalog): {omdb_response_false}"
+        )
     finally:
         conn.close()
 

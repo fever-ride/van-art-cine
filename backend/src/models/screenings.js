@@ -1,7 +1,30 @@
 import { prisma } from '../lib/prismaClient.js';
 import { localDayToUtcRange, localRangeToUtc } from '../utils/time.js';
 
+/**
+ * Screening list queries for the public API.
+ *
+ * `fetchScreenings` powers GET /api/screenings with filters, sort, and pagination.
+ * `findByIds` loads specific rows (e.g. watchlist bulk) and adds a derived `status`.
+ */
 
+/**
+ * List active screenings with optional filters, sort, and pagination.
+ *
+ * @param {object} opts
+ * @param {string} [opts.date]           Single local calendar day (YYYY-MM-DD); mutually exclusive with from/to in practice
+ * @param {string} [opts.from]         Range start (local, ISO date string)
+ * @param {string} [opts.to]           Range end (local)
+ * @param {number[]} [opts.cinemaIds]  Restrict to these cinema IDs
+ * @param {number} [opts.filmId]       Restrict to this film
+ * @param {string} [opts.q]            Substring match on film.normalized_title (already lowercased by controller)
+ * @param {string} [opts.sort]         time | title | imdb | rt | votes | year
+ * @param {string} [opts.order]        ASC | DESC
+ * @param {number} [opts.limit]
+ * @param {number} [opts.offset]
+ * @param {string} [opts.tz]           IANA zone for date/range → UTC (default America/Vancouver)
+ * @returns {Promise<object[]>} Flat rows with film + cinema fields denormalized for the API
+ */
 export async function fetchScreenings(opts = {}) {
   const {
     date, from, to,
@@ -17,7 +40,7 @@ export async function fetchScreenings(opts = {}) {
 
   const safeOrder = (String(order).toLowerCase() === 'desc') ? 'desc' : 'asc';
 
-  // --- Time window (UTC) logic ---
+  // Resolve [gte, lt) in UTC for start_at_utc: either one calendar day or an arbitrary local range.
   let gte = null;
   let lt = null;
 
@@ -31,21 +54,30 @@ export async function fetchScreenings(opts = {}) {
     lt = utcRangeEnd ?? null;
   }
 
-  // --- Prisma where clause ---
+  // Optional lower bound / upper bound on screening start (half-open interval in UTC).
+  const startAtUtc =
+    gte || lt
+      ? {
+          start_at_utc: {
+            ...(gte ? { gte } : {}),
+            ...(lt ? { lt } : {}),
+          },
+        }
+      : {};
+
   const where = {
     is_active: true,
-    ...(gte || lt ? { start_at_utc: { ...(gte ? { gte } : {}), ...(lt ? { lt } : {}) } } : {}),
-    
+    ...startAtUtc,
     ...(cinemaIds?.length > 0
       ? { cinema_id: { in: cinemaIds.map(Number) } }
       : {}),
-    
     ...(Number.isFinite(filmId) ? { film_id: Number(filmId) } : {}),
-    ...(q ? { film: { normalized_title: { contains: q } } } : {}),
+    ...(q
+      ? { film: { normalized_title: { contains: q } } }
+      : {}),
   };
 
-  // --- Include the relations we need to reproduce the SELECT/LEFT JOINs ---
-  // We fetch film + cinema, and film_person with role='director' to build the directors string.
+  // Load related film (incl. directors), cinema; directors flattened to a string below.
   const baseSelect = {
     id: true,
     start_at_utc: true,
@@ -70,7 +102,6 @@ export async function fetchScreenings(opts = {}) {
         rt_rating_pct: true,
         imdb_votes: true,
         imdb_url: true,
-        // Pull directors; we’ll stringify and order by name in JS
         film_person: {
           where: { role: 'director' },
           select: { person: { select: { name: true } } },
@@ -80,11 +111,8 @@ export async function fetchScreenings(opts = {}) {
     cinema: { select: { id: true, name: true } },
   };
 
-  // --- Ordering & pagination ---
   let orderBy;
   const sortKey = String(sort);
-
-  // Unified rule for rating sorting
   const ratingOrder = { sort: safeOrder, nulls: 'last' };
 
   if (sortKey === 'time') {
@@ -125,8 +153,8 @@ export async function fetchScreenings(opts = {}) {
     take: Number(limit),
   });
 
-  // Build directors string and flatten to the original SELECT shape
-  let flattened = rowsRaw.map((s) => {
+  // Denormalize to the legacy API shape: single directors string, film fields at top level.
+  const flattened = rowsRaw.map((s) => {
     const film = s.film ?? {};
     const cinema = s.cinema ?? {};
     const directors =
@@ -168,31 +196,31 @@ export async function fetchScreenings(opts = {}) {
 }
 
 /**
- * Find screenings by IDs with the original LEFT JOIN shape + status column.
- * Output rows shape:
- * {
- *   id, start_at_utc, end_at_utc, runtime_min, tz,
- *   film_id, title, year, imdb_rating, rt_rating_pct,
- *   cinema_id, cinema_name,
- *   source_url,
- *   status  ('missing' | 'inactive' | 'past' | 'upcoming')
- * }
+ * Load screenings by primary key IDs for bulk endpoints (e.g. watchlist).
+ * IDs that do not exist are omitted; there is no placeholder row per missing ID.
+ *
+ * @param {object} params
+ * @param {number[]} params.ids
+ * @param {boolean} [params.includePast]  If false/omitted, only active rows with start_at_utc >= now
+ * @returns {Promise<object[]>} One object per found row, plus `status` for UI
  */
 export async function findByIds({ ids, includePast }) {
   if (!ids?.length) return [];
 
   const now = new Date();
 
-  // Base query. If includePast === false, mirror:
-  //   AND s.is_active = 1 AND s.start_at_utc >= UTC_TIMESTAMP()
-  const where = {
-    id: { in: ids.map(Number) },
-    ...(includePast
+  // When includePast is not true, match legacy behaviour: only active, not-yet-started screenings.
+  const upcomingOnly =
+    includePast
       ? {}
       : {
           is_active: true,
           start_at_utc: { gte: now },
-        }),
+        };
+
+  const where = {
+    id: { in: ids.map(Number) },
+    ...upcomingOnly,
   };
 
   const rows = await prisma.screening.findMany({
@@ -221,15 +249,12 @@ export async function findByIds({ ids, includePast }) {
     },
   });
 
-  // Map to original aliasing + status computation
   const mapped = rows.map((s) => {
-    const exists = !!s; // always true here; if ID didn't exist it wouldn't be returned
-    const active = exists ? !!s.is_active : false;
-    const start = exists ? s.start_at_utc : null;
+    const active = !!s.is_active;
+    const start = s.start_at_utc;
 
     let status;
-    if (!exists) status = 'missing';
-    else if (!active) status = 'inactive';
+    if (!active) status = 'inactive';
     else if (start && start < now) status = 'past';
     else status = 'upcoming';
 

@@ -5,6 +5,11 @@ import { handleValidationErrors } from '../utils/validators.js';
 
 const router = Router();
 
-router.get('/:id', getFilmValidator, handleValidationErrors, getByIdHandler);
+router.get(
+  '/:id',
+  getFilmValidator,
+  handleValidationErrors,
+  getByIdHandler,
+);
 
 export default router;
