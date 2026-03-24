@@ -148,13 +148,20 @@ frontend/
 - **watchlist_screening** — Records of screenings saved by users.
 - **refresh_token** — Session storage and token rotation.
 
-### Ingestion-related models:
+### Ingestion-related models
 
-- **raw_import** — Raw scraped payloads before processing.
-- **stg_screening** — Staging area for processed screening data before merge.
-- **ops_ingest_run** — Metadata for each ingestion pipeline run.
-- **custom_event** — Generic event logging for user actions.
-- **user_schedule** — (Unused) placeholder for potential schedule features.
+- **raw_import** — One row per scrape/fetch: JSON `payload` from a cinema `source`, plus timestamps; `rows_processed` can be updated as the pipeline progresses. Written during `load_json` (and similar paths).
+- **stg_screening** — Staging area for processed screening data before merge to live.
+- **ops_ingest_run** — Metadata for each ingestion pipeline run (counts, status, timing).
+- **custom_event** — (Unused in app code) Reserved for user-scoped events (`event_name`, `event_data` JSON); no backend or frontend writes today.
+- **user_schedule** — (Unused) Placeholder for potential schedule features.
+
+### Enums
+
+- **film_person_role** — `director`, `writer`, `cast`, `unknown`
+- **watchlist_screening_status** — `planned`, `watched`
+- **app_user_role** — `user`, `admin`
+- **ops_ingest_run_status** — `running`, `success`, `error`
 
 ## 6. Backend API Overview
 
