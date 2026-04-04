@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { getButtonClassName } from '@/components/ui';
 
 export const metadata = {
-  title: "About The Cinephile's Van",
-  description: "What The Cinephile's Van is, where our data comes from, and how to reach us.",
+  title: "About",
+  description: "The Cinephile's Van is a Vancouver indie cinema guide covering movie listings for Vancouver's independent movie theaters. Find what films are playing in Vancouver and plan your next screening.",
 };
 
 export default function AboutPage() {
