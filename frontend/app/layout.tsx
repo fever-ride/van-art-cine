@@ -13,9 +13,41 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = 'https://www.cinephilesvan.com';
+
 export const metadata: Metadata = {
-  title: "The Cinephiles Van",
-  description: "Vancouver indie cinema listings and watchlist",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "The Cinephile's Van: Movies Playing in Vancouver's Indie Cinemas",
+    template: "%s | The Cinephile's Van",
+  },
+  description:
+    "Browse movie listings for Vancouver BC independent cinemas. Find what films are playing, filter by title or movie theater, and save your picks to a personal watchlist.",
+  keywords: [
+    'Vancouver cinema',
+    'movie listings vancouver bc',
+    'vancouver canada movie theater',
+    'film screenings Vancouver',
+    'vancouver film festival',
+  ],
+  openGraph: {
+    type: 'website',
+    siteName: "The Cinephile's Van",
+    url: SITE_URL,
+    title: "The Cinephile's Van: Movies Playing in Vancouver's Indie Cinemas",
+    description:
+      "Browse movie listings for Vancouver BC independent cinemas. Find what films are playing, filter by title or movie theater, and save your picks to a personal watchlist.",
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "The Cinephile's Van: Movies Playing in Vancouver's Indie Cinemas",
+    description:
+      "Browse movie listings for Vancouver BC independent cinemas. Find what films are playing, filter by title or movie theater, and save your picks to a personal watchlist.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { getFilmDetail } from '@/app/lib/films';
 import FilmHeader from '@/components/films/FilmHeader';
 import FilmMeta from '@/components/films/FilmMeta';
@@ -9,6 +10,41 @@ const noto = Noto_Sans({
   subsets: ['latin'],
   display: 'swap',
 });
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const { film } = await getFilmDetail(Number(id));
+    const title = `Upcoming screenings of ${film.title} in Vancouver`;
+
+    const descriptionBase = `${film.title}${film.year ? ` (${film.year})` : ''} — upcoming screenings at Vancouver's independent cinemas.`;
+    const description = film.description
+      ? `${descriptionBase} ${film.description.slice(0, 100).trimEnd()}…`
+      : descriptionBase;
+
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        ...(film.poster_url ? { images: [{ url: film.poster_url }] } : {}),
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        ...(film.poster_url ? { images: [film.poster_url] } : {}),
+      },
+    };
+  } catch {
+    return { title: 'Film' };
+  }
+}
 
 export default async function FilmPage({
   params,

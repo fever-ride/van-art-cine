@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /profile
+Disallow: /watchlist
+Disallow: /auth/
+
+Sitemap: https://www.cinephilesvan.com/sitemap.xml
