@@ -66,6 +66,91 @@ export async function generateMetadata({
 }
 
 /**
+ * Injects JSON-LD structured data for Google rich results.
+ *
+ * Movie schema: enables star-rating rich results in Google Search.
+ * Event schemas: one per upcoming screening; enables Google Events rich results
+ *   showing dates and venues directly in search.
+ *
+ * Google accepts JSON-LD anywhere in the document (head or body), so rendering
+ * these inside <main> is valid.
+ */
+function StructuredData({
+  film,
+  upcoming,
+}: {
+  film: import('@/app/lib/films').Film;
+  upcoming: import('@/app/lib/films').UpcomingScreening[];
+}) {
+  const filmUrl = `https://www.cinephilesvan.com/films/${film.id}`;
+  const ratingNum = film.imdb_rating ? Number(film.imdb_rating) : null;
+
+  const movieSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Movie',
+    name: film.title,
+    url: filmUrl,
+    ...(film.year && { dateCreated: String(film.year) }),
+    ...(film.description && { description: film.description }),
+    ...(film.poster_url && { image: film.poster_url }),
+    ...(film.directors?.length && {
+      director: film.directors.map((name) => ({ '@type': 'Person', name })),
+    }),
+    ...(film.genre && { genre: film.genre }),
+    ...(ratingNum && !isNaN(ratingNum) && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: ratingNum,
+        bestRating: 10,
+        worstRating: 0,
+        ...(film.imdb_votes && { ratingCount: film.imdb_votes }),
+      },
+    }),
+  };
+
+  const eventSchemas = upcoming.map((s) => ({
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: film.title,
+    startDate: s.start_at_utc,
+    ...(s.end_at_utc && { endDate: s.end_at_utc }),
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    location: {
+      '@type': 'Place',
+      name: s.cinema_name,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Vancouver',
+        addressRegion: 'BC',
+        addressCountry: 'CA',
+      },
+    },
+    organizer: {
+      '@type': 'Organization',
+      name: s.cinema_name,
+    },
+    ...(s.source_url && { url: s.source_url }),
+  }));
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(movieSchema) }}
+      />
+      {eventSchemas.map((schema, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
+    </>
+  );
+}
+
+/**
  * Fetches film data and renders the page body.
  *
  * Extracted into its own async component so it can sit inside a <Suspense>
@@ -77,6 +162,7 @@ async function FilmContent({ id }: { id: number }) {
 
   return (
     <>
+      <StructuredData film={film} upcoming={upcoming} />
       <FilmHeader film={film} />
       {/* Two-column layout: film metadata left, showtimes right */}
       <div className="mt-8 grid grid-cols-1 gap-10 md:grid-cols-[0.4fr_0.6fr]">
