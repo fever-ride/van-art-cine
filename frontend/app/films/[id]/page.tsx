@@ -44,6 +44,9 @@ export async function generateMetadata({
     return {
       title,
       description,
+      alternates: {
+        canonical: `https://www.cinephilesvan.com/films/${id}`,
+      },
       openGraph: {
         title,
         description,
