@@ -1,3 +1,10 @@
+/**
+ * Screenings API wrapper, types, and query builder.
+ *
+ * `getScreenings` is used client-side (CSR) by `useScreeningsData` to fetch
+ * paginated, filtered screening listings. All datetime parameters are sent with
+ * a Vancouver timezone so the backend returns times aligned to local schedules.
+ */
 // Plan: Add 'time' to SortKey to filter by time in a day
 export type SortKey = 'time' | 'title' | 'imdb' | 'rt' | 'votes' | 'year';
 export type Order = 'asc' | 'desc';

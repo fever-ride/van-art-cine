@@ -1,3 +1,12 @@
+/**
+ * Authenticated watchlist API wrappers.
+ *
+ * All mutation calls (`add`, `remove`, `toggle`, `import`) use `fetchWithAuth`
+ * via the internal `fetchJSON` helper, which handles 401 → token refresh →
+ * retry automatically.
+ *
+ * For guest (unauthenticated) watchlist operations, see `guestWatchlist.ts`.
+ */
 import { fetchWithAuth } from '@/app/lib/auth';
 
 export type WatchStatus = 'upcoming' | 'past' | 'unavailable';

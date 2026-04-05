@@ -1,3 +1,9 @@
+/**
+ * TypeScript type guard utilities.
+ * Used to safely narrow `unknown` values caught from API responses or try/catch
+ * blocks without relying on type assertions.
+ */
+
 /** Error-like object with a string message (e.g. caught errors, API errors). */
 export function isErrorLike(x: unknown): x is { message: string } {
   return (

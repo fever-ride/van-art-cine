@@ -1,3 +1,7 @@
+/**
+ * Cinema API wrapper.
+ * Fetches the list of all cinemas for use in filter dropdowns.
+ */
 export type Cinema = { id: number; name: string };
 
 export async function apiListCinemas(): Promise<Cinema[]> {

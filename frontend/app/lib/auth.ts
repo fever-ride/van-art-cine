@@ -1,3 +1,13 @@
+/**
+ * Authentication API wrappers and fetch utilities.
+ *
+ * - `fetchWithAuth`: drop-in fetch replacement that auto-refreshes the access
+ *   token on 401 and retries the original request once.
+ * - `apiLogin` / `apiRegister` / `apiLogout` / `apiMe`: thin wrappers around
+ *   the backend auth endpoints with friendly error messages.
+ * - After a successful login or register, guest watchlist items are
+ *   automatically merged into the new/existing account.
+ */
 import { getGuestSet, clearGuestSet } from '@/app/lib/guestWatchlist';
 
 /** 

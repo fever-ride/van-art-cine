@@ -1,3 +1,8 @@
+/**
+ * User profile API wrappers.
+ * All calls use fetchWithAuth (auto token-refresh on 401).
+ * Used by the profile page for reading and mutating the current user's account.
+ */
 import { fetchWithAuth } from '@/app/lib/auth';
 
 export type User = {

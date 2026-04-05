@@ -1,3 +1,7 @@
+/**
+ * Date/time formatting helpers for screening display.
+ * All outputs are localised to Vancouver time (America/Vancouver).
+ */
 import { DISPLAY_TIMEZONE } from './constants';
 
 const LOCALE = 'en-US';
