@@ -1,3 +1,10 @@
+/**
+ * Film API wrapper and types.
+ *
+ * `getFilmDetail` is wrapped with React.cache() so that `generateMetadata`
+ * and the page component can both call it without triggering duplicate network
+ * requests — the result is shared within a single server request lifecycle.
+ */
 export interface FilmDetailResponse {
   film: Film;
   upcoming: UpcomingScreening[];
@@ -37,9 +44,11 @@ export interface UpcomingScreening {
   source_url?: string | null;
 }
 
-export async function getFilmDetail(film_id: number): Promise<FilmDetailResponse> {
+import { cache } from 'react';
+
+export const getFilmDetail = cache(async (film_id: number): Promise<FilmDetailResponse> => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   const res = await fetch(`${baseUrl}/api/films/${film_id}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json() as Promise<FilmDetailResponse>;
-}
+});
