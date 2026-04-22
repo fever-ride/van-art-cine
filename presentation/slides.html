@@ -290,101 +290,110 @@
   .step-text { font-size: 11px; color: var(--muted); line-height: 1.55; }
   .step-text strong { color: var(--primary); font-weight: 600; }
 
-  /* Slide 3: stacked left + challenges column */
+  /* Slide 3: three columns — data model, backend, frontend */
+  .arch-cols-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 11px;
+    align-items: stretch;
+  }
   .arch-s3-layout {
-    grid-template-columns: 0.78fr 1.22fr;
-    align-items: start;
+    margin-top: 6px;
   }
-  .arch-left-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  .col-head.dm { background: var(--accent-lt); }
+  .s3-dm-body {
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.5;
   }
-  /* Left stack: light dashed panels, no heavy card chrome */
-  .s3-left-panel {
-    border: 1px dashed #D4CFC6;
-    border-radius: 10px;
-    padding: 10px 12px 11px;
-    background: rgba(255, 255, 255, 0.65);
+  .dm-block {
+    margin-bottom: 8px;
   }
-  .s3-left-panel h4 {
-    font-size: 10.5px;
-    font-weight: 600;
-    color: #5A5A5A;
-    margin: 0 0 8px;
-    padding-bottom: 6px;
-    border-bottom: 1px dashed #E5E1D9;
-    letter-spacing: -0.01em;
-  }
-  .s3-left-panel .pipe-detail-item {
-    font-size: 10.5px;
-    color: #6F7580;
-  }
-  .s3-left-panel .pipe-detail-item strong {
-    color: #454545;
-    font-weight: 600;
-  }
-  /* Right: number outside left of dashed panel; row reclaims width for the badge column */
-  .s3-cs-row {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-  .s3-cs-row:last-child {
+  .dm-block:last-child {
     margin-bottom: 0;
   }
-  .s3-cs-block {
-    flex: 1;
-    min-width: 0;
-    border: 1px dashed #C5C1B8;
-    border-radius: 10px;
-    padding: 9px 10px 7px;
-    background: var(--surface);
-  }
-  .s3-cs-badge {
-    flex-shrink: 0;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 9px;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0;
-    padding: 0;
-    background: var(--green);
-    margin-top: 8px;
-  }
-  .s3-cs-card .col-body {
-    padding-top: 12px;
-  }
-  /* Vertical stack inside A/B/C: subsection heads without full-width rules */
-  .s3-cs-vstack {
-    display: flex;
-    flex-direction: column;
-    gap: 11px;
-  }
-  .s3-cs-h {
-    font-size: 9.5px;
+  .dm-block h5 {
+    font-size: 10.5px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.65px;
+    letter-spacing: 0.55px;
     color: var(--accent);
     margin: 0 0 3px;
   }
-  .s3-cs-vstack .pipe-details-inner {
+  .dm-block p {
+    margin: 0;
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .dm-block p + p {
+    margin-top: 3px;
+  }
+  .dm-block p strong {
+    color: var(--primary);
+    font-weight: 600;
+  }
+  .s3-guest-note {
+    margin-top: 9px;
+    padding: 7px 9px 8px;
+    border: 1px dashed #C5C1B8;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.5);
+  }
+  .s3-guest-note .s3-guest-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .s3-guest-note .pipe-details-inner {
+    margin-bottom: 6px;
+    gap: 3px;
+  }
+  .s3-guest-note .pipe-details-inner:last-child {
+    margin-bottom: 0;
+  }
+  .s3-guest-note .pipe-detail-item {
+    font-size: 11.5px;
+    line-height: 1.5;
+  }
+  .s3-guest-h {
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    margin: 5px 0 2px;
+  }
+  #s3 {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 52px;
+  }
+  #s3 .eyebrow {
+    font-size: 11px;
+  }
+  #s3 h2 {
+    font-size: 24px;
+  }
+  #s3 .col-body .pipe-details-inner {
     margin-bottom: 0;
     gap: 4px;
   }
-  .s3-left-panel .pipe-details-inner {
-    margin-bottom: 0;
-    gap: 4px;
+  #s3 .pipe-detail-item {
+    font-size: 11.5px;
+    line-height: 1.5;
   }
-  .col-head.cs { background: var(--accent-lt); }
+  #s3 .col-head h3 {
+    font-size: 11.5px;
+    line-height: 1.3;
+    font-weight: 700;
+  }
+  #s3 code {
+    font-size: 11px;
+  }
 
   /* ── SLIDE 4: Future (two blocks) ── */
   .future-split {
@@ -413,7 +422,7 @@
       </div>
       <hr class="intro-divider" />
       <div class="intro-section">
-        <h4>Part-time internship</h4>
+        <h4>Part-time</h4>
         <ul class="intro-list">
           <li><strong>BiotechAnalyzer</strong> (early-stage startup): I help build <strong>backend services</strong> for their web app in Node.js.</li>
         </ul>
@@ -422,9 +431,9 @@
       <div class="intro-section">
         <h4>Tech landscape</h4>
         <ul class="intro-list">
-          <li><strong>Frontend:</strong> React. I enjoy building UIs with it.</li>
+          <li><strong>Backend:</strong> Node.js (JavaScript, TypeScript), Java, Go</li>
+          <li><strong>Frontend:</strong> React</li>
           <li><strong>Databases:</strong> SQL and NoSQL; at work also Neo4j (still learning).</li>
-          <li><strong>Also:</strong> <strong>Java & Go</strong> in my distributed systems class. Planning a concurrent, microservices style project.</li>
         </ul>
       </div>
       <hr class="intro-divider" />
@@ -624,95 +633,73 @@
     </div>
   </section>
 
-  <!-- ── Slide 3: Backend + Frontend + challenges ── -->
-  <section class="slide" id="s3">
+  <!-- ── Slide 3: Data model · Backend · Frontend ── -->
+  <section class="slide top" id="s3">
     <div class="eyebrow">Part 2 · Architecture</div>
-    <h2>Backend &amp; Frontend</h2>
-    <div class="arch-cols-2 arch-s3-layout">
-      <div class="arch-left-stack">
-        <div class="s3-left-panel">
-          <h4>Backend: Node.js + Express + PostgreSQL + Prisma ORM</h4>
-          <div class="pipe-details-inner">
-            <div class="pipe-detail-item"><strong>REST API:</strong> Four main resources: films, screenings, watchlist, auth. Each has its own route group with standard HTTP methods.</div>
-            <div class="pipe-detail-item"><strong>MVC layers:</strong> <code>routes</code> → <code>controllers</code> → <code>services</code> → <code>models</code>.</div>
-            <div class="pipe-detail-item"><strong>Dual-token JWT:</strong> Short-lived access token + long-lived refresh token.</div>
-            <div class="pipe-detail-item"><strong>Middleware pipeline (Express):</strong> Use Express middleware as a policy layer to handle CORS, cookies, request validation, rate limiting, and centralized error handling, so cross-cutting concerns stay consistent and routes remain simple.</div>
-          </div>
+    <h2>Data model · Backend · Frontend</h2>
+    <div class="arch-cols-3 arch-s3-layout">
+      <div class="col-card">
+        <div class="col-head dm">
+          <h3>Data models</h3>
         </div>
-        <div class="s3-left-panel">
-          <h4>Frontend: Next.js + React + Tailwind</h4>
-          <div class="pipe-details-inner">
-            <div class="pipe-detail-item"><strong>Page composition:</strong> Reuse shared UI primitives and higher-level feature components; pages are composed from these layers.</div>
-            <div class="pipe-detail-item"><strong>State without Redux:</strong> Behaviour and async state live in colocated custom hooks so concerns stay testable and the tree stays shallow</div>
-            <div class="pipe-detail-item"><strong>Next.js integration:</strong> Use App Router and rewrites to proxy /api to the backend, which avoids CORS and simplifies cookie-based auth, and use server components for SSR while keeping client components only where interactivity is needed.</div>
+        <div class="col-body s3-dm-body">
+          <div class="dm-block">
+            <h5>Core</h5>
+            <p><strong>app_user</strong>: User accounts, authentication info, and related records.</p>
+            <p><strong>cinema</strong>: Cinema metadata such as name, website, and address.</p>
+            <p><strong>film</strong>: Film titles and enriched metadata (ratings, cast, external IDs).</p>
+            <p><strong>person</strong>: People associated with films (directors, writers, cast).</p>
+            <p><strong>film_person</strong>: Join table linking films and people with a role.</p>
+            <p><strong>screening</strong>: Final normalized showtimes linked to film + cinema.</p>
+            <p><strong>watchlist_screening</strong>: Records of screenings saved by users.</p>
+            <p><strong>refresh_token</strong>: Session storage and token rotation.</p>
+          </div>
+          <div class="dm-block">
+            <h5>Ingestion</h5>
+            <p><strong>raw_import</strong>: One row per scrape/fetch.</p>
+            <p><strong>stg_screening</strong>: Staging area for processed screening data before merge to live.</p>
+            <p><strong>ops_ingest_run</strong>: Metadata for each ingestion pipeline run (counts, status, timing).</p>
           </div>
         </div>
       </div>
 
-      <div class="col-card s3-cs-card">
-        <div class="col-head cs">
-          <h3>Challenges &amp; solutions</h3>
+      <div class="col-card">
+        <div class="col-head be">
+          <h3>Backend: Node.js + Express + PostgreSQL + Prisma ORM</h3>
         </div>
         <div class="col-body">
-          <div class="s3-cs-row">
-            <span class="s3-cs-badge" aria-hidden="true">1</span>
-            <div class="s3-cs-block">
-            <div class="s3-cs-vstack">
-              <div>
-                <div class="s3-cs-h">Challenge: Authentication</div>
-                <div class="pipe-details-inner">
-                  <div class="pipe-detail-item">Choosing between JWT, OAuth, or managed auth while balancing UX, security, and control</div>
-                </div>
-              </div>
-              <div>
-                <div class="s3-cs-h">Solution</div>
-                <div class="pipe-details-inner">
-                  <div class="pipe-detail-item">Dual-token JWT: short-lived access token in cookies, long-lived refresh token stored hashed and revocable server-side</div>
-                  <div class="pipe-detail-item">Single-flight refresh then retry on 401; rate limits on auth endpoints</div>
-                </div>
-              </div>
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item"><strong>REST API:</strong> We expose route groups for auth, films, screenings, watchlist, cinemas, and user (profile / account).</div>
+            <div class="pipe-detail-item"><strong>MVC layers:</strong> <code>routes</code> → <code>controllers</code> → <code>services</code> → <code>models</code>.</div>
+            <div class="pipe-detail-item"><strong>Dual-token JWT:</strong> Short-lived access token + long-lived refresh token.</div>
+            <div class="pipe-detail-item"><strong>Middleware pipeline (Express):</strong> Use Express middleware as a policy layer to handle cookies, request validation, rate limiting, and centralized error handlings.</div>
+          </div>
+          <div class="s3-guest-note">
+            <div class="s3-guest-label">Guest vs signed-in user</div>
+            <div class="s3-guest-h">Challenge</div>
+            <div class="pipe-details-inner">
+              <div class="pipe-detail-item">Users should be able to use the watchlist without logging in</div>
+              <div class="pipe-detail-item">But logged-in users need persistent, server-side data</div>
             </div>
+            <div class="s3-guest-h">Solution</div>
+            <div class="pipe-details-inner">
+              <div class="pipe-detail-item">Single UI flow: try API first; on 401, gracefully fall back to guest mode (localStorage)</div>
+              <div class="pipe-detail-item">After login, merge guest data into the account to keep a seamless experience</div>
             </div>
           </div>
-          <div class="s3-cs-row">
-            <span class="s3-cs-badge" aria-hidden="true">2</span>
-            <div class="s3-cs-block">
-            <div class="s3-cs-vstack">
-              <div>
-                <div class="s3-cs-h">Challenge: Guest vs signed-in user</div>
-                <div class="pipe-details-inner">
-                  <div class="pipe-detail-item">Users should be able to use the watchlist without logging in</div>
-                  <div class="pipe-detail-item">But logged-in users need persistent, server-side data</div>
-                </div>
-              </div>
-              <div>
-                <div class="s3-cs-h">Solution</div>
-                <div class="pipe-details-inner">
-                  <div class="pipe-detail-item">Single UI flow: try API first; on 401, gracefully fall back to guest mode (localStorage)</div>
-                  <div class="pipe-detail-item">After login, merge guest data into the account to keep a seamless experience</div>
-                </div>
-              </div>
-            </div>
-            </div>
-          </div>
-          <div class="s3-cs-row">
-            <span class="s3-cs-badge" aria-hidden="true">3</span>
-            <div class="s3-cs-block">
-            <div class="s3-cs-vstack">
-              <div>
-                <div class="s3-cs-h">Challenges: Frontend structure</div>
-                <div class="pipe-details-inner">
-                  <div class="pipe-detail-item">One screen mixes filters, paging, fetching, and personal list state, which is easy to entangle</div>
-                </div>
-              </div>
-              <div>
-                <div class="s3-cs-h">Solution</div>
-                <div class="pipe-details-inner">
-                  <div class="pipe-detail-item">Separate hooks for UI state, data loading, and watchlist; page only orchestrates</div>
-                </div>
-              </div>
-            </div>
-            </div>
+        </div>
+      </div>
+
+      <div class="col-card">
+        <div class="col-head fe">
+          <h3>Frontend: Next.js + React + Tailwind</h3>
+        </div>
+        <div class="col-body">
+          <div class="pipe-details-inner">
+            <div class="pipe-detail-item"><strong>Page composition:</strong> Reuse shared UI primitives and higher-level feature components; pages are composed from these layers.</div>
+            <div class="pipe-detail-item"><strong>State without Redux:</strong> Separate hooks for UI state, data loading, and watchlist.</div>
+            <div class="pipe-detail-item"><strong>App Router:</strong> File-based routing where each folder under app/ represents a route segment, keeping the project structure clean and removing the need to define routes manually.</div>
+            <div class="pipe-detail-item"><strong>Rendering strategy:</strong> Use server components for SSR and keep client components only where interactivity is needed.</div>
           </div>
         </div>
       </div>
