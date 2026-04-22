@@ -107,7 +107,7 @@ export default function LoginPage() {
               href="/auth/register"
               className="font-semibold text-accent hover:text-accent-hover"
             >
-              Sign up
+              Create account
             </Link>
           </div>
         </form>

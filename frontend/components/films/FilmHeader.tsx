@@ -123,31 +123,25 @@ export default function FilmHeader({ film }: Props) {
           </div>
 
           {/* Ratings */}
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            {hasRating
-              ? chip(
-                  <>
-                    IMDb · {ratingNum.toFixed(1)}
-                    {typeof imdb_votes === 'number' ? (
-                      <span className="pl-1 text-muted">
-                        ({imdb_votes.toLocaleString()})
-                      </span>
-                    ) : null}
-                  </>
-                )
-              : chip(
-                  <>
-                    IMDb · <span className="text-muted">—</span>
-                  </>
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            {hasRating && (
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm font-medium text-muted">IMDb</span>
+                <span className="text-2xl font-bold text-primary">{ratingNum.toFixed(1)}</span>
+                {typeof imdb_votes === 'number' && (
+                  <span className="text-sm text-muted">
+                    ({imdb_votes.toLocaleString()})
+                  </span>
                 )}
+              </div>
+            )}
 
-            {typeof rt_rating_pct === 'number'
-              ? chip(<>Rotten Tomatoes · {rt_rating_pct}%</>)
-              : chip(
-                  <>
-                    Rotten Tomatoes · <span className="text-muted">—</span>
-                  </>
-                )}
+            {typeof rt_rating_pct === 'number' && (
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm font-medium text-muted">Rotten Tomatoes</span>
+                <span className="text-2xl font-bold text-primary">{rt_rating_pct}%</span>
+              </div>
+            )}
           </div>
 
           {/* Links */}

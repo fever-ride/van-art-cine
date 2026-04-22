@@ -49,32 +49,25 @@ export default function AboutPage() {
         </p>
       </header>
 
-      {/* What We Do - Full Width Hero */}
-      <section className="rounded-card border border-border bg-surface p-10 mb-12">
+      {/* What We Do */}
+      <section className="mb-12">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-2xl font-bold text-primary mb-4">
             Discover Independent Cinema
           </h2>
-          <p className="text-lg text-muted leading-relaxed">
+          <p className="text-lg text-muted leading-relaxed mb-6">
             The Cinephile&apos;s Van aggregates screenings from Vancouver&apos;s best independent cinemas.
             Browse current showings, filter by theater or date, save favorites to your personal watchlist,
             and never miss a screening at your favorite indie theaters.
           </p>
+          <p className="text-sm text-muted">
+            Screening times collected from cinema websites. Film metadata enriched via TMDB and OMDb APIs.
+          </p>
         </div>
       </section>
 
-      {/* Data Attribution */}
-      <section className="rounded-card border border-border bg-surface p-8 mb-12">
-        <h2 className="text-xl font-bold text-primary mb-3">Data Sources</h2>
-        <p className="text-muted leading-relaxed">
-          Screening times collected from cinema websites. Film metadata enriched via TMDB and OMDb APIs.
-          All trademarks belong to their respective owners.
-        </p>
-      </section>
-
-      {/* Contact Section - Two Columns */}
-      <section className="grid md:grid-cols-2 gap-8 mb-12">
-        {/* Left: Contact Form */}
+      {/* Contact Section */}
+      <section className="max-w-2xl mx-auto mb-12">
         <div className="rounded-card border border-border bg-surface p-8">
           <h2 className="text-2xl font-bold text-primary mb-3">Get in Touch</h2>
           <p className="text-muted mb-6">
@@ -147,43 +140,25 @@ export default function AboutPage() {
           </form>
         </div>
 
-        {/* Right: Developer Info */}
-        <div className="rounded-card border-2 border-accent bg-surface p-8 flex flex-col">
-          <h2 className="text-2xl font-bold text-primary mb-3">
-            Built by Wendy Zhong
-          </h2>
-          <p className="text-muted leading-relaxed mb-6 flex-grow">
-            Film-loving CS student actively seeking internships and part-time developer opportunities.
-            Passionate about building tools that connect people with culture and community.
-          </p>
-          <div className="space-y-4">
+        {/* Developer Info - Simple text below */}
+        <div className="mt-8 text-center text-sm text-muted">
+          <p>
+            Built by{' '}
             <Link
               href="https://www.linkedin.com/in/wendi-zhong/"
               target="_blank"
               rel="noopener noreferrer"
-              className={getButtonClassName({ variant: 'primary', size: 'md' }) + ' inline-flex items-center gap-2 w-full justify-center'}
+              className="text-accent hover:text-accent-hover underline"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="h-5 w-5"
-                aria-hidden="true"
-              >
-                <path d="M19 0h-14C2.239 0 0 2.239 0 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5V5c0-2.761-2.238-5-5-5zM8 19H5V9h3v10zm-1.5-11.3c-.966 0-1.75-.79-1.75-1.7s.784-1.7 1.75-1.7S8 5.1 8 6s-.784 1.7-1.75 1.7zM20 19h-3v-5.5c0-1.2-.02-2.7-1.65-2.7-1.65 0-1.9 1.3-1.9 2.6V19h-3V9h2.9v1.4h.04c.4-.7 1.37-1.4 2.82-1.4 3.02 0 3.78 2 3.78 4.7V19z" />
-              </svg>
-              Connect on LinkedIn
+              Wendy Zhong
             </Link>
-
-            <div className="pt-4 border-t border-border text-center">
-              <p className="text-sm text-muted">
-                Or email{" "}
-                <a href="mailto:wendyzhong08@outlook.com" className="text-accent hover:text-accent-hover underline font-medium">
-                  wendyzhong08@outlook.com
-                </a>
-              </p>
-            </div>
-          </div>
+            {' '}• CS student seeking internships and part-time opportunities
+          </p>
+          <p className="mt-2">
+            <a href="mailto:wendyzhong08@outlook.com" className="text-accent hover:text-accent-hover underline">
+              wendyzhong08@outlook.com
+            </a>
+          </p>
         </div>
       </section>
 

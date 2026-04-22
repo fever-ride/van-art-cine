@@ -39,14 +39,14 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
 
   return (
     <section className="overflow-hidden rounded-card border border-border bg-surface">
-      {/* Header */}
-      <div className="border-b border-border bg-surface px-6 py-4">
-        <h2 className="text-lg font-bold text-primary">
+      {/* Black header like main table */}
+      <div className="bg-table-header-bg px-6 py-3">
+        <h2 className="text-[11px] font-medium uppercase tracking-wide text-white">
           Upcoming Screenings in Vancouver
         </h2>
       </div>
 
-      {/* Rows */}
+      {/* Rows like main table */}
       <ul className="divide-y divide-border">
         {visible.map((s) => {
           const dt = new Date(s.start_at_utc);
@@ -57,10 +57,10 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
           return (
             <li
               key={s.id}
-              className="flex flex-col gap-1 px-4 py-3 text-[13px] leading-6 md:flex-row md:items-center md:px-6 md:py-4"
+              className="flex flex-col gap-3 px-6 py-4 text-[13px] leading-6 md:flex-row md:items-center"
             >
-              {/* When (copy main table style) */}
-              <div className="flex flex-col items-start leading-tight text-primary md:w-[13%]">
+              {/* When */}
+              <div className="flex flex-col items-start leading-tight text-primary md:w-[140px]">
                 <div className="text-[14px] font-medium text-muted">{dateStr}</div>
                 <div className="text-[16px] font-semibold text-primary">
                   {timeStr}
@@ -71,26 +71,25 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
               </div>
 
               {/* Cinema */}
-              <div className="text-[14px] text-primary md:flex-1 md:px-6">
+              <div className="text-[14px] text-primary md:flex-1">
                 {s.cinema_name}
               </div>
 
-              {/* Actions: ticket link + watchlist button */}
-              <div className="flex items-center justify-start gap-3 md:justify-end">
+              {/* Actions */}
+              <div className="flex items-center gap-3">
                 {s.source_url ? (
                   <a
                     href={s.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface-hover"
+                    className="inline-flex items-center rounded-btn bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
                   >
                     Get tickets
                   </a>
                 ) : (
-                  <span className="text-xs text-muted">No ticket link</span>
+                  <span className="text-xs text-muted">No link</span>
                 )}
 
-                {/* Keep watchlist button style consistent with main table */}
                 <WatchlistButton
                   screeningId={s.id}
                   initialSaved={initiallySaved}
@@ -108,7 +107,7 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
 
       {/* Show more / less */}
       {sorted.length > 10 && (
-        <div className="border-t border-border px-4 py-3 md:px-6">
+        <div className="border-t border-border px-6 py-3">
           <Button
             type="button"
             variant="outline"

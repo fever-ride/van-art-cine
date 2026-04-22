@@ -154,18 +154,18 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                     ].join(' ')}
                   >
                     {isOpen && (
-                      <div className="bg-band px-4 py-4 md:px-6">
+                      <div className="bg-band px-6 py-5">
                         <div className="grid gap-6 md:grid-cols-2 md:items-start">
                           {/* LEFT: schedule + blurb */}
-                          <div className="grid gap-2 text-[13px]">
-                            <div className="flex gap-3">
-                              <span className="w-16 shrink-0 text-muted">Starts</span>
+                          <div className="space-y-3 text-sm">
+                            <div className="flex gap-4">
+                              <span className="font-semibold text-primary w-20">Starts</span>
                               <span className="text-primary">{startsFull}</span>
                             </div>
 
                             {s.end_at_utc && (
-                              <div className="flex gap-3">
-                                <span className="w-16 shrink-0 text-muted">Ends</span>
+                              <div className="flex gap-4">
+                                <span className="font-semibold text-primary w-20">Ends</span>
                                 <span className="text-primary">
                                   {formatScreeningDateTime(new Date(s.end_at_utc))}
                                 </span>
@@ -173,14 +173,14 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                             )}
 
                             {s.runtime_min != null && (
-                              <div className="flex gap-3">
-                                <span className="w-16 shrink-0 text-muted">Runtime</span>
+                              <div className="flex gap-4">
+                                <span className="font-semibold text-primary w-20">Runtime</span>
                                 <span className="text-primary">{s.runtime_min} min</span>
                               </div>
                             )}
 
                             {s.description && (
-                              <p className="mt-2 text-[13px] text-muted">{s.description}</p>
+                              <p className="mt-3 text-sm text-primary leading-relaxed">{s.description}</p>
                             )}
                           </div>
 
@@ -217,7 +217,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   href={s.source_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface-hover"
+                                  className="inline-flex items-center rounded-btn bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
                                 >
                                   View on cinema site
                                 </a>
@@ -227,7 +227,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   href={s.imdb_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface-hover"
+                                  className="inline-flex items-center rounded-btn bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
                                 >
                                   View on IMDb
                                 </a>

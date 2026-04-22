@@ -44,75 +44,55 @@ export default function FilmMeta({ film }: Props) {
       : '';
 
   return (
-    <section className="rounded-card border border-border bg-surface p-6">
-      <h3 className="text-lg font-bold text-primary mb-4">Film Details</h3>
-      <dl className="text-sm text-primary divide-y divide-border">
-        <FactRow
-          label="Language"
-          value={
-            langs.length > 0 ? langs.join(', ') : missing('No language available.')
-          }
-        />
+    <section className="overflow-hidden rounded-card border border-border bg-surface">
+      <div className="bg-table-header-bg px-6 py-3">
+        <h3 className="text-[11px] font-medium uppercase tracking-wide text-white">
+          Film Details
+        </h3>
+      </div>
 
-        <FactRow
-          label="Rated"
-          value={
-            isMissingText(film.rated)
-              ? missing('No rating available.')
-              : film.rated
-          }
-        />
+      <div className="px-6 py-5 space-y-5">
+        {/* Description */}
+        {description && (
+          <div>
+            <p className="text-[15px] leading-relaxed text-primary">
+              {description}
+            </p>
+          </div>
+        )}
 
-        <FactRow
-          label="Writer"
-          value={
-            writers.length > 0
-              ? writers.join(', ')
-              : missing('No writer information available.')
-          }
-        />
+        {/* Details */}
+        <div className="space-y-4 text-sm pt-3">
+          {langs.length > 0 && (
+            <div className="flex gap-4">
+              <span className="font-semibold text-primary w-20">Language</span>
+              <span className="text-primary">{langs.join(', ')}</span>
+            </div>
+          )}
 
-        <FactRow
-          label="Top cast"
-          value={
-            topCast.length > 0
-              ? topCast.join(', ')
-              : missing('No cast information available.')
-          }
-        />
+          {!isMissingText(film.rated) && film.rated && (
+            <div className="flex gap-4">
+              <span className="font-semibold text-primary w-20">Rated</span>
+              <span className="text-primary">{film.rated}</span>
+            </div>
+          )}
 
-        <FactRow
-          label="Description"
-          value={
-            description ? (
-              <span className="text-[15px] leading-7 text-primary block">
-                {description}
-              </span>
-            ) : (
-              missing('No description available.')
-            )
-          }
-        />
-      </dl>
+          {writers.length > 0 && (
+            <div className="flex gap-4">
+              <span className="font-semibold text-primary w-20">Writer{writers.length > 1 ? 's' : ''}</span>
+              <span className="text-primary">{writers.join(', ')}</span>
+            </div>
+          )}
+
+          {topCast.length > 0 && (
+            <div className="flex gap-4">
+              <span className="font-semibold text-primary w-20">Cast</span>
+              <span className="text-primary">{topCast.join(', ')}</span>
+            </div>
+          )}
+        </div>
+      </div>
     </section>
   );
 }
 
-function FactRow({
-  label,
-  value,
-}: {
-  readonly label: string;
-  readonly value: ReactNode;
-}) {
-  return (
-    <div className="grid grid-cols-[120px_1fr] items-start gap-4 py-3">
-      <dt className="text-[12px] font-semibold text-primary">
-        {label}
-      </dt>
-      <dd className="m-0 min-w-0 break-words text-[14px] text-primary">
-        {value}
-      </dd>
-    </div>
-  );
-}
