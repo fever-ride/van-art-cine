@@ -37,21 +37,17 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-4 py-12">
+    <main className="mx-auto max-w-md px-4 py-16">
       {/* Page title */}
-      <h1 className="mb-6 font-serif text-3xl font-semibold tracking-tight text-primary">
-        Create account
-      </h1>
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold text-primary mb-2">
+          Create account
+        </h1>
+        <p className="text-muted">Join The Cinephile&apos;s Van</p>
+      </div>
 
-      <Card
-        band={
-          <>
-            <p className="text-[15px] font-semibold text-primary">Join us</p>
-            <p className="text-[13px] text-muted">Sign up to save your favorite screenings.</p>
-          </>
-        }
-      >
-        <form onSubmit={onSubmit} className="space-y-4 p-5">
+      <Card>
+        <form onSubmit={onSubmit} className="space-y-5 p-8">
           {err && (
             <div
               role="alert"
@@ -62,7 +58,7 @@ export default function RegisterPage() {
           )}
 
           <label className="block">
-            <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
+            <span className="mb-2 block text-sm font-semibold text-primary">
               Email
             </span>
             <Input
@@ -76,8 +72,8 @@ export default function RegisterPage() {
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
-              Name (optional)
+            <span className="mb-2 block text-sm font-semibold text-primary">
+              Name <span className="text-muted font-normal">(optional)</span>
             </span>
             <Input
               type="text"
@@ -88,7 +84,7 @@ export default function RegisterPage() {
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
+            <span className="mb-2 block text-sm font-semibold text-primary">
               Password
             </span>
             <div className="relative">
@@ -115,16 +111,18 @@ export default function RegisterPage() {
             <p className="mt-1 text-xs text-muted">Use at least 8 characters.</p>
           </label>
 
-          <div className="mt-2 flex items-center justify-between">
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? 'Creating account…' : 'Create account'}
+          </Button>
+
+          <div className="text-center text-sm text-muted">
+            Already have an account?{' '}
             <Link
               href="/auth/login"
-              className="text-sm font-medium text-accent hover:underline"
+              className="font-semibold text-accent hover:text-accent-hover"
             >
-              Already have an account?
+              Log in
             </Link>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Creating…' : 'Register'}
-            </Button>
           </div>
         </form>
       </Card>
