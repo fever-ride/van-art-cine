@@ -225,13 +225,8 @@ export default function WatchlistPage() {
       {err && <p className="text-sm text-error-text">Error: {err}</p>}
 
       {authed === false && !loading && (
-        <div className="mb-4 rounded-card border border-warning-border bg-warning-bg px-4 py-3 text-sm text-warning-text">
-          You’re browsing as a guest.
-          <br />
-          <Link href="/auth/login" className="font-semibold text-accent hover:text-accent-hover underline">
-            Log in
-          </Link>{' '}
-          to save your watchlist and access it anytime, on any device!
+        <div className="mb-4 rounded-input border border-warning-border bg-warning-bg px-4 py-3 text-sm text-warning-text">
+          You’re browsing as a guest. Sign in to save your watchlist and access it anytime, on any device.
         </div>
       )}
 

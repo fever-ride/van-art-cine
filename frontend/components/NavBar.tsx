@@ -18,25 +18,17 @@ export default function NavBar() {
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const pathname = usePathname();
 
+  const checkAuth = async () => {
+    try {
+      const data = await apiMe();
+      setIsAuthed(!!data?.user);
+    } catch {
+      setIsAuthed(false);
+    }
+  };
+
   useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const data = await apiMe();
-
-        if (cancelled) return;
-
-        setIsAuthed(!!data?.user);
-      } catch {
-        if (cancelled) return;
-        setIsAuthed(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    checkAuth();
   }, [pathname]);
 
   async function handleLogout() {
@@ -101,10 +93,18 @@ export default function NavBar() {
         </div>
 
         {/* Sign In Dropdown */}
-        <SignInDropdown isOpen={showSignIn} onClose={() => setShowSignIn(false)} />
+        <SignInDropdown
+          isOpen={showSignIn}
+          onClose={() => setShowSignIn(false)}
+          onSuccess={checkAuth}
+        />
 
         {/* Create Account Modal */}
-        <CreateAccountModal isOpen={showCreateAccount} onClose={() => setShowCreateAccount(false)} />
+        <CreateAccountModal
+          isOpen={showCreateAccount}
+          onClose={() => setShowCreateAccount(false)}
+          onSuccess={checkAuth}
+        />
 
         {/* Row 2: Section menu */}
         <div className="-mx-4 border-t border-border-light px-4">
