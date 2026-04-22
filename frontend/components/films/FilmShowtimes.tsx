@@ -31,21 +31,18 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
 
   if (!sorted.length) {
     return (
-      <section className="mt-6 rounded-card border border-border bg-surface p-4 text-sm text-muted shadow-md md:p-6">
+      <section className="rounded-card border border-border bg-surface p-6 text-sm text-muted">
         No upcoming screenings.
       </section>
     );
   }
 
   return (
-    <section className="mt-6 overflow-hidden rounded-card border border-border bg-surface">
-      {/* Header band: same cream style, film-specific title */}
-      <div className="rounded-t-2xl border-b border-border bg-highlight px-4 py-3 md:px-6">
-        <h2 className="text-sm font-semibold text-primary md:text-[15px]">
-          Upcoming Screenings of{' '}
-          <span className="font-semibold">
-            {filmTitle ?? 'this film'} in Vancouver
-          </span>
+    <section className="overflow-hidden rounded-card border border-border bg-surface">
+      {/* Header */}
+      <div className="border-b border-border bg-surface px-6 py-4">
+        <h2 className="text-lg font-bold text-primary">
+          Upcoming Screenings in Vancouver
         </h2>
       </div>
 
@@ -85,9 +82,9 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
                     href={s.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center rounded-full border border-border bg-highlight px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-highlight/80"
+                    className="inline-flex items-center rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface-hover"
                   >
-                    Get tickets on cinema site!
+                    Get tickets
                   </a>
                 ) : (
                   <span className="text-xs text-muted">No ticket link</span>

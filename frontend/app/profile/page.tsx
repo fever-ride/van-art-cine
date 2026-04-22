@@ -156,45 +156,43 @@ export default function ProfilePage() {
   const nameChanged = (user.name ?? '') !== nameInput.trim();
 
   return (
-    <main className={`${noto.className} mx-auto max-w-3xl px-4 py-8`}>
-      <header>
-        <h1 className="text-2xl font-semibold text-primary">My Profile</h1>
-        <p className="mt-2 text-sm text-muted">
+    <main className={`${noto.className} mx-auto max-w-4xl px-4 py-8`}>
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-primary">My Profile</h1>
+        <p className="mt-2 text-base text-muted">
           Manage your account details, password, and profile.
         </p>
       </header>
 
-      <Card className="mt-6 p-6">
-        {/* Account summary */}
-        <div>
-          <h2 className="text-base font-semibold text-primary">Account</h2>
-          <dl className="mt-4 space-y-3 text-sm">
+      <div className="space-y-6">
+        {/* Account Info Card */}
+        <Card className="p-6">
+          <h2 className="text-lg font-bold text-primary mb-4">Account Information</h2>
+          <dl className="space-y-4 text-sm">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-              <dt className="w-32 text-muted">Email</dt>
-              <dd className="font-medium text-primary break-all">
+              <dt className="w-32 font-semibold text-primary">Email</dt>
+              <dd className="font-medium text-muted break-all">
                 {user.email}
               </dd>
             </div>
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-              <dt className="w-32 text-muted">Member since</dt>
-              <dd className="text-primary">
+              <dt className="w-32 font-semibold text-primary">Member since</dt>
+              <dd className="text-muted">
                 {new Date(user.created_at).toLocaleDateString()}
               </dd>
             </div>
           </dl>
-        </div>
+        </Card>
 
-        {/* Divider */}
-        <div className="my-6 border-t border-dashed border-border-subtle" />
-
-        {/* Name section */}
-        <div>
-          <h2 className="text-base font-semibold text-primary">Profile</h2>
-          <p className="mt-1 text-sm text-muted">
+        {/* Name Card */}
+        <Card className="p-6">
+          <div>
+          <h2 className="text-lg font-bold text-primary mb-2">Display Name</h2>
+          <p className="text-sm text-muted mb-4">
             Update the name shown in your account.
           </p>
 
-          <form onSubmit={handleSaveName} className="mt-4 space-y-4">
+          <form onSubmit={handleSaveName} className="space-y-4">
             <div className="space-y-1 text-sm">
               <label htmlFor="name" className="block font-medium text-primary">
                 Name
@@ -219,19 +217,18 @@ export default function ProfilePage() {
               )}
             </div>
           </form>
-        </div>
+          </div>
+        </Card>
 
-        {/* Divider */}
-        <div className="my-6 border-t border-dashed border-border-subtle" />
-
-        {/* Password section */}
-        <div>
-          <h2 className="text-base font-semibold text-primary">Password</h2>
-          <p className="mt-1 text-sm text-muted">
+        {/* Password Card */}
+        <Card className="p-6">
+          <div>
+          <h2 className="text-lg font-bold text-primary mb-2">Change Password</h2>
+          <p className="text-sm text-muted mb-4">
             Set a new password for your account.
           </p>
 
-          <form onSubmit={handleSavePassword} className="mt-4 space-y-4">
+          <form onSubmit={handleSavePassword} className="space-y-4">
             <div className="space-y-1 text-sm">
               <label
                 htmlFor="new-password"
@@ -279,20 +276,19 @@ export default function ProfilePage() {
               )}
             </div>
           </form>
-        </div>
+          </div>
+        </Card>
 
-        {/* Divider */}
-        <div className="my-6 border-t border-dashed border-error-border" />
-
-        {/* Danger zone (inside same card, but red emphasis) */}
-        <div>
-          <h2 className="text-base font-semibold text-error-text">Danger zone</h2>
-          <p className="mt-1 text-sm text-error-text">
+        {/* Danger Zone Card */}
+        <Card className="p-6 border-error">
+          <div>
+          <h2 className="text-lg font-bold text-error mb-2">Danger Zone</h2>
+          <p className="text-sm text-error-text mb-4">
             Deleting your account will remove your profile and watchlist. This action
             cannot be undone.
           </p>
 
-          <form onSubmit={handleDeleteAccount} className="mt-4 space-y-3">
+          <form onSubmit={handleDeleteAccount} className="space-y-3">
             <div className="space-y-1 text-sm">
               <label
                 htmlFor="delete-confirm"
@@ -317,8 +313,9 @@ export default function ProfilePage() {
               )}
             </div>
           </form>
-        </div>
-      </Card>
+          </div>
+        </Card>
+      </div>
     </main>
   );
 }

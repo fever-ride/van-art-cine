@@ -75,8 +75,8 @@ export default function FilmHeader({ film }: Props) {
   );
 
   return (
-    <section className="rounded-card-lg">
-      <div className="flex flex-col gap-6 p-4 md:flex-row md:items-start md:p-6">
+    <section className="rounded-card border border-border bg-surface">
+      <div className="flex flex-col gap-6 p-6 md:flex-row md:items-start md:p-8">
         {/* Poster */}
         <div className="shrink-0">
           <img
@@ -113,7 +113,7 @@ export default function FilmHeader({ film }: Props) {
                 {genres.map((g) => (
                   <span
                     key={g}
-                    className="inline-flex items-center rounded-full bg-surface-subtle px-3 py-1 text-xs font-semibold text-primary"
+                    className="inline-flex items-center rounded-full bg-pill px-2.5 py-1 text-[12px] font-semibold text-primary"
                   >
                     {g}
                   </span>
@@ -157,7 +157,7 @@ export default function FilmHeader({ film }: Props) {
                 href={imdb_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center rounded-full bg-accent px-4 py-1.5 text-xs font-semibold border-border text-surface transition-colors hover:bg-accent-hover"
+                className="inline-flex items-center rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
               >
                 View film on IMDb
               </a>

@@ -44,8 +44,9 @@ export default function FilmMeta({ film }: Props) {
       : '';
 
   return (
-    <section className="mt-4 px-4 md:px-7">
-      <dl className="border-t border-border/60 text-sm text-primary divide-y divide-border/60">
+    <section className="rounded-card border border-border bg-surface p-6">
+      <h3 className="text-lg font-bold text-primary mb-4">Film Details</h3>
+      <dl className="text-sm text-primary divide-y divide-border">
         <FactRow
           label="Language"
           value={
@@ -105,8 +106,8 @@ function FactRow({
   readonly value: ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-[130px_1fr] items-start gap-3 py-3">
-      <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+    <div className="grid grid-cols-[120px_1fr] items-start gap-4 py-3">
+      <dt className="text-[12px] font-semibold text-primary">
         {label}
       </dt>
       <dd className="m-0 min-w-0 break-words text-[14px] text-primary">

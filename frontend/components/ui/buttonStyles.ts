@@ -10,18 +10,18 @@ const variantClasses: Record<ButtonVariant, string> = {
   primary:
     'bg-accent text-white hover:bg-accent-hover disabled:opacity-60 disabled:hover:bg-accent',
   outline:
-    'border-[1.5px] border-border bg-surface text-primary hover:bg-surface-hover',
+    'border border-border bg-surface text-primary hover:bg-surface-hover transition-colors',
   danger:
-    'bg-error text-white hover:bg-error-hover disabled:opacity-60 disabled:hover:bg-error disabled:bg-error-border',
+    'bg-error text-white hover:bg-error-hover disabled:opacity-60 disabled:hover:bg-error',
   ghost:
-    'border border-border bg-surface text-muted shadow-sm hover:bg-highlight hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface disabled:hover:text-muted',
+    'border border-border bg-surface text-muted hover:bg-surface-subtle hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'rounded-btn px-3 py-1.5 text-sm font-semibold',
-  md: 'rounded-btn px-4 py-2 text-sm font-semibold',
+  sm: 'rounded-btn px-4 py-2 text-sm font-semibold',
+  md: 'rounded-btn px-5 py-2.5 text-sm font-semibold',
   icon:
-    'inline-flex h-9 w-9 items-center justify-center rounded-full text-base',
+    'inline-flex h-9 w-9 items-center justify-center rounded-btn text-base',
 };
 
 /**

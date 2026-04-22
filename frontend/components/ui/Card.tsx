@@ -15,7 +15,7 @@ export default function Card({ children, band, bandClassName, className = '' }: 
   return (
     <section
       className={[
-        'overflow-hidden rounded-card border border-border bg-surface shadow-md',
+        'overflow-hidden rounded-card border border-border bg-surface',
         className,
       ]
         .filter(Boolean)

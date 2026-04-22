@@ -42,7 +42,7 @@ export default function NavBar() {
 
   const isActive = (href: string) => pathname === href;
   const pill =
-    'whitespace-nowrap rounded-btn px-2 py-1 text-sm font-medium text-muted hover:bg-highlight';
+    'whitespace-nowrap px-3 py-1.5 text-sm font-medium text-muted hover:bg-primary hover:text-white transition-colors';
 
   return (
     <header
@@ -104,7 +104,7 @@ export default function NavBar() {
               target="_blank"
               rel="noopener noreferrer"
               className={`${pill} ${
-                isActive('/watchlist') ? 'bg-highlight text-primary' : ''
+                isActive('/watchlist') ? 'bg-primary text-white' : ''
               } snap-start`}
             >
               My Watchlist
@@ -114,7 +114,7 @@ export default function NavBar() {
               <Link
                 href="/profile"
                 className={`${pill} ${
-                  isActive('/profile') ? 'bg-highlight text-primary' : ''
+                  isActive('/profile') ? 'bg-primary text-white' : ''
                 } snap-start`}
               >
                 My Profile
@@ -124,7 +124,7 @@ export default function NavBar() {
             <Link
               href="/about"
               className={`${pill} ${
-                isActive('/about') ? 'bg-highlight text-primary' : ''
+                isActive('/about') ? 'bg-primary text-white' : ''
               } snap-start`}
             >
               About
