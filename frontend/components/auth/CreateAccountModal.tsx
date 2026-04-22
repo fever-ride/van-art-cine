@@ -10,9 +10,10 @@ import { Input, Button } from '@/components/ui';
 type Props = {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 };
 
-export default function CreateAccountModal({ isOpen, onClose }: Props) {
+export default function CreateAccountModal({ isOpen, onClose, onSuccess }: Props) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -33,6 +34,7 @@ export default function CreateAccountModal({ isOpen, onClose }: Props) {
     try {
       await apiRegister({ email, password, name });
       onClose();
+      onSuccess?.();
       router.refresh();
     } catch (err: unknown) {
       if (isErrorLike(err)) {

@@ -9,9 +9,10 @@ import { Input, Button } from '@/components/ui';
 type Props = {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 };
 
-export default function SignInDropdown({ isOpen, onClose }: Props) {
+export default function SignInDropdown({ isOpen, onClose, onSuccess }: Props) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,6 +26,7 @@ export default function SignInDropdown({ isOpen, onClose }: Props) {
     try {
       await apiLogin({ email, password });
       onClose();
+      onSuccess?.();
       router.refresh();
     } catch (err: unknown) {
       if (isErrorLike(err)) {
