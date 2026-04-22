@@ -7,11 +7,15 @@ import { usePathname } from 'next/navigation';
 import { apiLogout, apiMe } from '@/app/lib/auth';
 import { Noto_Sans } from 'next/font/google';
 import { Button, getButtonClassName } from '@/components/ui';
+import SignInDropdown from '@/components/auth/SignInDropdown';
+import CreateAccountModal from '@/components/auth/CreateAccountModal';
 
 const noto = Noto_Sans({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
 export default function NavBar() {
   const [isAuthed, setIsAuthed] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [showCreateAccount, setShowCreateAccount] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -42,7 +46,7 @@ export default function NavBar() {
 
   const isActive = (href: string) => pathname === href;
   const pill =
-    'whitespace-nowrap rounded-btn px-2 py-1 text-sm font-medium text-muted hover:bg-highlight';
+    'whitespace-nowrap px-3 py-1.5 text-sm font-medium text-muted hover:bg-primary hover:text-white transition-colors';
 
   return (
     <header
@@ -75,26 +79,32 @@ export default function NavBar() {
           <div className="flex shrink-0 items-center gap-3">
             {!isAuthed ? (
               <>
-                <Link
-                  href="/auth/login"
+                <button
+                  onClick={() => setShowSignIn(true)}
                   className={getButtonClassName({ variant: 'outline', size: 'sm' })}
                 >
-                  Log in
-                </Link>
-                <Link
-                  href="/auth/register"
+                  Sign in
+                </button>
+                <button
+                  onClick={() => setShowCreateAccount(true)}
                   className={getButtonClassName({ variant: 'primary', size: 'sm' })}
                 >
-                  Register
-                </Link>
+                  Create account
+                </button>
               </>
             ) : (
               <Button variant="outline" size="sm" onClick={handleLogout}>
-                Logout
+                Sign out
               </Button>
             )}
           </div>
         </div>
+
+        {/* Sign In Dropdown */}
+        <SignInDropdown isOpen={showSignIn} onClose={() => setShowSignIn(false)} />
+
+        {/* Create Account Modal */}
+        <CreateAccountModal isOpen={showCreateAccount} onClose={() => setShowCreateAccount(false)} />
 
         {/* Row 2: Section menu */}
         <div className="-mx-4 border-t border-border-light px-4">
@@ -104,7 +114,7 @@ export default function NavBar() {
               target="_blank"
               rel="noopener noreferrer"
               className={`${pill} ${
-                isActive('/watchlist') ? 'bg-highlight text-primary' : ''
+                isActive('/watchlist') ? 'bg-primary text-white' : ''
               } snap-start`}
             >
               My Watchlist
@@ -114,7 +124,7 @@ export default function NavBar() {
               <Link
                 href="/profile"
                 className={`${pill} ${
-                  isActive('/profile') ? 'bg-highlight text-primary' : ''
+                  isActive('/profile') ? 'bg-primary text-white' : ''
                 } snap-start`}
               >
                 My Profile
@@ -124,7 +134,7 @@ export default function NavBar() {
             <Link
               href="/about"
               className={`${pill} ${
-                isActive('/about') ? 'bg-highlight text-primary' : ''
+                isActive('/about') ? 'bg-primary text-white' : ''
               } snap-start`}
             >
               About

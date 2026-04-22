@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NavBar from '@/components/NavBar';
+import Footer from '@/components/Footer';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,6 +45,9 @@ export const metadata: Metadata = {
     description:
       "Browse movie listings for Vancouver BC independent cinemas. Find what films are playing, filter by title or movie theater, and save your picks to a personal watchlist.",
   },
+  alternates: {
+    canonical: SITE_URL,
+  },
   robots: {
     index: true,
     follow: true,
@@ -58,7 +62,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NavBar />
-        {children}
+        <main className="min-h-[calc(100vh-200px)]">
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   );

@@ -102,13 +102,13 @@ export default function Filters({
     onApply();
   };
 
-  const labelCls = 'text-[12px] font-semibold text-accent';
+  const labelCls = 'text-[12px] font-semibold text-primary';
   const control =
-    'w-full rounded-btn border-[1.5px] border-border px-3 py-2.5 text-sm ' +
-    'focus:border-border focus:outline-none focus:ring-1 focus:ring-accent/30';
+    'w-full rounded-btn border border-border px-3 py-2.5 text-sm ' +
+    'focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20';
 
   return (
-    <Card className="space-y-4 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+    <Card className="space-y-4 p-4">
       <label className="flex flex-col gap-1">
         <span className={labelCls}>Search</span>
         <Input
@@ -153,11 +153,11 @@ export default function Filters({
             return (
               <label
                 key={c.id}
-                className="flex items-center gap-2 rounded px-1 py-2 hover:bg-surface-subtle cursor-pointer"
+                className="flex items-center gap-2 rounded px-1 py-2 hover:bg-surface-subtle cursor-pointer transition-colors"
               >
                 <input
                   type="checkbox"
-                  className="h-3 w-3 rounded-control border-[0.5px] border-border text-accent focus:ring-1 focus:ring-accent/30"
+                  className="h-3.5 w-3.5 rounded-control border border-border text-accent focus:ring-1 focus:ring-accent/20"
                   checked={checked}
                   onChange={(e) => {
                     if (e.target.checked) {

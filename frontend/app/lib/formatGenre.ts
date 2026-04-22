@@ -1,3 +1,8 @@
+/**
+ * Genre string normalization.
+ * Handles the inconsistent formats that come back from TMDB/OMDb
+ * (comma-separated string, array, or null) and strips placeholder values.
+ */
 const SKIP = new Set(['n/a', 'na', '']);
 
 /**

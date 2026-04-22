@@ -75,8 +75,8 @@ export default function FilmHeader({ film }: Props) {
   );
 
   return (
-    <section className="rounded-card-lg">
-      <div className="flex flex-col gap-6 p-4 md:flex-row md:items-start md:p-6">
+    <section className="rounded-card border border-border bg-surface">
+      <div className="flex flex-col gap-6 p-6 md:flex-row md:items-start md:p-8">
         {/* Poster */}
         <div className="shrink-0">
           <img
@@ -113,7 +113,7 @@ export default function FilmHeader({ film }: Props) {
                 {genres.map((g) => (
                   <span
                     key={g}
-                    className="inline-flex items-center rounded-full bg-surface-subtle px-3 py-1 text-xs font-semibold text-primary"
+                    className="inline-flex items-center rounded-full bg-pill px-2.5 py-1 text-[12px] font-semibold text-primary"
                   >
                     {g}
                   </span>
@@ -123,31 +123,25 @@ export default function FilmHeader({ film }: Props) {
           </div>
 
           {/* Ratings */}
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            {hasRating
-              ? chip(
-                  <>
-                    IMDb · {ratingNum.toFixed(1)}
-                    {typeof imdb_votes === 'number' ? (
-                      <span className="pl-1 text-muted">
-                        ({imdb_votes.toLocaleString()})
-                      </span>
-                    ) : null}
-                  </>
-                )
-              : chip(
-                  <>
-                    IMDb · <span className="text-muted">—</span>
-                  </>
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            {hasRating && (
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm font-medium text-muted">IMDb</span>
+                <span className="text-2xl font-bold text-primary">{ratingNum.toFixed(1)}</span>
+                {typeof imdb_votes === 'number' && (
+                  <span className="text-sm text-muted">
+                    ({imdb_votes.toLocaleString()})
+                  </span>
                 )}
+              </div>
+            )}
 
-            {typeof rt_rating_pct === 'number'
-              ? chip(<>Rotten Tomatoes · {rt_rating_pct}%</>)
-              : chip(
-                  <>
-                    Rotten Tomatoes · <span className="text-muted">—</span>
-                  </>
-                )}
+            {typeof rt_rating_pct === 'number' && (
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm font-medium text-muted">Rotten Tomatoes</span>
+                <span className="text-2xl font-bold text-primary">{rt_rating_pct}%</span>
+              </div>
+            )}
           </div>
 
           {/* Links */}
@@ -157,7 +151,7 @@ export default function FilmHeader({ film }: Props) {
                 href={imdb_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center rounded-full bg-accent px-4 py-1.5 text-xs font-semibold border-border text-surface transition-colors hover:bg-accent-hover"
+                className="inline-flex items-center rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
               >
                 View film on IMDb
               </a>

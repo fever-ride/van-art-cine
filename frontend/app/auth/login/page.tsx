@@ -36,21 +36,17 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-4 py-12">
+    <main className="mx-auto max-w-md px-4 py-16">
       {/* Page title */}
-      <h1 className="mb-6 font-serif text-3xl font-semibold tracking-tight text-primary">
-        Log in
-      </h1>
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold text-primary mb-2">
+          Log in
+        </h1>
+        <p className="text-muted">Welcome back to The Cinephile&apos;s Van</p>
+      </div>
 
-      <Card
-        band={
-          <>
-            <p className="text-[15px] font-semibold text-primary">Welcome back</p>
-            <p className="text-[13px] text-muted">Sign in to manage your watchlist.</p>
-          </>
-        }
-      >
-        <form onSubmit={onSubmit} className="space-y-4 p-5">
+      <Card>
+        <form onSubmit={onSubmit} className="space-y-5 p-8">
           {err && (
             <div
               role="alert"
@@ -61,7 +57,7 @@ export default function LoginPage() {
           )}
 
           <label className="block">
-            <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
+            <span className="mb-2 block text-sm font-semibold text-primary">
               Email
             </span>
             <Input
@@ -75,7 +71,7 @@ export default function LoginPage() {
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
+            <span className="mb-2 block text-sm font-semibold text-primary">
               Password
             </span>
             <div className="relative">
@@ -101,16 +97,18 @@ export default function LoginPage() {
             </div>
           </label>
 
-          <div className="mt-2 flex items-center justify-between">
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? 'Logging in…' : 'Log in'}
+          </Button>
+
+          <div className="text-center text-sm text-muted">
+            Don&apos;t have an account?{' '}
             <Link
               href="/auth/register"
-              className="text-sm font-medium text-accent hover:underline"
+              className="font-semibold text-accent hover:text-accent-hover"
             >
-              Create an account
+              Create account
             </Link>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Logging in…' : 'Log in'}
-            </Button>
           </div>
         </form>
       </Card>

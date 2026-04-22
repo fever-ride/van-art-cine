@@ -32,12 +32,12 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
   return (
     <table className="w-full bg-surface table-auto border-separate border-spacing-0 text-[14px] leading-6">
       <thead>
-        <tr className="border-b border-border bg-highlight text-left">
-          <th className="w-12 px-2 py-3" aria-label="expand column" />
-          <th className="w-[12%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-muted">When</th>
-          <th className="w-[33%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-muted">Title</th>
-          <th className="w-[28%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-muted">Cinema</th>
-          <th className="w-[20%] px-3 py-3 text-[14px] font-semibold uppercase tracking-wide text-muted text-center">Watchlist</th>
+        <tr className="bg-table-header-bg text-left">
+          <th className="w-12 px-2 py-4" aria-label="expand column" />
+          <th className="w-[12%] px-3 py-4 text-[11px] font-medium uppercase tracking-wider text-white">When</th>
+          <th className="w-[33%] px-3 py-4 text-[11px] font-medium uppercase tracking-wider text-white">Title</th>
+          <th className="w-[28%] px-3 py-4 text-[11px] font-medium uppercase tracking-wider text-white">Cinema</th>
+          <th className="w-[20%] px-3 py-4 text-[11px] font-medium uppercase tracking-wider text-white text-center">Watchlist</th>
         </tr>
       </thead>
 
@@ -154,18 +154,18 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                     ].join(' ')}
                   >
                     {isOpen && (
-                      <div className="bg-band px-4 py-4 md:px-6">
+                      <div className="bg-band px-6 py-5">
                         <div className="grid gap-6 md:grid-cols-2 md:items-start">
                           {/* LEFT: schedule + blurb */}
-                          <div className="grid gap-2 text-[13px]">
-                            <div className="flex gap-3">
-                              <span className="w-16 shrink-0 text-muted">Starts</span>
+                          <div className="space-y-3 text-sm">
+                            <div className="flex gap-4">
+                              <span className="font-semibold text-primary w-20">Starts</span>
                               <span className="text-primary">{startsFull}</span>
                             </div>
 
                             {s.end_at_utc && (
-                              <div className="flex gap-3">
-                                <span className="w-16 shrink-0 text-muted">Ends</span>
+                              <div className="flex gap-4">
+                                <span className="font-semibold text-primary w-20">Ends</span>
                                 <span className="text-primary">
                                   {formatScreeningDateTime(new Date(s.end_at_utc))}
                                 </span>
@@ -173,14 +173,14 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                             )}
 
                             {s.runtime_min != null && (
-                              <div className="flex gap-3">
-                                <span className="w-16 shrink-0 text-muted">Runtime</span>
+                              <div className="flex gap-4">
+                                <span className="font-semibold text-primary w-20">Runtime</span>
                                 <span className="text-primary">{s.runtime_min} min</span>
                               </div>
                             )}
 
                             {s.description && (
-                              <p className="mt-2 text-[13px] text-muted">{s.description}</p>
+                              <p className="mt-3 text-sm text-primary leading-relaxed">{s.description}</p>
                             )}
                           </div>
 
@@ -217,9 +217,9 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   href={s.source_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center rounded-control border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface/80"
+                                  className="inline-flex items-center rounded-btn bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
                                 >
-                                  View film on cinema site
+                                  View on cinema site
                                 </a>
                               )}
                               {s.imdb_url && (
@@ -227,9 +227,9 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   href={s.imdb_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center rounded-control border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface/80"
+                                  className="inline-flex items-center rounded-btn bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
                                 >
-                                  View film on IMDb
+                                  View on IMDb
                                 </a>
                               )}
                             </div>

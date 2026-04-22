@@ -90,25 +90,25 @@ function ScreeningsPageInner() {
 
   return (
     <main className={`${noto.className}`}>
-      <section className="bg-hero-bg text-white mb-12">
-        <div className="mx-auto max-w-[1400px] px-4 py-16 md:py-20">
-          <h1 className="text-4xl font-bold leading-tight md:text-5xl lg:text-6xl mb-4">
+      <section className=”bg-hero-bg text-white -mt-8 mb-12”>
+        <div className=”mx-auto max-w-[1400px] px-4 py-16 md:py-20”>
+          <h1 className=”text-4xl font-bold leading-tight md:text-5xl lg:text-6xl mb-4”>
             Vancouver&apos;s indie
             <br />
             screenings,
             <br />
             all in one place.
           </h1>
-          <p className="text-lg text-gray-300 max-w-2xl">
+          <p className=”text-lg text-gray-300 max-w-2xl”>
             Discover independent films, art-house cinema, and festival screenings across the city&apos;s best theaters.
           </p>
         </div>
       </section>
 
-      <div className="mx-auto max-w-[1400px] px-4">
-        <h2 className="mb-6 text-2xl font-bold text-primary">Now Playing</h2>
+      <div className=”mx-auto max-w-[1400px] px-4”>
+        <h2 className=”mb-6 text-2xl font-bold text-primary”>Now Playing</h2>
 
-        <div className="flex flex-col gap-4 md:flex-row">
+        <div className=”flex flex-col gap-4 md:flex-row”>
         {/* Left sidebar */}
         <aside className="self-start md:w-[275px] md:flex-shrink-0 md:sticky md:top-30">
           <Filters
@@ -135,7 +135,7 @@ function ScreeningsPageInner() {
             )}
 
           {screeningsData.items.length > 0 && (
-            <div className="overflow-x-auto rounded-card border border-border bg-surface">
+            <div className="overflow-x-auto border-2 border-primary bg-surface">
               <ResultsTable
                 items={screeningsData.items}
                 savedIds={watchlist.savedIds}

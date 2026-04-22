@@ -1,3 +1,11 @@
+/**
+ * Guest watchlist — localStorage persistence for unauthenticated users.
+ *
+ * Stores a list of screening IDs in localStorage under GUEST_KEY.
+ * On login/register, `mergeGuestToServer` imports these IDs into the
+ * authenticated user's watchlist and clears the local copy.
+ * Changes are broadcast via StorageEvent so other open tabs stay in sync.
+ */
 import { apiImportWatchlist } from '@/app/lib/watchlist';
 
 /** Key used for guest watchlist in localStorage */

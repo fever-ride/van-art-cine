@@ -241,10 +241,10 @@ export default function WatchlistPage() {
 
       {!loading && rowsToShow.length > 0 && (
         <Card
-          className="mt-4 overflow-hidden shadow-[0_10px_24px_rgba(0,0,0,0.04)]"
-          bandClassName="bg-highlight px-4 py-3 md:px-6"
+          className="mt-4 overflow-hidden"
+          bandClassName="bg-surface border-b border-border px-4 py-3 md:px-6"
           band={
-            <h2 className="text-sm font-semibold text-primary md:text-[15px]">
+            <h2 className="text-lg font-bold text-primary">
               Saved Screenings
             </h2>
           }
@@ -320,9 +320,9 @@ export default function WatchlistPage() {
                             href={r.source_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center rounded-full border border-border bg-highlight px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-highlight/80"
+                            className="inline-flex items-center rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface-hover"
                           >
-                            Get tickets on cinema site!
+                            Get tickets
                           </a>
                         ) : (
                           <span className="text-xs text-muted">
@@ -415,9 +415,9 @@ export default function WatchlistPage() {
                         href={r.source_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center rounded-full border border-border bg-highlight px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-highlight/80"
+                        className="inline-flex items-center rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface-hover"
                       >
-                        Get tickets on cinema site!
+                        Get tickets
                       </a>
                     ) : (
                       <span className="text-xs text-muted">
