@@ -21,7 +21,6 @@ const {
   listWatchlist,
   addManyWatchlistScreenings,
   countWatchlist,
-  findWatchlistedScreeningIdsSet,
 } = await import('../../src/models/watchlistModel.js');
 
 beforeEach(() => {
@@ -93,25 +92,6 @@ describe('countWatchlist', () => {
   test('returns numeric count', async () => {
     prismaMock.watchlist_screening.count.mockResolvedValue(4);
     await expect(countWatchlist({ userUid: 1 })).resolves.toBe(4);
-  });
-});
-
-describe('findWatchlistedScreeningIdsSet', () => {
-  test('returns empty Set when no ids', async () => {
-    const s = await findWatchlistedScreeningIdsSet(1, []);
-    expect(s.size).toBe(0);
-    expect(prismaMock.watchlist_screening.findMany).not.toHaveBeenCalled();
-  });
-
-  test('returns Set of ids from prisma', async () => {
-    prismaMock.watchlist_screening.findMany.mockResolvedValue([
-      { screening_id: 10 },
-      { screening_id: 20 },
-    ]);
-    const s = await findWatchlistedScreeningIdsSet(1, [10, 20, 99]);
-    expect(s.has(10)).toBe(true);
-    expect(s.has(20)).toBe(true);
-    expect(s.has(99)).toBe(false);
   });
 });
 

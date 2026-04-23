@@ -41,8 +41,7 @@ export async function fetchScreenings(opts = {}) {
   const safeOrder = (String(order).toLowerCase() === 'desc') ? 'desc' : 'asc';
 
   // Resolve [gte, lt) in UTC for start_at_utc: either one calendar day or an arbitrary local range.
-  let gte = null;
-  let lt = null;
+  let gte, lt;
 
   if (date) {
     const [utcStart, utcEnd] = localDayToUtcRange(date, tz);

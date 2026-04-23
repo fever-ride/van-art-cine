@@ -109,7 +109,7 @@ export async function login({ email, password, userAgent, ip }) {
     });
   }
 
-  const { password_hash, ...safeUser } = user;
+  const { password_hash: _, ...safeUser } = user;
   return { user: safeUser, accessToken, refreshToken };
 }
 
@@ -131,7 +131,7 @@ export async function refresh({ refreshToken, userAgent, ip }) {
   let payload;
   try {
     payload = verifyRefresh(refreshToken);
-  } catch (err) {
+  } catch (_err) {
     throw new AuthError('Invalid refresh token', 'BAD_REFRESH_TOKEN', 401);
   }
 
@@ -161,7 +161,7 @@ export async function refresh({ refreshToken, userAgent, ip }) {
     });
   }
 
-  const { password_hash, ...safeUser } = user;
+  const { password_hash: _hash, ...safeUser } = user;
   return { user: safeUser, accessToken, refreshToken: newRefreshToken };
 }
 
