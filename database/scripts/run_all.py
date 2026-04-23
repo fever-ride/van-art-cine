@@ -20,6 +20,7 @@ ALL STEPS (step name == module name without .py):
   5) enrich_person_ids       Fetch TMDB/IMDB IDs for persons
   6) merge_duplicate_persons Merge duplicate person records
   7) merge_staging_to_live   Promote staging data to live screening table
+  8) generate_embeddings     Generate OpenAI embeddings for new films (smart search)
 
 DEFAULT (no flags):
   python run_all.py
@@ -96,6 +97,7 @@ ALL_STEPS: List[str] = [
     "enrich_person_ids",
     "merge_duplicate_persons",
     "merge_staging_to_live",
+    "generate_embeddings",
 ]
 
 MERGE_STEPS = {

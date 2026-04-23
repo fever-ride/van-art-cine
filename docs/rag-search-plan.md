@@ -1,346 +1,328 @@
-# RAG Semantic Search — Implementation Plan
+# Smart Search — Implementation Plan (v3)
 
 ## Context
 
-The app currently only supports substring matching on `film.normalized_title`. We're adding a semantic search system so users can find screenings with natural language queries like:
+The app has two search APIs:
 
-- "dark Japanese thriller"
-- "classic French new wave"
-- "feel-good comedy this weekend at the Rio"
-- "anything directed by Wong Kar-wai"
+| Endpoint | Purpose | Calls LLM |
+|----------|---------|-----------|
+| `GET /api/screenings?q=...` | Keyword search (existing, unchanged) | Never |
+| `GET /api/search?q=...` | Smart search (new) | Every request |
 
-### Tech Keywords
+Keyword search stays as the default. Smart search is a separate mode the user explicitly opts into on the frontend.
 
-RAG, Embedding, pgvector, semantic search, hybrid search (semantic + structured filtering), LLM integration, full-stack AI (Next.js + Express + Postgres + Prisma)
+### Smart Search — Two Tiers
+
+| Tier | When | Strategy | External API calls |
+|------|------|----------|-------------------|
+| **Semantic** | Query describes mood, theme, style, genre | Embed query → pgvector cosine similarity | 1× GPT-4o-mini (classify) + 1× embedding |
+| **Agentic** | Query has hard constraints (time, duration, location) or complex personal preferences | LLM decomposes intent → semantic search → filter → explain | 1× GPT-4o-mini + 1× embedding + 2× GPT-4o |
+
+### Tech Demonstrated
+
+Semantic search / RAG, pgvector + HNSW index, OpenAI embeddings, intent classification, agentic search orchestration, LLM slot extraction, natural language date/cinema resolution
 
 ---
 
 ## Architecture Overview
 
 ```
-User query
-  → Frontend (Next.js)
-  → GET /api/search?q=...&date=...&cinema_ids=...
-  → Backend (Express)
-      1. Generate query embedding (OpenAI text-embedding-3-small, 1536 dims)
-      2. pgvector cosine similarity search on film_embedding table
-      3. JOIN with screening/cinema + structured filters (date, cinema, is_active)
-      4. Top results → Claude API generates per-film match explanation
-  → Response: screenings with similarity scores + explanations
-  → Frontend renders results with match badges + explanation text
+User opts into "Smart Search" and enters query
+  │
+  ▼
+GET /api/search?q=...
+  │
+  ▼
+Intent Classifier (GPT-4o-mini — fast, cheap)
+  │
+  ├─ SEMANTIC ──→ embed query → pgvector cosine search
+  │               → return { items, tier: "semantic", similarity }
+  │
+  └─ AGENTIC ──→ GPT-4o decomposes query into constraints
+                  → semantic search with vibe_keywords
+                  → hard constraint filtering (runtime, date, cinema)
+                  → GPT-4o generates per-film explanation
+                  → return { items, tier: "agentic", similarity, match_explanation }
 ```
 
-Existing `GET /api/screenings` remains **untouched**. A new `GET /api/search` endpoint handles all semantic queries.
+Key distinction: if the query ONLY describes what kind of film → semantic. If it includes constraints like time, duration, area, or complex personal preferences → agentic.
 
-### Data Flow Diagram
-
-```
-┌──────────────┐
-│   film table  │  title, description, genre, directors,
-│  (Prisma ORM) │  country, language, tags, year, awards
-└──────┬───────┘
-       │ buildFilmDocText() — concatenate metadata into one string
-       ▼
-┌──────────────────┐
-│  OpenAI Embedding │  text-embedding-3-small → 1536-dim vector
-│      API          │
-└──────┬───────────┘
-       ▼
-┌──────────────────┐
-│  film_embedding   │  Postgres table with pgvector column
-│  (raw SQL)        │  HNSW index for fast cosine search
-└──────────────────┘
-
-        User search query
-              │
-              ▼
-┌──────────────────┐
-│  OpenAI Embedding │  same model → query vector
-│      API          │
-└──────┬───────────┘
-       ▼
-┌──────────────────────────────────────────┐
-│  Hybrid Search (raw SQL)                  │
-│  1. cosine similarity: 1 - (emb <=> q)   │
-│  2. JOIN screening + film + cinema        │
-│  3. WHERE is_active, date range, cinemas  │
-│  4. ORDER BY similarity DESC              │
-└──────┬───────────────────────────────────┘
-       ▼
-┌──────────────────┐
-│  Claude API       │  generate 1-sentence match explanation
-│  (Anthropic SDK)  │  per top film (optional)
-└──────┬───────────┘
-       ▼
-   JSON response → Frontend
-```
+Fallback: if the classifier fails or times out, default to semantic (safe middle ground).
 
 ---
 
-## Phase 1: Database + Embedding Infrastructure
+## Phase 1: Database + Embedding Infrastructure ✅ DONE (2026-04-23)
 
-### 1.1 Prisma Migration — pgvector + film_embedding table
+### 1.1 Prisma Migration — pgvector + film_embedding table ✅
 
-Create migration: `backend/prisma/migrations/<timestamp>_add_film_embeddings/migration.sql`
-
-Use a **separate `film_embedding` table** (not a column on `film`) because Prisma cannot natively model the `vector` type. All vector operations use raw SQL anyway, so isolating the vector data avoids polluting the Prisma-managed schema.
+Migration: `backend/prisma/migrations/20260423000000_add_film_embeddings/migration.sql`
 
 ```sql
--- Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- Embedding storage, one row per film
 CREATE TABLE film_embedding (
   film_id     INT PRIMARY KEY REFERENCES film(id) ON DELETE CASCADE,
   embedding   vector(1536) NOT NULL,
-  doc_text    TEXT NOT NULL,          -- the concatenated source text
+  doc_text    TEXT NOT NULL,
   model       VARCHAR(64) NOT NULL DEFAULT 'text-embedding-3-small',
   created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at  TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- HNSW index for fast approximate cosine similarity
 CREATE INDEX idx_film_embedding_cosine
-  ON film_embedding
-  USING hnsw (embedding vector_cosine_ops)
+  ON film_embedding USING hnsw (embedding vector_cosine_ops)
   WITH (m = 16, ef_construction = 64);
 ```
 
-**Why these HNSW params?**
-- `m = 16`: connections per node (good balance of recall vs. index size for < 10K films)
-- `ef_construction = 64`: build-time quality (higher = better recall, slower build)
-- These are pgvector defaults and work well for datasets under 100K rows
+### 1.2 Dependencies ✅
 
-### 1.2 New Dependencies
+- `openai` added to `backend/package.json`
+- `OPENAI_API_KEY` added to `backend/.env`
 
-**Backend** (`backend/package.json`):
+### 1.3 `backend/src/services/embeddingService.js` ✅
 
-| Package | Purpose |
-|---------|---------|
-| `openai` | OpenAI Node SDK — embedding generation |
-| `@anthropic-ai/sdk` | Anthropic SDK — match explanation via Claude |
+- `buildFilmDocText(filmId)` — title, year, genre, directors, country, language, rated, awards, description, tags
+- `generateEmbedding(text)` — OpenAI text-embedding-3-small → 1536-dim vector
+- `upsertFilmEmbedding(filmId)` — build doc text → embed → upsert via raw SQL (ON CONFLICT UPDATE)
+- `embedQuery(queryText)` — embed a search query
 
-**Environment variables** (`backend/.env`):
+### 1.4 Backfill Script ✅
 
-```env
-OPENAI_API_KEY=sk-...        # for embedding generation
-ANTHROPIC_API_KEY=sk-ant-... # for match explanations
-```
+`backend/scripts/backfill-embeddings.js` (Node.js, reuses embeddingService directly)
 
-### 1.3 New: `backend/src/services/embeddingService.js`
-
-| Function | Description |
-|----------|-------------|
-| `buildFilmDocText(filmId)` | Query film + directors from DB, concatenate into a single string: `"Title: In the Mood for Love. Year: 2000. Genre: Drama, Romance. Directors: Wong Kar-wai. Country: Hong Kong. Description: Two neighbors..."` |
-| `generateEmbedding(text)` | Call OpenAI `text-embedding-3-small` → return `number[]` of 1536 dimensions |
-| `upsertFilmEmbedding(filmId)` | Build doc text → embed → `INSERT ... ON CONFLICT DO UPDATE` into `film_embedding` via `prisma.$executeRawUnsafe` |
-| `embedQuery(queryText)` | Generate embedding for a user search query string |
-
-**Document text template**:
-
-```
-Title: {title}. Year: {year}. Genre: {genre}. Directors: {directors}.
-Country: {country}. Language: {language}. Awards: {awards}.
-Description: {description}. Tags: {tags}.
-```
-
-Only non-null fields are included. This gives the embedding model rich semantic signal.
-
-### 1.4 Backfill Script: `database/scripts/generate_embeddings.py`
-
-Follows the existing Python pipeline pattern (uses `db_helper.conn_open`).
-
-```
-Usage:
-  python scripts/generate_embeddings.py         # incremental (new films only)
-  python scripts/generate_embeddings.py --all   # regenerate ALL embeddings
-```
-
-- Finds films without embeddings: `SELECT f.id FROM film f LEFT JOIN film_embedding fe ON f.id = fe.film_id WHERE fe.film_id IS NULL`
-- Fetches directors per batch: `SELECT fp.film_id, p.name FROM film_person fp JOIN person p ... WHERE fp.role = 'director'`
-- Calls OpenAI batch embedding (up to 100 texts per API call)
-- Upserts into `film_embedding` with `ON CONFLICT`
+- Incremental by default (skips films that already have embeddings), `--all` for full rebuild
+- Batches of 20 concurrent requests, 500ms delay between batches
+- Run: `node scripts/backfill-embeddings.js`
+- Result: 779/779 films embedded, 0 errors
 
 ---
 
-## Phase 2: Search Endpoint (Backend)
+## Phase 2: Intent Router + Search Endpoint ✅ DONE (2026-04-23)
 
-### 2.1 New: `backend/src/models/search.js`
+### 2.1 `backend/src/services/intentClassifier.js` ✅
 
-Core function: `semanticSearch(opts)` — raw SQL query
+GPT-4o-mini classifies query into `semantic` or `agentic`. Returns `{ tier }`.
 
-```sql
-SELECT
-  s.id, s.start_at_utc, s.end_at_utc, s.runtime_min, s.tz, s.source_url,
-  f.id AS film_id, f.title, f.year, f.description, f.rated, f.genre,
-  f.language, f.country, f.awards, f.imdb_rating, f.rt_rating_pct,
-  f.imdb_votes, f.imdb_id, f.tmdb_id, f.imdb_url,
-  c.id AS cinema_id, c.name AS cinema_name,
-  1 - (fe.embedding <=> $1::vector) AS similarity
-FROM screening s
-JOIN film f ON s.film_id = f.id
-JOIN film_embedding fe ON f.id = fe.film_id
-JOIN cinema c ON s.cinema_id = c.id
-WHERE s.is_active = true
-  AND s.start_at_utc >= $2                          -- future screenings
-  -- dynamic: AND s.start_at_utc < $3               -- date/to filter
-  -- dynamic: AND s.cinema_id = ANY($4::int[])      -- cinema filter
-  AND 1 - (fe.embedding <=> $1::vector) >= $5       -- similarity threshold
-ORDER BY similarity DESC, s.start_at_utc ASC
-LIMIT $6 OFFSET $7
-```
+Fallback on error: `{ tier: 'semantic' }`.
 
-Directors are fetched in a second query for the result film IDs and merged in JS (same pattern as existing `fetchScreenings`).
+### 2.2 `backend/src/services/searchOrchestrator.js` ✅
 
-### 2.2 New: `backend/src/services/explanationService.js`
-
-- `generateMatchExplanation(query, films)` — single Claude API call
-- Input: user query + top unique films (title, year, genre, directors, description snippet, similarity score)
-- Output: JSON array of `{ film_id, explanation }` — 1-sentence per film
-- Optional: controlled by `explain` query parameter (default `true`)
-- Only called for top results (max ~10 unique films) to keep latency low
-
-**Prompt to Claude**:
-
-```
-You are a film recommendation assistant. A user searched for: "{query}"
-
-The following films matched. For each, write ONE brief sentence explaining
-why it matches the search. Be specific.
-
-Films:
-1. {title} ({year}) — {genre}. Director: {directors}. {description snippet}.
-
-Respond as JSON: [{"film_id": 1, "explanation": "..."}]
-```
-
-### 2.3 New: `backend/src/validators/searchValidators.js`
+Central dispatcher:
 
 ```javascript
-query('q').notEmpty().trim()           // required
-query('date').optional().isISO8601()
-query('from').optional().isISO8601()
-query('to').optional().isISO8601()
-query('cinema_ids').optional()
-query('sort').optional().isIn(['relevance', 'time'])
-query('limit').optional().isInt({ min: 1, max: 50 }).toInt()
-query('offset').optional().isInt({ min: 0 }).toInt()
-query('explain').optional().isIn(['true', 'false'])
+export async function orchestrateSearch({ query, tier, filters })
 ```
 
-### 2.4 New: `backend/src/controllers/searchController.js`
+- **Semantic path**: embed query → pgvector cosine search → return results with similarity
+- **Agentic path**: GPT-4o slot extraction → semantic search with vibe_keywords → hard constraint filtering (runtime, date, cinema) → GPT-4o explanation generation
 
-```
-searchHandler:
-  1. Extract validated params
-  2. embedQuery(q) → query vector
-  3. semanticSearch({ queryEmbedding, date, cinemaIds, ... }) → screening rows
-  4. if explain !== 'false' && results.length > 0:
-       deduplicate films → generateMatchExplanation(q, films) → attach to items
-  5. res.json({ items })
-```
+### 2.3 `backend/src/services/dateResolver.js` ✅
 
-### 2.5 New: `backend/src/routes/search.js`
+Rule-based, no LLM. Uses `date-fns`.
 
-```javascript
-router.get('/', searchValidator, handleValidationErrors, searchHandler);
-```
+- "today" / "tonight" → `{ date: '2026-04-23' }`
+- "tomorrow" → `{ date: '2026-04-24' }`
+- "this weekend" → `{ from: '2026-04-25', to: '2026-04-27' }`
 
-### 2.6 Modify: `backend/src/server.js`
+### 2.4 `backend/src/services/cinemaResolver.js` ✅
 
-```javascript
-import search from './routes/search.js';
-app.use('/api/search', search);
-```
+Fuzzy substring match against cinema table. Cached.
 
-Rate limit: 30 req/min per IP (since each request calls OpenAI for embedding).
+- "rio" → `[166]` (Rio Theatre)
+- "cinematheque" → `[1]` (The Cinematheque)
+- "viff" → `[112, 113, 116]`
+
+### 2.5 `backend/src/services/explanationService.js` ✅
+
+Agentic tier only. GPT-4o receives each film's description, scores match quality 1-10, and generates 1-2 sentence explanation. Results sorted by score descending — low scores still returned (library is art-house heavy) but clearly marked so frontend can treat them differently.
+
+### 2.6 `backend/src/models/search.js` ✅
+
+Raw SQL with pgvector cosine similarity. Dynamic WHERE clause for date range, cinema IDs, min similarity threshold.
+
+### 2.7 Route: `GET /api/search` ✅
+
+- Controller: `backend/src/controllers/searchController.js`
+- Validator: `backend/src/validators/searchValidators.js`
+- Route: `backend/src/routes/search.js`
+- Mounted in `backend/src/app.js` with 30 req/min rate limit
 
 ---
 
-## Phase 3: Frontend Integration
+## Phase 3: Frontend Integration — TODO
 
 ### 3.1 New: `frontend/app/lib/search.ts`
 
 ```typescript
 interface SearchResult extends Screening {
-  similarity: number;
+  similarity?: number;
   match_explanation?: string | null;
 }
 
-interface SearchQuery {
-  q: string;
-  date?: string;
-  from?: string;
-  to?: string;
-  cinema_ids?: number[];
-  sort?: 'relevance' | 'time';
-  limit?: number;
-  offset?: number;
-  explain?: boolean;
+interface SearchResponse {
+  items: SearchResult[];
+  tier: 'semantic' | 'agentic';
 }
 
-function searchScreenings(params: SearchQuery): Promise<{ items: SearchResult[] }>
+function searchScreenings(params: SearchQuery): Promise<SearchResponse>
 ```
 
 ### 3.2 New: `frontend/lib/hooks/useSearchData.ts`
 
-Mirrors `useScreeningsData.ts` but calls `searchScreenings()`. Activated only when searchMode is `'semantic'`.
+Same pattern as `useScreeningsData.ts`. Returns `{ items, tier, loading, error, hasMore, reload }`.
 
 ### 3.3 Modify: `frontend/lib/hooks/useScreeningsUI.ts`
 
-Add to UIState:
-
-```typescript
-searchMode: 'keyword' | 'semantic'  // default: 'keyword'
-```
+Add `searchMode: 'keyword' | 'smart'` to UIState. Default: `'keyword'`.
 
 ### 3.4 Modify: `frontend/components/screenings/Filters.tsx`
 
-- Add pill-style toggle: **"Title search"** / **"Smart search"** (matches existing single-date / date-range toggle pattern)
-- Smart search mode: placeholder changes to `"Describe what you're looking for..."`
-- Debounce: 600ms for semantic (vs 350ms for keyword)
+- Pill toggle: **"Title search"** / **"Smart search"**
+- Smart mode placeholder: `"Describe what you're looking for..."`
+- Debounce: 800ms in smart mode (vs 350ms for keyword)
 
 ### 3.5 Modify: `frontend/app/page.tsx`
 
-Conditionally use `useSearchData` when `searchMode === 'semantic'` and `q` is non-empty; otherwise use `useScreeningsData`.
+Dispatch between `useScreeningsData` (keyword mode) and `useSearchData` (smart mode).
 
 ### 3.6 Modify: `frontend/components/screenings/ResultsTable.tsx`
 
-- Show `"Match: 82%"` badge next to title when `similarity` is present
-- Show `match_explanation` in expanded detail row (italic, subtle background)
+- Show tier badge: "Semantic match: 84%" / "AI recommended"
+- Show `match_explanation` for agentic results in expanded row
 
 ---
 
-## Phase 4: Pipeline Integration
+## Phase 4: Pipeline Integration ✅ DONE (2026-04-23)
 
-### 4.1 Modify: `database/scripts/run_all.py`
+### 4.1 `database/scripts/generate_embeddings.py` ✅
 
-Add `generate_embeddings` step after `merge_staging_to_live` so new films automatically get embeddings after ingestion.
+Pure Python script integrated into the data pipeline. Uses `db_helper.conn_open()` + OpenAI SDK.
+
+- Incremental by default (skips films with existing embeddings), `--all` for full rebuild
+- Added as step 8 in `database/scripts/run_all.py`, runs after `merge_staging_to_live`
+- New films get embeddings automatically on every pipeline run
 
 ---
 
 ## Response Shape
 
+Both tiers return the same base shape. Tier-specific fields are optional.
+
 ```json
 {
+  "tier": "semantic",
   "items": [
     {
-      "id": 42,
-      "title": "In the Mood for Love",
-      "year": 2000,
-      "start_at_utc": "2026-04-25T19:00:00.000Z",
-      "cinema_name": "The Cinematheque",
+      "id": 2738,
+      "title": "Happy Together",
+      "year": 1997,
+      "start_at_utc": "2026-04-28T03:00:00.000Z",
+      "cinema_name": "VIFF Centre - VIFF Cinema",
       "genre": "Drama, Romance",
-      "directors": "Wong Kar-wai",
-      "description": "Two neighbors form a bond when they suspect...",
-      "imdb_rating": 8.1,
-      "similarity": 0.84,
-      "match_explanation": "This moody Hong Kong romance matches your search for atmospheric Asian cinema with its dreamlike visuals and melancholic tone.",
-      "...": "...other screening fields..."
+      "runtime_min": 96,
+      "similarity": 0.452,
+      "match_score": null,
+      "match_explanation": null
     }
   ]
 }
 ```
+
+- `similarity` — present for both tiers (cosine similarity 0–1)
+- `match_score` — agentic only (1–10, GPT-4o judges match quality based on film description). Results with score < 5 are filtered out.
+- `match_explanation` — agentic only (1–2 sentence reasoning)
+- `message` — present when agentic tier finds no good matches (all scores < 5)
+
+---
+
+## Test Results (2026-04-23)
+
+All results below are actual API responses, not edited.
+
+### Semantic Tier
+
+**Query: "dreamy melancholic romance"**
+```
+Tier: semantic
+0.373 | The Green Ray (1986) | Drama, Romance | The Cinematheque
+0.354 | Two Seasons, Two Strangers (2025) | Drama | The Cinematheque
+```
+
+**Query: "wong kar-wai style visual aesthetic"**
+```
+Tier: semantic
+0.452 | Happy Together (1997) | Drama, Romance
+0.367 | Yi Yi (2000) | Drama
+```
+
+**Query: "dark atmospheric japanese thriller"**
+```
+Tier: semantic
+0.503 | All the Long Nights (2024) | Drama | Japan
+0.472 | Two Seasons, Two Strangers (2025) | Drama | Japan
+```
+
+**Query: "visually stunning animation"**
+```
+Tier: semantic
+0.381 | The Forgotten Reels of Nunavut's Animation Workshop
+```
+
+**Query: "classic European cinema with beautiful cinematography"**
+```
+Tier: semantic
+0.478 | Man With a Movie Camera | Documentary | Soviet Union
+0.453 | The Damned (1969) | Drama, War | Italy, West Germany, Switzerland
+0.439 | D'est (1993) | Documentary | Belgium, France, Portugal
+0.427 | The Leopard (1963) | Drama, History | Italy, France
+```
+
+### Agentic Tier
+
+**Query: "something light and fun for a first date under two hours"**
+```json
+{
+  "tier": "agentic",
+  "message": "No good matches found for your query among current screenings.",
+  "items": []
+}
+```
+All candidates scored below 5 and were filtered out. GPT-4o read the film descriptions and correctly identified that none of the art-house screenings match a "light fun comedy" request — instead of recommending "Happy Together" just because the title sounds cheerful.
+
+**Query: "a movie my film-buff friend would respect but my partner won't hate"**
+```
+Tier: agentic
+score:8 | The Art of Adventure (2025) | Documentary | VIFF Centre
+  → This documentary combines adventure and art, offering a balanced and
+    engaging experience that is both thought-provoking and accessible,
+    likely to satisfy both a film buff and a general viewer.
+score:7 | Really Happy Someday (2024) | Drama | Rio Theatre
+  → This drama offers a thought-provoking narrative about self-discovery
+    and identity, which could appeal to film buffs, while its engaging
+    personal story might be accessible and entertaining for a wider audience.
+```
+
+**Query: "intense war drama this weekend"**
+```
+Tier: agentic
+score:9 | The Damned (1969) | Drama, War | The Cinematheque
+  → The film is a war drama set during the Third Reich, matching the
+    intense and historical aspects of the query. Its runtime is suitable
+    for a weekend screening.
+score:7 | Palestine 36 | Biography, Drama, History | VIFF Centre
+  → While not explicitly a war drama, it deals with historical conflict
+    and unrest, offering an intense and emotional narrative set against
+    British colonial rule.
+```
+
+### Score threshold
+
+Agentic results with `match_score` < 5 are filtered out. GPT-4o scoring distribution on our art-house library:
+- **2–3**: Clearly wrong match (e.g. "Happy Together" for "light fun comedy")
+- **5–6**: Relevant but with caveats
+- **7–9**: Strong match
+
+5 as cutoff correctly separates "at least relevant" from "not what was asked for".
 
 ---
 
@@ -348,52 +330,50 @@ Add `generate_embeddings` step after `merge_staging_to_live` so new films automa
 
 | Decision | Choice | Why |
 |----------|--------|-----|
-| Embedding table | Separate `film_embedding` table | Prisma can't model `vector` type; keeps ORM clean |
-| Embedding granularity | Per film (not per screening) | Semantic meaning lives in film metadata; screenings are just time+venue |
-| Embedding model | `text-embedding-3-small` (1536 dims) | Good quality/cost ratio; OpenAI's recommended default |
-| Vector index | HNSW (not IVFFlat) | Better recall for small datasets (< 100K); no need for training step |
-| Match explanation | Claude API (not template) | Much higher quality, contextual explanations |
-| Explanation toggle | `explain=true/false` param | Lets frontend skip the Claude call when latency matters |
-| Similarity threshold | Default 0.3 | Tunable; prevents noisy low-relevance results |
-| New endpoint | `GET /api/search` (not extending `/api/screenings`) | Clean separation; existing functionality untouched |
+| Separate APIs | `/api/screenings` (keyword) + `/api/search` (smart) | User typos don't trigger LLM calls; smart search is opt-in |
+| Two-tier classifier | GPT-4o-mini: semantic vs agentic | Simpler and more accurate than three-way; structured queries stay on the keyword API |
+| Classifier fallback | Default to `semantic` | Safe middle ground — always produces reasonable results |
+| Semantic search | pgvector + HNSW | Good enough for < 10K films; no separate vector DB needed |
+| Agentic search | GPT-4o for decomposition + explanation | Complex reasoning needs a capable model; only invoked for complex queries |
+| Date resolution | `date-fns` rule-based | "this weekend" / "tonight" are deterministic; no LLM needed |
+| Cinema resolution | Substring fuzzy match | Small cinema list (< 20); exact match + contains is sufficient |
+| Explanation | Agentic tier only | Semantic results are self-explanatory; explanation adds latency |
+| All LLM calls | OpenAI only | Project already uses OpenAI elsewhere; single SDK, single API key |
 
 ---
 
-## Verification Plan
+## Cost & Latency Estimates
 
-1. **Migration**: Run migration → confirm `film_embedding` table and HNSW index exist via `\d film_embedding`
-2. **Backfill**: Run `generate_embeddings.py` → confirm all films have embeddings via `SELECT count(*) FROM film_embedding`
-3. **Search API**: `curl "localhost:3000/api/search?q=dark+japanese+thriller"` → verify results with similarity scores
-4. **Hybrid filters**: `curl "localhost:3000/api/search?q=comedy&cinema_ids=1&date=2026-04-25"` → verify structured filters combine with semantic search
-5. **Frontend**: Toggle to "Smart search" → type natural language query → verify results with match badges and explanation text
-6. **Pipeline**: Run full ingest → verify new films get embeddings automatically
+| Tier | External calls | Est. latency | Est. cost per query |
+|------|---------------|-------------|-------------------|
+| Semantic | 1× GPT-4o-mini + 1× embedding | ~1.5s | ~$0.0005 |
+| Agentic | 1× GPT-4o-mini + 1× embedding + 2× GPT-4o | ~4s | ~$0.005 |
 
 ---
 
-## Files to Create
+## Files Created
 
-| File | Type |
-|------|------|
-| `backend/prisma/migrations/..._add_film_embeddings/migration.sql` | Migration |
-| `backend/src/services/embeddingService.js` | Service |
-| `backend/src/services/explanationService.js` | Service |
-| `backend/src/models/search.js` | Model |
-| `backend/src/controllers/searchController.js` | Controller |
-| `backend/src/validators/searchValidators.js` | Validator |
-| `backend/src/routes/search.js` | Route |
-| `frontend/app/lib/search.ts` | API wrapper |
-| `frontend/lib/hooks/useSearchData.ts` | Hook |
-| `database/scripts/generate_embeddings.py` | Script |
+| File | Purpose |
+|------|---------|
+| `backend/prisma/migrations/20260423000000_add_film_embeddings/migration.sql` | pgvector + film_embedding table |
+| `backend/src/services/intentClassifier.js` | GPT-4o-mini: semantic vs agentic |
+| `backend/src/services/searchOrchestrator.js` | Dispatch to semantic / agentic path |
+| `backend/src/services/embeddingService.js` | OpenAI embedding generation + storage |
+| `backend/src/services/explanationService.js` | GPT-4o per-film explanation (agentic only) |
+| `backend/src/services/dateResolver.js` | "this weekend" → concrete date range |
+| `backend/src/services/cinemaResolver.js` | "rio" → cinema ID fuzzy match |
+| `backend/src/models/search.js` | pgvector similarity SQL |
+| `backend/src/controllers/searchController.js` | Request handler |
+| `backend/src/validators/searchValidators.js` | Input validation |
+| `backend/src/routes/search.js` | Route definition |
+| `backend/scripts/backfill-embeddings.js` | Node.js embedding backfill script |
+| `database/scripts/generate_embeddings.py` | Python pipeline embedding step |
 
-## Files to Modify
+## Files Modified
 
 | File | Change |
 |------|--------|
-| `backend/src/server.js` | Mount `/api/search` route + rate limit |
-| `backend/package.json` | Add `openai`, `@anthropic-ai/sdk` |
-| `backend/.env` | Add `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` |
-| `frontend/lib/hooks/useScreeningsUI.ts` | Add `searchMode` to UIState |
-| `frontend/components/screenings/Filters.tsx` | Add semantic/keyword toggle |
-| `frontend/app/page.tsx` | Dispatch between data hooks |
-| `frontend/components/screenings/ResultsTable.tsx` | Show similarity + explanation |
-| `database/scripts/run_all.py` | Add embedding step |
+| `backend/src/app.js` | Mount `/api/search` route + 30 req/min rate limit |
+| `backend/package.json` | Add `openai` dependency |
+| `backend/.env` | Add `OPENAI_API_KEY` |
+| `database/scripts/run_all.py` | Add `generate_embeddings` as step 8 |

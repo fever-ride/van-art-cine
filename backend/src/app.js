@@ -12,6 +12,7 @@ import auth from './routes/auth.js';
 import watchlist from './routes/watchlist.js';
 import cinemas from './routes/cinemas.js';
 import user from './routes/user.js';
+import search from './routes/search.js';
 
 const app = express();
 
@@ -80,6 +81,15 @@ app.use('/api/films', films);
 app.use('/api/watchlist', watchlist);
 app.use('/api/cinemas', cinemas);
 app.use('/api/user', user);
+app.use('/api/search', rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({ error: 'RATE_LIMIT', message: RATE_LIMIT_MESSAGE });
+  },
+}), search);
 
 app.use((req, res, next) => {
   if (req.method === 'OPTIONS') return res.sendStatus(204);
