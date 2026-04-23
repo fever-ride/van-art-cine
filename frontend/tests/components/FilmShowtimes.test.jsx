@@ -60,17 +60,14 @@ describe('FilmShowtimes', () => {
 
     // Header text
     expect(
-      screen.getByText(/Upcoming Screenings of/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/My Film in Vancouver/i)
+      screen.getByText(/Upcoming Screenings in Vancouver/i)
     ).toBeInTheDocument();
 
     // Cinema name
     expect(screen.getByText('Test Cinema')).toBeInTheDocument();
 
     // Ticket link
-    const ticketLink = screen.getByText('Get tickets on cinema site!');
+    const ticketLink = screen.getByText('Get tickets');
     expect(ticketLink).toBeInTheDocument();
     expect(ticketLink).toHaveAttribute(
       'href',
@@ -88,7 +85,7 @@ describe('FilmShowtimes', () => {
 
     render(<FilmShowtimes upcoming={screenings} filmTitle="Another Film" />);
 
-    expect(screen.getByText('No ticket link')).toBeInTheDocument();
+    expect(screen.getByText('No link')).toBeInTheDocument();
   });
 
   test('limits to 10 screenings by default and shows "Show more" when there are more', () => {

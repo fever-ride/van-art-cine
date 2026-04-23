@@ -6,6 +6,14 @@ import { apiMe, apiLogout } from '@/app/lib/auth';
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
   usePathname: jest.fn(() => '/'),
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    refresh: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    prefetch: jest.fn(),
+  })),
 }));
 
 // Mock Next.js Link
@@ -26,6 +34,11 @@ jest.mock('next/image', () => {
   };
 });
 
+// Mock next/font/google
+jest.mock('next/font/google', () => ({
+  Noto_Sans: () => ({ className: 'mock-noto' }),
+}));
+
 // Mock auth API
 jest.mock('@/app/lib/auth', () => ({
   apiMe: jest.fn(),
@@ -37,7 +50,7 @@ describe('NavBar Component', () => {
     jest.clearAllMocks();
   });
 
-  test('displays login and register when user is not authenticated', async () => {
+  test('displays Sign in and Create account when user is not authenticated', async () => {
     apiMe.mockResolvedValue({ user: null });
 
     render(<NavBar />);
@@ -46,24 +59,22 @@ describe('NavBar Component', () => {
       expect(apiMe).toHaveBeenCalled();
     });
 
-    expect(screen.getByText('Log in')).toBeInTheDocument();
-    expect(screen.getByText('Register')).toBeInTheDocument();
-    expect(screen.queryByText('Logout')).not.toBeInTheDocument();
-    expect(screen.queryByText('My Profile')).not.toBeInTheDocument();
+    expect(screen.getByText('Sign in')).toBeInTheDocument();
+    expect(screen.getByText('Create account')).toBeInTheDocument();
+    expect(screen.queryByText('Sign out')).not.toBeInTheDocument();
   });
 
-  test('displays logout and My Profile when user is authenticated', async () => {
+  test('displays Sign out when user is authenticated', async () => {
     apiMe.mockResolvedValue({ user: { id: 1, name: 'Test User' } });
 
     render(<NavBar />);
 
     await waitFor(() => {
-      expect(screen.getByText('Logout')).toBeInTheDocument();
+      expect(screen.getByText('Sign out')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('My Profile')).toBeInTheDocument();
-    expect(screen.queryByText('Log in')).not.toBeInTheDocument();
-    expect(screen.queryByText('Register')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sign in')).not.toBeInTheDocument();
+    expect(screen.queryByText('Create account')).not.toBeInTheDocument();
   });
 
   test('shows common navigation links for all users', async () => {
@@ -79,22 +90,20 @@ describe('NavBar Component', () => {
     expect(screen.getByText('About')).toBeInTheDocument();
   });
 
-  test('calls apiLogout and returns to logged-out state when logout is clicked', async () => {
+  test('calls apiLogout and returns to signed-out state when Sign out is clicked', async () => {
     apiMe.mockResolvedValue({ user: { id: 1 } });
     apiLogout.mockResolvedValue({ ok: true });
 
     render(<NavBar />);
 
-    const logoutButton = await screen.findByText('Logout');
-
-    // fireEvent instead of userEvent
-    fireEvent.click(logoutButton);
+    const signOutButton = await screen.findByText('Sign out');
+    fireEvent.click(signOutButton);
 
     expect(apiLogout).toHaveBeenCalledTimes(1);
 
     await waitFor(() => {
-      expect(screen.getByText('Log in')).toBeInTheDocument();
-      expect(screen.getByText('Register')).toBeInTheDocument();
+      expect(screen.getByText('Sign in')).toBeInTheDocument();
+      expect(screen.getByText('Create account')).toBeInTheDocument();
     });
   });
 
@@ -111,6 +120,7 @@ describe('NavBar Component', () => {
     });
 
     const aboutLink = screen.getByText('About').closest('a');
-    expect(aboutLink).toHaveClass('bg-highlight');
+    expect(aboutLink).toHaveClass('bg-primary');
+    expect(aboutLink).toHaveClass('text-white');
   });
 });

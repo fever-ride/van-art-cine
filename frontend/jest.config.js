@@ -11,6 +11,21 @@ const customJestConfig = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
+  collectCoverageFrom: [
+    'components/**/*.{ts,tsx}',
+    'app/lib/**/*.{ts,tsx}',
+    'lib/**/*.{ts,tsx}',
+    '!**/*.d.ts',
+    '!**/index.{ts,tsx}',
+  ],
+  coverageThreshold: {
+    global: {
+      statements: 25,
+      branches: 15,
+      functions: 25,
+      lines: 25,
+    },
+  },
 }
 
 module.exports = createJestConfig(customJestConfig)

@@ -39,7 +39,7 @@ describe('Filters component', () => {
 
     // Search input
     expect(
-      screen.getByPlaceholderText('Title, director…')
+      screen.getByPlaceholderText('Enter a film title…')
     ).toBeInTheDocument();
 
     // Cinemas label
@@ -62,7 +62,8 @@ describe('Filters component', () => {
     ).toBeInTheDocument();
   });
 
-  test('updates search query and calls setUI + onApply when typing', () => {
+  test('updates search query and calls setUI after debounce when typing', () => {
+    jest.useFakeTimers();
     const ui = makeUI({ q: '' });
     const setUI = jest.fn();
     const onApply = jest.fn();
@@ -76,16 +77,18 @@ describe('Filters component', () => {
       />
     );
 
-    const input = screen.getByPlaceholderText('Title, director…');
+    const input = screen.getByPlaceholderText('Enter a film title…');
 
     fireEvent.change(input, { target: { value: 'Ozu' } });
 
+    expect(setUI).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(400);
+
     expect(setUI).toHaveBeenCalledTimes(1);
-    expect(setUI).toHaveBeenCalledWith({
-      ...ui,
-      q: 'Ozu',
-    });
-    expect(onApply).toHaveBeenCalledTimes(1);
+    expect(setUI).toHaveBeenCalledWith({ q: 'Ozu' });
+
+    jest.useRealTimers();
   });
 
   test('selecting and clearing cinemas updates the summary text', () => {
