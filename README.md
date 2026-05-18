@@ -183,6 +183,10 @@ frontend/
 - `GET  /screenings` — filtering, sorting, pagination
 - `POST /screenings/bulk` — used by guest watchlist
 
+### Smart Search (not yet deployed)
+
+- `GET /smart-search?q=...` — natural language search (structured or agentic path)
+
 ### User (Auth required)
 
 - `GET   /user/me` — get user profile
@@ -198,7 +202,30 @@ frontend/
 - `POST   /watchlist/toggle`
 - `POST   /watchlist/import`
 
-## 7. Frontend Features
+## 7. Smart Search (in development — not yet deployed)
+
+A natural-language search system that lets users describe what they want to watch (mood, style, constraints) rather than requiring an exact title.
+
+**Architecture:** Two-path routing via LLM classifier:
+
+| Path | When | How |
+|------|------|-----|
+| **Structured** | Query references a known entity (director, film title, cinema) | Entity extraction → SQL lookup |
+| **Agentic** | Query describes mood/vibe/style or has complex constraints | Embedding recall (pgvector) → LLM verification + scoring |
+
+**Key components:**
+- `queryRouter.js` — GPT-4o-mini classifier with circuit breaker (degrades to keyword ILIKE on repeated failure)
+- `structuredSearch.js` — SQL entity lookup (person/film/cinema + screening join)
+- `verificationService.js` — Batched LLM scoring of embedding recall candidates (max 15 per call)
+- `searchOrchestrator.js` — Coordinates routing, recall, filtering, and verification
+
+**Tech:** pgvector + HNSW index, OpenAI text-embedding-3-small (1536-dim), GPT-4o-mini / GPT-4o for verification.
+
+**Branch:** `smart-search` | **Design doc:** `docs/rag-search-plan.md`
+
+---
+
+## 8. Frontend Features
 
 ### Homepage
 

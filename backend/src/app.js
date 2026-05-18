@@ -81,7 +81,7 @@ app.use('/api/films', films);
 app.use('/api/watchlist', watchlist);
 app.use('/api/cinemas', cinemas);
 app.use('/api/user', user);
-app.use('/api/search', rateLimit({
+app.use('/api/smart-search', rateLimit({
   windowMs: 60 * 1000,
   max: 30,
   standardHeaders: true,

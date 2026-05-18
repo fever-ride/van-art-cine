@@ -35,7 +35,7 @@ pgvector + HNSW index, OpenAI embeddings (text-embedding-3-small, 1536-dim), GPT
 User enters natural language query
   │
   ▼
-GET /api/search?q=...
+GET /api/smart-search?q=...
   │
   ▼
 Query Router (GPT-4o-mini)
