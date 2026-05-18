@@ -1,61 +1,272 @@
-# Smart Search — Implementation Plan (v3)
+# Smart Search — Implementation Plan (v4)
 
 ## Context
 
-The app has two search APIs:
+The app has two search modes, unified under a single smart search endpoint:
 
-| Endpoint | Purpose | Calls LLM |
-|----------|---------|-----------|
-| `GET /api/screenings?q=...` | Keyword search (existing, unchanged) | Never |
-| `GET /api/search?q=...` | Smart search (new) | Every request |
-
-Keyword search stays as the default. Smart search is a separate mode the user explicitly opts into on the frontend.
-
-### Smart Search — Two Tiers
-
-| Tier | When | Strategy | External API calls |
+| Mode | When | Strategy | External API calls |
 |------|------|----------|-------------------|
-| **Semantic** | Query describes mood, theme, style, genre | Embed query → pgvector cosine similarity | 1× GPT-4o-mini (classify) + 1× embedding |
-| **Agentic** | Query has hard constraints (time, duration, location) or complex personal preferences | LLM decomposes intent → semantic search → filter → explain | 1× GPT-4o-mini + 1× embedding + 2× GPT-4o |
+| **Structured** | Query references a specific entity (director, film title, cinema) | Entity extraction → SQL lookup + filters | 1× GPT-4o-mini (router) |
+| **Agentic** | Query describes mood/vibe/style OR has complex constraints OR requires reasoning | Embedding recall → LLM verification + scoring | 2× GPT-4o-mini (router + constraint extraction) + 1× embedding + 1× GPT-4o-mini or GPT-4o (verify/score) |
 
-### Tech Demonstrated
+The existing keyword search (`GET /api/screenings?q=...`) remains available as a simple title ILIKE fallback, but is not part of the smart search system.
 
-Semantic search / RAG, pgvector + HNSW index, OpenAI embeddings, intent classification, agentic search orchestration, LLM slot extraction, natural language date/cinema resolution
+### Why not three tiers (structured / semantic / agentic)?
+
+v3 of this plan had a standalone "semantic" tier: embed query → return cosine results directly without LLM verification. This was removed because:
+
+1. **Embedding similarity ≠ match quality.** Cosine similarity measures text proximity in vector space, not whether a film actually satisfies the user's intent. "light happy romance" returns "Happy Together" (a melancholic breakup drama) at similarity 0.37 — a plausible-looking score for a completely wrong result.
+
+2. **No reliable way to predict when embedding-only is safe.** The classifier cannot determine in advance whether a vibe query will be misled by title words, genre labels, or description language that shares vocabulary with the query without matching tone.
+
+3. **The cost of verification is low; the cost of a bad recommendation is high.** Adding a lightweight GPT-4o-mini verification pass to the top-N results costs ~$0.001 and ~500ms. Serving a confidently wrong recommendation erodes user trust.
+
+Embedding search is now the **recall step** inside the agentic path, not an independent output path. It retrieves candidates; LLM verification decides which candidates actually match.
+
+### Tech Stack
+
+pgvector + HNSW index, OpenAI embeddings (text-embedding-3-small, 1536-dim), GPT-4o-mini (routing + verification), GPT-4o (complex reasoning when needed), rule-based date/cinema resolution
 
 ---
 
 ## Architecture Overview
 
 ```
-User opts into "Smart Search" and enters query
+User enters natural language query
   │
   ▼
 GET /api/search?q=...
   │
   ▼
-Intent Classifier (GPT-4o-mini — fast, cheap)
+Query Router (GPT-4o-mini)
   │
-  ├─ SEMANTIC ──→ embed query → pgvector cosine search
-  │               → return { items, tier: "semantic", similarity }
+  ├─ STRUCTURED
+  │   Query contains a recognizable entity (person name, film title, cinema)
+  │   │
+  │   ▼
+  │   Entity extraction → SQL lookup (person/film/cinema tables)
+  │   → Apply optional filters (date, cinema, runtime)
+  │   → Return results directly (no embedding needed)
   │
-  └─ AGENTIC ──→ GPT-4o decomposes query into constraints
-                  → semantic search with vibe_keywords
-                  → hard constraint filtering (runtime, date, cinema)
-                  → GPT-4o generates per-film explanation
-                  → return { items, tier: "agentic", similarity, match_explanation }
+  └─ AGENTIC
+      Query describes what kind of film / experience the user wants
+      │
+      ▼
+      1. Extract search parameters:
+         - vibe_keywords (for embedding recall)
+         - hard constraints (date, cinema, runtime)
+      2. Embed vibe_keywords → pgvector cosine recall (top 30-40 candidates)
+      3. Apply hard constraint filters (date range, cinema, runtime)
+      4. LLM verification + scoring:
+         - GPT-4o-mini for simple vibe queries (score 1-10)
+         - GPT-4o for complex reasoning queries (score 1-10 + explanation)
+      5. Filter out score < 5
+      6. Return ranked results with match_score and optional explanation
 ```
 
-Key distinction: if the query ONLY describes what kind of film → semantic. If it includes constraints like time, duration, area, or complex personal preferences → agentic.
+### Key insight: embedding is retrieval, LLM is precision
 
-Fallback: if the classifier fails or times out, default to semantic (safe middle ground).
+Embedding search is good at narrowing 800 films to 30 plausible candidates. It is bad at judging whether a candidate truly matches the user's intent. LLM verification closes this gap — even for "simple" vibe queries like "light happy romance", it reads the film's description and rejects false positives that embedding similarity alone would surface.
 
 ---
 
-## Phase 1: Database + Embedding Infrastructure ✅ DONE (2026-04-23)
+## Query Router Design
 
-### 1.1 Prisma Migration — pgvector + film_embedding table ✅
+The router replaces the old "intent classifier" (which only decided semantic vs agentic). It now makes a two-way decision with entity extraction:
 
-Migration: `backend/prisma/migrations/20260423000000_add_film_embeddings/migration.sql`
+```
+Input: user query string
+Output: { mode: "structured" | "agentic", entities?: {...}, date_hint?: string }
+```
+
+### Routing logic
+
+| Signal in query | Route to | Example |
+|----------------|----------|---------|
+| Named person (director, actor) | structured | "Tarantino movies this week" |
+| Specific film title | structured | "when is Happy Together playing" |
+| Named cinema without vibe | structured | "what's on at the Rio" |
+| Mood/style/genre description | agentic | "dark atmospheric noir" |
+| Personal preference / reasoning needed | agentic | "something my partner won't hate" |
+| Hard constraints + vibe | agentic | "light comedy tonight under 2 hours" |
+
+### Why a named entity triggers structured instead of embedding search
+
+"Tarantino" is an exact entity in the `person` table. Embedding search for "Tarantino" would return films that are *stylistically similar* to Tarantino's work — not necessarily directed by him. A SQL JOIN (`film_person WHERE person.name ILIKE '%tarantino%'`) is both faster and more precise.
+
+### Edge case: "Wong Kar-wai style"
+
+The router must distinguish:
+- "Wong Kar-wai films" → structured (find films BY this director)
+- "Wong Kar-wai style" → agentic (find films LIKE this director's style)
+
+The key signal is whether the user wants the entity itself or something resembling it.
+
+### Router prompt (GPT-4o-mini)
+
+```
+You route natural language queries for a movie screening search engine in Vancouver.
+
+Classify into exactly one mode:
+
+- "structured": The query asks about a SPECIFIC entity — a named director, actor, 
+  film title, or cinema — and wants to find screenings of/by/at that entity.
+  Examples: "Tarantino films", "when is Nosferatu playing", "what's at the Rio this week"
+
+- "agentic": The query describes what kind of experience or film the user wants, 
+  using mood, style, genre, theme, personal preferences, or any description 
+  that requires judgment to match against films. Also use this when the user 
+  references a person/film as a STYLE REFERENCE rather than looking for that 
+  specific entity.
+  Examples: "dark atmospheric noir", "light fun date movie", 
+  "something my film-buff friend would respect", "dreamy melancholic romance",
+  "Wong Kar-wai style visual aesthetic"
+
+Key distinction: if the user is looking FOR a known thing → structured.
+If the user is looking for something that MATCHES a description → agentic.
+
+Respond as JSON:
+{
+  "mode": "structured" | "agentic",
+  "entities": { "person": null | "name", "film": null | "title", "cinema": null | "name" },
+  "date_hint": null | "today" | "tonight" | "tomorrow" | "this weekend"
+}
+
+Only populate "entities" for structured mode. For agentic mode, set all entity fields to null.
+```
+
+Fallback on error: `{ mode: "agentic" }` (safe — agentic always produces verified results).
+
+### Resilience — Circuit Breaker
+
+The router calls GPT-4o-mini on every request. If OpenAI is degraded, we need graceful degradation:
+
+```
+Fallback chain:
+  Router OK           → structured / agentic (normal)
+  Router fails (1×)   → default to agentic (acceptable; one extra embedding + verify call)
+  Router fails (≥5× in 60s) → circuit breaker OPEN → degrade to keyword ILIKE search
+  After 30s cooldown  → circuit breaker HALF-OPEN → retry the router call
+  If succeeds         → circuit breaker CLOSED (resume normal)
+```
+
+Implementation: in-memory counter + timestamp in `queryRouter.js`. No external dependency needed at our scale. If the breaker is open, the orchestrator skips all LLM calls and falls through to `GET /api/screenings?q=...` logic (title ILIKE) with a response header `X-Search-Degraded: true` so the frontend can show a notice.
+
+Rate limiting (existing): 30 req/min per IP on `/api/search`. This remains unchanged and acts as the first line of defense against abuse regardless of circuit breaker state.
+
+---
+
+## Structured Path
+
+### Flow
+
+1. Router extracts entities: `{ person: "Tarantino", cinema: null, date_hint: "this week" }`
+2. Entity resolution:
+   - Person: fuzzy match against `person.name` / `person.normalized_name` → get `person_id`
+   - Film: fuzzy match against `film.title` / `film.normalized_title` → get `film_id`
+   - Cinema: `cinemaResolver.js` (existing) → get `cinema_id`
+3. SQL query: JOIN `screening` + `film` + `film_person` with resolved IDs + date range filter
+4. Return results (no embedding, no LLM scoring needed — precision comes from exact entity match)
+
+### When structured has no results
+
+If the entity lookup returns 0 results (e.g. no upcoming screenings for that director, or entity not found), **do not silently fall back to agentic**. Instead, return an empty result with a fallback hint:
+
+```json
+{
+  "mode": "structured",
+  "items": [],
+  "message": "No upcoming screenings found for Tarkovsky.",
+  "fallback_available": true,
+  "fallback_hint": "Show films with a similar style?"
+}
+```
+
+The frontend displays the message and a CTA button. If the user opts in, the frontend sends a second request with the query rewritten as a style reference (e.g. "Tarkovsky style"), which routes to agentic.
+
+**Rationale:** The user asked for a specific thing. Silently giving them vaguely related results would be confusing. But a dead end with no option is also bad UX. Offering an explicit opt-in for fuzzy results respects user intent while providing a useful escape hatch. This matches patterns in Netflix/Spotify (exact search → "You might also like..." as a separate section, never mixed into primary results).
+
+---
+
+## Agentic Path
+
+### Flow
+
+1. Router classifies as agentic
+2. Constraint extraction (separate GPT-4o-mini call, distinct from router):
+   - `vibe_keywords`: rich descriptive string for embedding recall
+   - `date_hint`: "today" / "this weekend" / null → resolved via `dateResolver.js`
+   - `cinema_hint`: "rio" / "cinematheque" / null → resolved via `cinemaResolver.js`
+   - `runtime_max`: number or null
+   - `avoid`: things to exclude (optional)
+   - `complex`: boolean — determines whether verification uses GPT-4o or GPT-4o-mini
+3. Embedding recall:
+   - Embed `vibe_keywords` → pgvector cosine search
+   - Retrieve top 30-40 candidates above minimum similarity threshold (0.25)
+4. Hard constraint filtering:
+   - Date range (from dateResolver)
+   - Cinema IDs (from cinemaResolver)
+   - Runtime max
+5. LLM verification + scoring:
+   - For each remaining candidate, LLM reads: user query + film title + genre + description
+   - Scores 1-10: does this film actually match what the user is looking for?
+   - Optionally generates 1-2 sentence explanation (for complex queries)
+6. Filter: remove candidates with score < 5
+7. Sort by score descending, return top results
+
+### Verification model selection
+
+| Query complexity | Verification model | Why |
+|-----------------|-------------------|-----|
+| Simple vibe ("dark noir", "romantic drama") | GPT-4o-mini | Straightforward match judgment; mini is sufficient and cheap |
+| Complex reasoning ("my partner won't hate", "good for a first date") | GPT-4o | Requires inference about social context, tone judgment |
+
+Complexity is determined by the constraint extraction step (the `complex` field in its response), not the router. The extraction prompt evaluates whether the query requires reasoning about social context or personal preferences.
+
+### Why verification solves the Happy Together problem
+
+Without verification (old v3 semantic path):
+- Query: "light happy romance" → embed → cosine search → "Happy Together" at similarity 0.37 → returned to user ❌
+
+With verification (new agentic path):
+- Query: "light happy romance" → embed → cosine search → "Happy Together" at similarity 0.37 → GPT-4o-mini reads description: "two men, their relationship deteriorating in Buenos Aires" → score: 2 → filtered out ✓
+
+The LLM does what embedding cannot: it reasons about whether the *content* of the film matches the *intent* of the query, rather than just measuring text proximity.
+
+### Batched verification — design and limits
+
+Instead of N separate LLM calls (one per candidate), batch all candidates into a single prompt:
+
+```
+User is searching for: "light happy romance"
+
+Score each film 1-10 on match quality:
+
+1. Happy Together (1997) | Drama, Romance | "Two men from Hong Kong, their relationship deteriorating..."
+2. The Green Ray (1986) | Drama, Romance | "A young woman searches for love during summer..."
+3. ...
+
+Respond as JSON: { "scores": [{ "index": 1, "score": 2 }, { "index": 2, "score": 6 }, ...] }
+```
+
+This reduces N × 300ms to a single ~800ms call regardless of candidate count.
+
+**Batch size cap: 15 candidates per verification call.**
+
+Rationale:
+- LLM scoring consistency degrades when evaluating more than ~15-20 items in a single prompt (known issue with positional bias in long lists).
+- 15 candidates × ~150 tokens each (title + genre + truncated description) ≈ 2250 tokens input + 300 tokens prompt + 300 tokens output ≈ 3000 tokens total. Well within context limits.
+- If hard filtering produces > 15 candidates, take the top-15 by embedding similarity. Candidates ranked 16+ by cosine similarity are unlikely to outscore the top-15 after verification.
+
+**Description truncation: max 150 characters per candidate in the verification prompt.** Full descriptions can be 500+ chars, but verification only needs enough to judge tone and content — not full plot summary. Truncate at sentence boundary when possible.
+
+**If the system ever needs > 15 verified results** (e.g. pagination): split into multiple verification calls. But current UX shows at most 10-15 results per page, so a single batch is sufficient.
+
+---
+
+## Database + Embedding Infrastructure (unchanged from v3)
+
+### Prisma Migration — pgvector + film_embedding table
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -74,255 +285,122 @@ CREATE INDEX idx_film_embedding_cosine
   WITH (m = 16, ef_construction = 64);
 ```
 
-### 1.2 Dependencies ✅
-
-- `openai` added to `backend/package.json`
-- `OPENAI_API_KEY` added to `backend/.env`
-
-### 1.3 `backend/src/services/embeddingService.js` ✅
+### `backend/src/services/embeddingService.js`
 
 - `buildFilmDocText(filmId)` — title, year, genre, directors, country, language, rated, awards, description, tags
 - `generateEmbedding(text)` — OpenAI text-embedding-3-small → 1536-dim vector
 - `upsertFilmEmbedding(filmId)` — build doc text → embed → upsert via raw SQL (ON CONFLICT UPDATE)
 - `embedQuery(queryText)` — embed a search query
 
-### 1.4 Backfill Script ✅
+### Backfill Script
 
-`backend/scripts/backfill-embeddings.js` (Node.js, reuses embeddingService directly)
-
-- Incremental by default (skips films that already have embeddings), `--all` for full rebuild
-- Batches of 20 concurrent requests, 500ms delay between batches
-- Run: `node scripts/backfill-embeddings.js`
-- Result: 779/779 films embedded, 0 errors
+`backend/scripts/backfill-embeddings.js` — incremental by default, `--all` for full rebuild.
 
 ---
 
-## Phase 2: Intent Router + Search Endpoint ✅ DONE (2026-04-23)
+## Supporting Services
 
-### 2.1 `backend/src/services/intentClassifier.js` ✅
+### `dateResolver.js` (rule-based, no LLM)
 
-GPT-4o-mini classifies query into `semantic` or `agentic`. Returns `{ tier }`.
+- "today" / "tonight" → `{ date: today }`
+- "tomorrow" → `{ date: tomorrow }`
+- "this weekend" → `{ from: saturday, to: sunday }`
 
-Fallback on error: `{ tier: 'semantic' }`.
-
-### 2.2 `backend/src/services/searchOrchestrator.js` ✅
-
-Central dispatcher:
-
-```javascript
-export async function orchestrateSearch({ query, tier, filters })
-```
-
-- **Semantic path**: embed query → pgvector cosine search → return results with similarity
-- **Agentic path**: GPT-4o slot extraction → semantic search with vibe_keywords → hard constraint filtering (runtime, date, cinema) → GPT-4o explanation generation
-
-### 2.3 `backend/src/services/dateResolver.js` ✅
-
-Rule-based, no LLM. Uses `date-fns`.
-
-- "today" / "tonight" → `{ date: '2026-04-23' }`
-- "tomorrow" → `{ date: '2026-04-24' }`
-- "this weekend" → `{ from: '2026-04-25', to: '2026-04-27' }`
-
-### 2.4 `backend/src/services/cinemaResolver.js` ✅
-
-Fuzzy substring match against cinema table. Cached.
+### `cinemaResolver.js` (fuzzy match, cached)
 
 - "rio" → `[166]` (Rio Theatre)
 - "cinematheque" → `[1]` (The Cinematheque)
 - "viff" → `[112, 113, 116]`
 
-### 2.5 `backend/src/services/explanationService.js` ✅
-
-Agentic tier only. GPT-4o receives each film's description, scores match quality 1-10, and generates 1-2 sentence explanation. Results sorted by score descending — low scores still returned (library is art-house heavy) but clearly marked so frontend can treat them differently.
-
-### 2.6 `backend/src/models/search.js` ✅
-
-Raw SQL with pgvector cosine similarity. Dynamic WHERE clause for date range, cinema IDs, min similarity threshold.
-
-### 2.7 Route: `GET /api/search` ✅
-
-- Controller: `backend/src/controllers/searchController.js`
-- Validator: `backend/src/validators/searchValidators.js`
-- Route: `backend/src/routes/search.js`
-- Mounted in `backend/src/app.js` with 30 req/min rate limit
-
 ---
 
-## Phase 3: Frontend Integration — TODO
+## Verification Prompt Design
 
-### 3.1 New: `frontend/app/lib/search.ts`
+### For simple vibe queries (GPT-4o-mini, batched)
 
-```typescript
-interface SearchResult extends Screening {
-  similarity?: number;
-  match_explanation?: string | null;
-}
+```
+You are verifying whether films match a user's search query for a movie screening app.
 
-interface SearchResponse {
-  items: SearchResult[];
-  tier: 'semantic' | 'agentic';
-}
+User is searching for: "{query}"
 
-function searchScreenings(params: SearchQuery): Promise<SearchResponse>
+Score each film 1-10 on how well it matches what the user is looking for:
+- 1-3: Clearly does not match (wrong tone, genre, or mood)
+- 4-5: Tangentially related but not what was asked for
+- 6-7: Reasonably good match
+- 8-10: Excellent match
+
+Films:
+{numbered list of candidates with title, year, genre, description}
+
+Respond as JSON: { "scores": [{ "index": 1, "score": <number> }, ...] }
 ```
 
-### 3.2 New: `frontend/lib/hooks/useSearchData.ts`
+### For complex reasoning queries (GPT-4o, batched)
 
-Same pattern as `useScreeningsData.ts`. Returns `{ items, tier, loading, error, hasMore, reload }`.
+```
+You are evaluating whether films match a user's nuanced search query.
 
-### 3.3 Modify: `frontend/lib/hooks/useScreeningsUI.ts`
+User is searching for: "{query}"
 
-Add `searchMode: 'keyword' | 'smart'` to UIState. Default: `'keyword'`.
+Score each film 1-10 considering:
+- The explicit criteria stated in the query
+- Implicit preferences (e.g. "first date" implies light tone, not too intense)
+- Whether this film would actually satisfy the user's underlying need
 
-### 3.4 Modify: `frontend/components/screenings/Filters.tsx`
+For each film, also provide a 1-2 sentence explanation.
 
-- Pill toggle: **"Title search"** / **"Smart search"**
-- Smart mode placeholder: `"Describe what you're looking for..."`
-- Debounce: 800ms in smart mode (vs 350ms for keyword)
+Films:
+{numbered list of candidates with title, year, genre, description, runtime, awards}
 
-### 3.5 Modify: `frontend/app/page.tsx`
-
-Dispatch between `useScreeningsData` (keyword mode) and `useSearchData` (smart mode).
-
-### 3.6 Modify: `frontend/components/screenings/ResultsTable.tsx`
-
-- Show tier badge: "Semantic match: 84%" / "AI recommended"
-- Show `match_explanation` for agentic results in expanded row
-
----
-
-## Phase 4: Pipeline Integration ✅ DONE (2026-04-23)
-
-### 4.1 `database/scripts/generate_embeddings.py` ✅
-
-Pure Python script integrated into the data pipeline. Uses `db_helper.conn_open()` + OpenAI SDK.
-
-- Incremental by default (skips films with existing embeddings), `--all` for full rebuild
-- Added as step 8 in `database/scripts/run_all.py`, runs after `merge_staging_to_live`
-- New films get embeddings automatically on every pipeline run
+Respond as JSON: { "scores": [{ "index": 1, "score": <number>, "explanation": "<string>" }, ...] }
+```
 
 ---
 
 ## Response Shape
 
-Both tiers return the same base shape. Tier-specific fields are optional.
-
 ```json
 {
-  "tier": "semantic",
+  "mode": "structured" | "agentic",
   "items": [
     {
       "id": 2738,
-      "title": "Happy Together",
-      "year": 1997,
+      "title": "The Damned",
+      "year": 1969,
       "start_at_utc": "2026-04-28T03:00:00.000Z",
-      "cinema_name": "VIFF Centre - VIFF Cinema",
-      "genre": "Drama, Romance",
-      "runtime_min": 96,
-      "similarity": 0.452,
-      "match_score": null,
-      "match_explanation": null
+      "cinema_name": "The Cinematheque",
+      "genre": "Drama, War",
+      "runtime_min": 156,
+      "source_url": "...",
+      "similarity": 0.45,
+      "match_score": 9,
+      "match_explanation": "An intense war drama set during the Third Reich..."
     }
-  ]
+  ],
+  "message": null
 }
 ```
 
-- `similarity` — present for both tiers (cosine similarity 0–1)
-- `match_score` — agentic only (1–10, GPT-4o judges match quality based on film description). Results with score < 5 are filtered out.
-- `match_explanation` — agentic only (1–2 sentence reasoning)
-- `message` — present when agentic tier finds no good matches (all scores < 5)
+Field presence by mode:
+
+| Field | Structured | Agentic |
+|-------|-----------|---------|
+| `similarity` | null | present (from embedding recall) |
+| `match_score` | null | present (from LLM verification) |
+| `match_explanation` | null | present for complex queries, null for simple |
+| `message` | present if no results | present if all candidates scored < 5 |
+| `fallback_available` | true if 0 results and entity was valid | null |
+| `fallback_hint` | suggestion text for style-based search | null |
 
 ---
 
-## Test Results (2026-04-23)
+## Cost & Latency Estimates
 
-All results below are actual API responses, not edited.
-
-### Semantic Tier
-
-**Query: "dreamy melancholic romance"**
-```
-Tier: semantic
-0.373 | The Green Ray (1986) | Drama, Romance | The Cinematheque
-0.354 | Two Seasons, Two Strangers (2025) | Drama | The Cinematheque
-```
-
-**Query: "wong kar-wai style visual aesthetic"**
-```
-Tier: semantic
-0.452 | Happy Together (1997) | Drama, Romance
-0.367 | Yi Yi (2000) | Drama
-```
-
-**Query: "dark atmospheric japanese thriller"**
-```
-Tier: semantic
-0.503 | All the Long Nights (2024) | Drama | Japan
-0.472 | Two Seasons, Two Strangers (2025) | Drama | Japan
-```
-
-**Query: "visually stunning animation"**
-```
-Tier: semantic
-0.381 | The Forgotten Reels of Nunavut's Animation Workshop
-```
-
-**Query: "classic European cinema with beautiful cinematography"**
-```
-Tier: semantic
-0.478 | Man With a Movie Camera | Documentary | Soviet Union
-0.453 | The Damned (1969) | Drama, War | Italy, West Germany, Switzerland
-0.439 | D'est (1993) | Documentary | Belgium, France, Portugal
-0.427 | The Leopard (1963) | Drama, History | Italy, France
-```
-
-### Agentic Tier
-
-**Query: "something light and fun for a first date under two hours"**
-```json
-{
-  "tier": "agentic",
-  "message": "No good matches found for your query among current screenings.",
-  "items": []
-}
-```
-All candidates scored below 5 and were filtered out. GPT-4o read the film descriptions and correctly identified that none of the art-house screenings match a "light fun comedy" request — instead of recommending "Happy Together" just because the title sounds cheerful.
-
-**Query: "a movie my film-buff friend would respect but my partner won't hate"**
-```
-Tier: agentic
-score:8 | The Art of Adventure (2025) | Documentary | VIFF Centre
-  → This documentary combines adventure and art, offering a balanced and
-    engaging experience that is both thought-provoking and accessible,
-    likely to satisfy both a film buff and a general viewer.
-score:7 | Really Happy Someday (2024) | Drama | Rio Theatre
-  → This drama offers a thought-provoking narrative about self-discovery
-    and identity, which could appeal to film buffs, while its engaging
-    personal story might be accessible and entertaining for a wider audience.
-```
-
-**Query: "intense war drama this weekend"**
-```
-Tier: agentic
-score:9 | The Damned (1969) | Drama, War | The Cinematheque
-  → The film is a war drama set during the Third Reich, matching the
-    intense and historical aspects of the query. Its runtime is suitable
-    for a weekend screening.
-score:7 | Palestine 36 | Biography, Drama, History | VIFF Centre
-  → While not explicitly a war drama, it deals with historical conflict
-    and unrest, offering an intense and emotional narrative set against
-    British colonial rule.
-```
-
-### Score threshold
-
-Agentic results with `match_score` < 5 are filtered out. GPT-4o scoring distribution on our art-house library:
-- **2–3**: Clearly wrong match (e.g. "Happy Together" for "light fun comedy")
-- **5–6**: Relevant but with caveats
-- **7–9**: Strong match
-
-5 as cutoff correctly separates "at least relevant" from "not what was asked for".
+| Mode | External calls | Est. latency | Est. cost per query |
+|------|---------------|-------------|-------------------|
+| Structured | 1× GPT-4o-mini (router) | ~0.8s | ~$0.0002 |
+| Agentic (simple vibe) | 2× GPT-4o-mini (router + extraction) + 1× embedding + 1× GPT-4o-mini (batched verify) | ~2.5s | ~$0.002 |
+| Agentic (complex) | 2× GPT-4o-mini (router + extraction) + 1× embedding + 1× GPT-4o (batched verify+explain) | ~4s | ~$0.006 |
 
 ---
 
@@ -330,50 +408,59 @@ Agentic results with `match_score` < 5 are filtered out. GPT-4o scoring distribu
 
 | Decision | Choice | Why |
 |----------|--------|-----|
-| Separate APIs | `/api/screenings` (keyword) + `/api/search` (smart) | User typos don't trigger LLM calls; smart search is opt-in |
-| Two-tier classifier | GPT-4o-mini: semantic vs agentic | Simpler and more accurate than three-way; structured queries stay on the keyword API |
-| Classifier fallback | Default to `semantic` | Safe middle ground — always produces reasonable results |
-| Semantic search | pgvector + HNSW | Good enough for < 10K films; no separate vector DB needed |
-| Agentic search | GPT-4o for decomposition + explanation | Complex reasoning needs a capable model; only invoked for complex queries |
-| Date resolution | `date-fns` rule-based | "this weekend" / "tonight" are deterministic; no LLM needed |
-| Cinema resolution | Substring fuzzy match | Small cinema list (< 20); exact match + contains is sufficient |
-| Explanation | Agentic tier only | Semantic results are self-explanatory; explanation adds latency |
-| All LLM calls | OpenAI only | Project already uses OpenAI elsewhere; single SDK, single API key |
+| Remove standalone semantic tier | Embedding is recall-only, always followed by LLM verification | Similarity score alone cannot reliably judge match quality |
+| Add structured mode | SQL entity lookup for named persons/films/cinemas | Exact entities should use exact matching; embedding introduces noise for known-item queries |
+| Verification for all agentic queries | Even "simple" vibe queries get GPT-4o-mini scoring | Cannot predict in advance which queries will be misled by embedding proximity |
+| Batched verification | All candidates scored in one LLM call, max 15 | Reduces latency; LLM scoring degrades beyond ~15 items |
+| Router fallback → agentic | If router fails once, default to agentic path | Agentic always verifies; safer than returning unverified results |
+| Circuit breaker on repeated failure | ≥5 router failures in 60s → degrade to keyword ILIKE | Prevents cascading LLM costs when OpenAI is down |
+| Structured empty → offer fallback | Return empty + `fallback_hint`, don't auto-switch to agentic | Respect user intent; let them opt in to fuzzy results explicitly |
+| Score threshold at 5 | Candidates below 5 are filtered out | Calibrated on art-house library: 2-3 = wrong, 5-6 = relevant with caveats, 7-9 = strong match |
+| Separate keyword API unchanged | `GET /api/screenings?q=...` stays as-is | Simple ILIKE; no LLM cost; quick path for users who know the exact title |
 
 ---
 
-## Cost & Latency Estimates
+## Migration from v3 (completed)
 
-| Tier | External calls | Est. latency | Est. cost per query |
-|------|---------------|-------------|-------------------|
-| Semantic | 1× GPT-4o-mini + 1× embedding | ~1.5s | ~$0.0005 |
-| Agentic | 1× GPT-4o-mini + 1× embedding + 2× GPT-4o | ~4s | ~$0.005 |
+### Files changed
 
----
+| File | What was done |
+|------|---------------|
+| `backend/src/services/intentClassifier.js` | **Deleted.** Replaced by `queryRouter.js` |
+| `backend/src/services/explanationService.js` | **Deleted.** Replaced by `verificationService.js` |
+| `backend/src/services/searchOrchestrator.js` | **Rewritten.** Removed semantic-only path; added structured + degraded handlers; agentic path now does constraint extraction → embedding recall → verification |
+| `backend/src/controllers/searchController.js` | **Rewritten.** Uses `routeQuery`; passes full routing object to orchestrator; sets `X-Search-Degraded` header |
 
-## Files Created
+### New files
 
 | File | Purpose |
 |------|---------|
-| `backend/prisma/migrations/20260423000000_add_film_embeddings/migration.sql` | pgvector + film_embedding table |
-| `backend/src/services/intentClassifier.js` | GPT-4o-mini: semantic vs agentic |
-| `backend/src/services/searchOrchestrator.js` | Dispatch to semantic / agentic path |
-| `backend/src/services/embeddingService.js` | OpenAI embedding generation + storage |
-| `backend/src/services/explanationService.js` | GPT-4o per-film explanation (agentic only) |
-| `backend/src/services/dateResolver.js` | "this weekend" → concrete date range |
-| `backend/src/services/cinemaResolver.js` | "rio" → cinema ID fuzzy match |
-| `backend/src/models/search.js` | pgvector similarity SQL |
-| `backend/src/controllers/searchController.js` | Request handler |
-| `backend/src/validators/searchValidators.js` | Input validation |
-| `backend/src/routes/search.js` | Route definition |
-| `backend/scripts/backfill-embeddings.js` | Node.js embedding backfill script |
-| `database/scripts/generate_embeddings.py` | Python pipeline embedding step |
+| `backend/src/services/queryRouter.js` | Two-way router (structured/agentic) with circuit breaker |
+| `backend/src/services/verificationService.js` | Batched LLM scoring (GPT-4o-mini or GPT-4o); max 15 candidates |
+| `backend/src/models/structuredSearch.js` | SQL entity lookup: `searchByPerson`, `searchByFilm`, `searchByCinema` |
 
-## Files Modified
+### Files unchanged
 
-| File | Change |
+| File | Reason |
 |------|--------|
-| `backend/src/app.js` | Mount `/api/search` route + 30 req/min rate limit |
-| `backend/package.json` | Add `openai` dependency |
-| `backend/.env` | Add `OPENAI_API_KEY` |
-| `database/scripts/run_all.py` | Add `generate_embeddings` as step 8 |
+| `embeddingService.js` | Embedding generation/query unchanged |
+| `dateResolver.js` | Date resolution logic unchanged |
+| `cinemaResolver.js` | Cinema resolution logic unchanged |
+| `backfill-embeddings.js` | Embedding backfill unchanged |
+| `generate_embeddings.py` | Pipeline step unchanged |
+| `models/search.js` | Semantic search (pgvector cosine) unchanged; structured queries live in new `structuredSearch.js` |
+| Migration SQL | pgvector table unchanged |
+
+---
+
+## Known Limitations & Future Work
+
+1. **Verification adds latency to all agentic queries.** For queries where embedding results happen to be correct (e.g. "dark japanese thriller"), verification confirms them but adds ~500ms. Acceptable at our scale; at higher QPS, pre-computed mood/tone tags could allow skipping verification for high-confidence matches.
+
+2. **Router accuracy depends on entity recognition.** "Wong Kar-wai style" must route to agentic, not structured. The prompt handles this but edge cases may arise.
+
+3. **Structured path needs robust fuzzy matching.** Users may misspell names. Current plan: ILIKE with wildcards. Future: `pg_trgm` trigram similarity for better typo tolerance.
+
+4. **Score threshold may need re-tuning.** The cutoff of 5 was calibrated on the current art-house library. If the catalog grows to include mainstream titles, the distribution may shift.
+
+5. **No user preference learning.** The system cannot learn that a specific user's "fun" means dark comedy. Would require per-user preference modeling.

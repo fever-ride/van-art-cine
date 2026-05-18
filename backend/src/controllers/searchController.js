@@ -1,10 +1,10 @@
-import { classifyQuery } from '../services/intentClassifier.js';
+import { routeQuery } from '../services/queryRouter.js';
 import { orchestrateSearch } from '../services/searchOrchestrator.js';
 
 export async function searchHandler(req, res, next) {
   try {
     const q = req.query.q;
-    const { tier } = await classifyQuery(q);
+    const routing = await routeQuery(q);
 
     const cinemaIds = req.query.cinema_ids
       ? req.query.cinema_ids.split(',').map(Number).filter(Number.isFinite)
@@ -20,7 +20,11 @@ export async function searchHandler(req, res, next) {
       offset: req.query.offset || 0,
     };
 
-    const result = await orchestrateSearch({ query: q, tier, filters });
+    const result = await orchestrateSearch({ query: q, routing, filters });
+
+    if (routing.mode === 'degraded') {
+      res.set('X-Search-Degraded', 'true');
+    }
 
     res.json(result);
   } catch (err) {
