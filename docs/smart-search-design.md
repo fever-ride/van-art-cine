@@ -1,4 +1,4 @@
-# Smart Search — Implementation Plan (v4)
+# Smart Search — Design (v4.1)
 
 ## Context
 
@@ -7,9 +7,9 @@ The app has two search modes, unified under a single smart search endpoint:
 | Mode | When | Strategy | External API calls |
 |------|------|----------|-------------------|
 | **Structured** | Query references a specific entity (director, film title, cinema) | Entity extraction → SQL lookup + filters | 1× GPT-4o-mini (router) |
-| **Agentic** | Query describes mood/vibe/style OR has complex constraints OR requires reasoning | Embedding recall → LLM verification + scoring | 2× GPT-4o-mini (router + constraint extraction) + 1× embedding + 1× GPT-4o-mini or GPT-4o (verify/score) |
+| **Agentic hybrid** | Query describes mood/vibe/style OR has complex constraints OR requires reasoning | Vector recall + PostgreSQL full-text lexical recall → merge/dedupe → LLM verification + scoring | 2× GPT-4o-mini (router + constraint extraction) + 1× embedding + 1× GPT-4o-mini or GPT-4o (verify/score) |
 
-The existing keyword search (`GET /api/screenings?q=...`) remains available as a simple title ILIKE fallback, but is not part of the smart search system.
+The existing keyword search (`GET /api/screenings?q=...`) remains available as a simple title ILIKE fallback. v4.1 adds PostgreSQL full-text lexical recall inside the smart search agentic path; this is BM25-style keyword retrieval, not a separate Elasticsearch/OpenSearch service.
 
 ### Why not three tiers (structured / semantic / agentic)?
 
@@ -21,11 +21,11 @@ v3 of this plan had a standalone "semantic" tier: embed query → return cosine 
 
 3. **The cost of verification is low; the cost of a bad recommendation is high.** Adding a lightweight GPT-4o-mini verification pass to the top-N results costs ~$0.001 and ~500ms. Serving a confidently wrong recommendation erodes user trust.
 
-Embedding search is now the **recall step** inside the agentic path, not an independent output path. It retrieves candidates; LLM verification decides which candidates actually match.
+Embedding search is now one **recall step** inside the agentic path, not an independent output path. It retrieves semantically similar candidates; PostgreSQL full-text search retrieves exact-token candidates; LLM verification decides which candidates actually match.
 
 ### Tech Stack
 
-pgvector + HNSW index, OpenAI embeddings (text-embedding-3-small, 1536-dim), GPT-4o-mini (routing + verification), GPT-4o (complex reasoning when needed), rule-based date/cinema resolution
+PostgreSQL full-text search + GIN index, pgvector + HNSW index, OpenAI embeddings (text-embedding-3-small, 1536-dim), GPT-4o-mini (routing + verification), GPT-4o (complex reasoning when needed), rule-based date/cinema resolution
 
 ---
 
@@ -55,18 +55,25 @@ Query Router (GPT-4o-mini)
       1. Extract search parameters:
          - vibe_keywords (for embedding recall)
          - hard constraints (date, cinema, runtime)
-      2. Embed vibe_keywords → pgvector cosine recall (top 30-40 candidates)
-      3. Apply hard constraint filters (date range, cinema, runtime)
-      4. LLM verification + scoring:
+      2. Vector recall:
+         - Embed vibe_keywords → pgvector cosine recall (top 30-40 candidates)
+      3. Lexical recall:
+         - PostgreSQL full-text search over title, normalized title, genre, description, tags, and optionally directors
+         - Rank with ts_rank_cd as a lightweight BM25-style signal
+      4. Merge + dedupe:
+         - Combine vector and lexical candidates by film_id/screening id
+         - Keep retrieval provenance and normalized recall scores
+      5. Apply hard constraint filters (date range, cinema, runtime)
+      6. LLM verification + scoring:
          - GPT-4o-mini for simple vibe queries (score 1-10)
          - GPT-4o for complex reasoning queries (score 1-10 + explanation)
-      5. Filter out score < 5
-      6. Return ranked results with match_score and optional explanation
+      7. Filter out score < 5
+      8. Return ranked results with match_score and optional explanation
 ```
 
-### Key insight: embedding is retrieval, LLM is precision
+### Key insight: recall needs both semantic and lexical signals
 
-Embedding search is good at narrowing 800 films to 30 plausible candidates. It is bad at judging whether a candidate truly matches the user's intent. LLM verification closes this gap — even for "simple" vibe queries like "light happy romance", it reads the film's description and rejects false positives that embedding similarity alone would surface.
+Embedding search is good at narrowing 800 films to 30 plausible candidates for mood/style queries. It is weak on exact tokens, title fragments, names, and unusual vocabulary. PostgreSQL full-text search complements it by retrieving candidates with strong lexical overlap. Both are still recall mechanisms, not final judgment: LLM verification closes the precision gap by reading the user's intent and the film metadata before scoring.
 
 ---
 
@@ -89,6 +96,45 @@ Output: { mode: "structured" | "agentic", entities?: {...}, date_hint?: string }
 | Mood/style/genre description | agentic | "dark atmospheric noir" |
 | Personal preference / reasoning needed | agentic | "something my partner won't hate" |
 | Hard constraints + vibe | agentic | "light comedy tonight under 2 hours" |
+
+### Planned intent taxonomy
+
+`mode` is intentionally coarse: it chooses the retrieval family. The next refinement is `intent_type`, which describes what the user is asking for inside that retrieval family. `result_type` then chooses the API presentation shape.
+
+```text
+mode        = how to retrieve
+intent_type = what the user is asking for
+result_type = how to present the answer
+```
+
+| `intent_type` | Typical `mode` | Default `result_type` | Examples |
+|---------------|----------------|------------------------|----------|
+| `discovery_query` | `agentic` | `film_results` | "dreamy melancholic romance", "something fun for a first date" |
+| `constraint_heavy_query` | `agentic` | `screening_results` | "tonight under 90 minutes", "movies after 7 at Cinematheque" |
+| `known_film_query` | `structured` | `film_showtimes` | "when is Happy Together playing?" |
+| `known_cinema_query` | `structured` | `cinema_schedule` | "what's at the Rio tonight?" |
+| `known_person_query` | `structured` | `person_results` | "Tarantino this week", "Wong Kar-wai films" |
+| `style_reference_query` | `agentic` | `film_results` | "Wong Kar-wai style", "Tarkovsky-esque" |
+
+`empty_with_fallback` is not an intent. It is a result state used when exact structured search has no results or agentic verification rejects all candidates.
+
+Current backend implementation has `mode`, `intent_type`, and `result_type`. The router returns coarse `intent_type`, and the agentic constraint extraction step can refine it with a `presentation_hint`, especially for `constraint_heavy_query` vs `discovery_query`.
+
+### Valid combinations
+
+Not every combination is valid. The allowed mapping should stay conservative:
+
+| `mode` | Allowed `intent_type` | Allowed `result_type` |
+|--------|------------------------|------------------------|
+| `structured` | `known_film_query` | `film_showtimes`, `empty_with_fallback` |
+| `structured` | `known_cinema_query` | `cinema_schedule`, `empty_with_fallback` |
+| `structured` | `known_person_query` | `person_results`, `empty_with_fallback` |
+| `agentic` | `discovery_query` | `film_results`, `empty_with_fallback` |
+| `agentic` | `style_reference_query` | `film_results`, `empty_with_fallback` |
+| `agentic` | `constraint_heavy_query` | `screening_results`, `film_results`, `empty_with_fallback` |
+| `degraded` | null | `screening_results`, `empty_with_fallback` |
+
+The only intentionally flexible case is `constraint_heavy_query`: if the query is mostly schedule/filter oriented, use `screening_results`; if it still asks for subjective recommendation quality, use `film_results`.
 
 ### Why a named entity triggers structured instead of embedding search
 
@@ -188,7 +234,7 @@ The frontend displays the message and a CTA button. If the user opts in, the fro
 
 ---
 
-## Agentic Path
+## Agentic Hybrid Path
 
 ### Flow
 
@@ -200,19 +246,59 @@ The frontend displays the message and a CTA button. If the user opts in, the fro
    - `runtime_max`: number or null
    - `avoid`: things to exclude (optional)
    - `complex`: boolean — determines whether verification uses GPT-4o or GPT-4o-mini
-3. Embedding recall:
+3. Vector recall:
    - Embed `vibe_keywords` → pgvector cosine search
    - Retrieve top 30-40 candidates above minimum similarity threshold (0.25)
-4. Hard constraint filtering:
+4. Lexical recall:
+   - Run PostgreSQL full-text search over film/search metadata
+   - Retrieve top 30-40 candidates ranked by `ts_rank_cd`
+   - Use this as a BM25-style exact-token signal for titles, names, genres, tags, and description terms
+5. Merge + dedupe:
+   - Combine vector and lexical candidates
+   - Dedupe by `film_id` for verification; keep screening rows for final showtimes
+   - Preserve `similarity`, `lexical_rank`, and retrieval source flags for debugging/evaluation
+6. Hard constraint filtering:
    - Date range (from dateResolver)
    - Cinema IDs (from cinemaResolver)
    - Runtime max
-5. LLM verification + scoring:
+7. LLM verification + scoring:
    - For each remaining candidate, LLM reads: user query + film title + genre + description
    - Scores 1-10: does this film actually match what the user is looking for?
    - Optionally generates 1-2 sentence explanation (for complex queries)
-6. Filter: remove candidates with score < 5
-7. Sort by score descending, return top results
+8. Filter: remove candidates with score < 5
+9. Sort by score descending, return top results
+
+### Why add lexical recall
+
+Vector search handles fuzzy semantic intent well, but it can underperform when the query contains exact words that matter: partial film titles, director names, cinema names, genre labels, unusual proper nouns, or keywords like "silent", "anime", "noir", and "restoration". Lexical recall provides a second candidate source that is stable for exact tokens and cheap to run inside the existing PostgreSQL database.
+
+This is intentionally Postgres-native rather than Elasticsearch/OpenSearch:
+- Current catalog size and traffic do not justify another managed search service.
+- Film, screening, cinema, person, and tag metadata already live in PostgreSQL.
+- Full-text search avoids index synchronization between the primary DB and a separate search cluster.
+- Render Postgres can support native full-text search and GIN indexes without new infrastructure.
+
+### Candidate merge strategy
+
+The agentic path should retrieve candidates from both sources before LLM verification:
+
+```text
+vectorCandidates  = semanticSearch(queryVec, filters, limit=40)
+lexicalCandidates = lexicalSearch(queryText, filters, limit=40)
+
+merged = merge by film_id:
+  - keep best vector similarity if present
+  - keep best lexical rank if present
+  - mark source: vector | lexical | both
+  - prefer candidates found by both sources when selecting verification batch
+```
+
+Initial selection rule for the verification batch:
+1. Include candidates found by both vector and lexical recall first.
+2. Fill remaining slots with top vector candidates and top lexical candidates in alternating order.
+3. Cap at 15 candidates for the existing batched LLM verifier.
+
+The LLM remains the final reranker. Retrieval scores are used only to build a diverse, high-recall candidate set; they should not override the LLM's match score.
 
 ### Verification model selection
 
@@ -264,7 +350,7 @@ Rationale:
 
 ---
 
-## Database + Embedding Infrastructure (unchanged from v3)
+## Database + Retrieval Infrastructure
 
 ### Prisma Migration — pgvector + film_embedding table
 
@@ -295,6 +381,43 @@ CREATE INDEX idx_film_embedding_cosine
 ### Backfill Script
 
 `backend/scripts/backfill-embeddings.js` — incremental by default, `--all` for full rebuild.
+
+### PostgreSQL Full-Text Lexical Recall (v4.1)
+
+Use PostgreSQL native full-text search as the lexical retriever. This is BM25-style keyword retrieval for this project, not strict BM25 and not a separate Elasticsearch/OpenSearch deployment.
+
+Implemented schema shape:
+
+```sql
+CREATE OR REPLACE FUNCTION film_search_vector(
+  title text,
+  normalized_title text,
+  genre text,
+  description text
+) RETURNS tsvector
+IMMUTABLE
+LANGUAGE sql
+AS $$
+  SELECT
+    setweight(to_tsvector('english'::regconfig, coalesce(title, '')), 'A') ||
+    setweight(to_tsvector('english'::regconfig, coalesce(normalized_title, '')), 'A') ||
+    setweight(to_tsvector('english'::regconfig, coalesce(genre, '')), 'B') ||
+    setweight(to_tsvector('english'::regconfig, coalesce(description, '')), 'C')
+$$;
+
+CREATE INDEX idx_film_search_vector
+  ON film USING GIN (
+    film_search_vector(title, normalized_title, genre, description)
+  );
+```
+
+This uses an immutable SQL function plus a function-based GIN index instead of a generated `tsvector` column. The query path calls the same `film_search_vector(...)` function, which keeps the indexed expression and query expression aligned.
+
+If director/person names should participate in lexical recall, either:
+- maintain a separate denormalized search document/table that includes joined person names, or
+- add a lexical query that joins `film_person` + `person` and ranks person-name matches separately.
+
+Initial implementation starts with film-local fields (`title`, `normalized_title`, `genre`, `description`) and can add tags/person names after quality testing.
 
 ---
 
@@ -357,7 +480,74 @@ Respond as JSON: { "scores": [{ "index": 1, "score": <number>, "explanation": "<
 
 ---
 
-## Response Shape
+## Response Presentation Plan
+
+Smart search should not force every natural-language query into the same presentation shape. The backend should separate:
+
+```text
+query understanding → retrieval/rerank → response formatter
+```
+
+Internally, retrieval can continue to work with screening rows because screenings carry date, cinema, and source URL constraints. For recommendation-style queries, verification/rerank should operate at the film level, and the response should return film-level results with nested showtimes.
+
+### Planned `result_type` values
+
+| `result_type` | When | Response shape |
+|---------------|------|----------------|
+| `film_results` | Agentic discovery/recommendation queries such as mood, style, genre, vibe, or personal preference | Film-level items with `showtimes[]`, `match_score`, and optional explanation |
+| `screening_results` | Constraint-heavy queries where the user primarily wants matching showtimes | Screening-level rows, usually sorted by time |
+| `film_showtimes` | Known film query such as "when is Happy Together playing?" | One film result with all matching upcoming showtimes |
+| `cinema_schedule` | Known cinema/date query such as "what's at the Rio tonight?" | Schedule grouped by cinema/date/time |
+| `person_results` | Known person query such as "Tarantino this week" | Films/screenings associated with that person, with exact SQL provenance |
+| `empty_with_fallback` | Structured search has no exact results, or agentic verification rejects all candidates | Empty items plus message/fallback hint |
+
+Current backend implementation adds `result_type` and moves agentic discovery results from repeated screening rows to film-level items:
+
+```json
+{
+  "mode": "agentic",
+  "result_type": "film_results",
+  "items": [
+    {
+      "film_id": 273,
+      "title": "The Green Ray",
+      "year": 1986,
+      "genre": "Drama, Romance",
+      "similarity": 0.33,
+      "lexical_rank": null,
+      "retrieval_source": "vector",
+      "match_score": 8,
+      "match_explanation": null,
+      "showtimes": [
+        {
+          "id": 2738,
+          "start_at_utc": "2026-04-28T03:00:00.000Z",
+          "end_at_utc": "2026-04-28T05:00:00.000Z",
+          "runtime_min": 98,
+          "cinema_id": 1,
+          "cinema_name": "The Cinematheque",
+          "source_url": "..."
+        }
+      ]
+    }
+  ],
+  "message": null
+}
+```
+
+### Formatting rules by mode
+
+- Agentic discovery defaults to `film_results`: dedupe by `film_id`, verify/rerank once per film, and nest matching showtimes under each film.
+- Structured film queries should use `film_showtimes`: exact film match first, then all matching showtimes.
+- Structured cinema queries should use `cinema_schedule`: the user cares about what's playing at a venue/time, so screening-level ordering is more useful.
+- Structured person queries should use `person_results`: preserve exact entity provenance and group by film where possible.
+- Empty structured searches should use `empty_with_fallback`: do not silently switch exact-entity intent into fuzzy style recommendations.
+
+---
+
+## Legacy Flat Screening Shape
+
+Earlier smart search responses returned a flat screening list. Keep this shape in mind for compatibility checks, but new agentic responses should prefer `film_results` with nested `showtimes[]`.
 
 ```json
 {
@@ -373,6 +563,8 @@ Respond as JSON: { "scores": [{ "index": 1, "score": <number>, "explanation": "<
       "runtime_min": 156,
       "source_url": "...",
       "similarity": 0.45,
+      "lexical_rank": 0.18,
+      "retrieval_source": "both",
       "match_score": 9,
       "match_explanation": "An intense war drama set during the Third Reich..."
     }
@@ -385,7 +577,9 @@ Field presence by mode:
 
 | Field | Structured | Agentic |
 |-------|-----------|---------|
-| `similarity` | null | present (from embedding recall) |
+| `similarity` | null | present if found by vector recall |
+| `lexical_rank` | null | present if found by lexical recall |
+| `retrieval_source` | null | `vector`, `lexical`, or `both` |
 | `match_score` | null | present (from LLM verification) |
 | `match_explanation` | null | present for complex queries, null for simple |
 | `message` | present if no results | present if all candidates scored < 5 |
@@ -399,8 +593,10 @@ Field presence by mode:
 | Mode | External calls | Est. latency | Est. cost per query |
 |------|---------------|-------------|-------------------|
 | Structured | 1× GPT-4o-mini (router) | ~0.8s | ~$0.0002 |
-| Agentic (simple vibe) | 2× GPT-4o-mini (router + extraction) + 1× embedding + 1× GPT-4o-mini (batched verify) | ~2.5s | ~$0.002 |
-| Agentic (complex) | 2× GPT-4o-mini (router + extraction) + 1× embedding + 1× GPT-4o (batched verify+explain) | ~4s | ~$0.006 |
+| Agentic hybrid (simple vibe) | 2× GPT-4o-mini (router + extraction) + 1× embedding + 1× PostgreSQL full-text query + 1× GPT-4o-mini (batched verify) | ~2.6s | ~$0.002 |
+| Agentic hybrid (complex) | 2× GPT-4o-mini (router + extraction) + 1× embedding + 1× PostgreSQL full-text query + 1× GPT-4o (batched verify+explain) | ~4.1s | ~$0.006 |
+
+PostgreSQL full-text recall adds no external API cost. It adds a small amount of database CPU and GIN index storage on Render Postgres, which is acceptable at the current catalog size and traffic.
 
 ---
 
@@ -410,6 +606,10 @@ Field presence by mode:
 |----------|--------|-----|
 | Remove standalone semantic tier | Embedding is recall-only, always followed by LLM verification | Similarity score alone cannot reliably judge match quality |
 | Add structured mode | SQL entity lookup for named persons/films/cinemas | Exact entities should use exact matching; embedding introduces noise for known-item queries |
+| Add lexical recall to agentic mode | PostgreSQL full-text search runs alongside vector recall | Exact tokens, title fragments, names, and genre terms are more stable with lexical retrieval |
+| Avoid Elasticsearch/OpenSearch | Use Postgres-native full-text search | Current data size and QPS do not justify another service or index synchronization pipeline |
+| Merge vector + lexical candidates before verification | Dedupe by film/screening and keep retrieval provenance | Improves recall while preserving LLM as final precision layer |
+| Add `result_type` | Separate retrieval mode from presentation shape | Natural-language queries can ask for recommendations, showtimes, schedules, or person-specific results |
 | Verification for all agentic queries | Even "simple" vibe queries get GPT-4o-mini scoring | Cannot predict in advance which queries will be misled by embedding proximity |
 | Batched verification | All candidates scored in one LLM call, max 15 | Reduces latency; LLM scoring degrades beyond ~15 items |
 | Router fallback → agentic | If router fails once, default to agentic path | Agentic always verifies; safer than returning unverified results |
@@ -420,7 +620,7 @@ Field presence by mode:
 
 ---
 
-## Migration from v3 (completed)
+## Migration from v3 (completed) and v4.1 (planned)
 
 ### Files changed
 
@@ -451,11 +651,20 @@ Field presence by mode:
 | `models/search.js` | Semantic search (pgvector cosine) unchanged; structured queries live in new `structuredSearch.js` |
 | Migration SQL | pgvector table unchanged |
 
+### Planned v4.1 files
+
+| File | Purpose |
+|------|---------|
+| New migration SQL | Add PostgreSQL full-text expression GIN index |
+| `backend/src/models/lexicalSearch.js` | PostgreSQL full-text lexical recall using `websearch_to_tsquery` / `ts_rank_cd` |
+| `backend/src/services/searchOrchestrator.js` | Merge vector + lexical candidates before verification |
+| `docs/smart-search-test-plan.md` | Add retrieval ablation eval: vector only, lexical only, hybrid, hybrid + rerank |
+
 ---
 
 ## Known Limitations & Future Work
 
-1. **Verification adds latency to all agentic queries.** For queries where embedding results happen to be correct (e.g. "dark japanese thriller"), verification confirms them but adds ~500ms. Acceptable at our scale; at higher QPS, pre-computed mood/tone tags could allow skipping verification for high-confidence matches.
+1. **Verification adds latency to all agentic queries.** For queries where retrieval results happen to be correct (e.g. "dark japanese thriller"), verification confirms them but adds ~500ms. Acceptable at our scale; at higher QPS, pre-computed mood/tone tags could allow skipping verification for high-confidence matches.
 
 2. **Router accuracy depends on entity recognition.** "Wong Kar-wai style" must route to agentic, not structured. The prompt handles this but edge cases may arise.
 
@@ -464,3 +673,5 @@ Field presence by mode:
 4. **Score threshold may need re-tuning.** The cutoff of 5 was calibrated on the current art-house library. If the catalog grows to include mainstream titles, the distribution may shift.
 
 5. **No user preference learning.** The system cannot learn that a specific user's "fun" means dark comedy. Would require per-user preference modeling.
+
+6. **Lexical recall is BM25-style, not strict BM25.** PostgreSQL `ts_rank_cd` is sufficient for this catalog size. Strict BM25 would require adding a dedicated search engine or extension, which is unnecessary for the current deployment.

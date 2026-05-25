@@ -1,18 +1,20 @@
 import { prisma } from '../lib/prismaClient.js';
 
-export async function semanticSearch({
-  queryVec,
-  minSimilarity = 0.3,
+export async function lexicalSearch({
+  query,
   limit = 20,
   offset = 0,
   cinemaIds = null,
   gte = null,
   lt = null,
 }) {
-  const vecLiteral = `[${queryVec.join(',')}]`;
+  const normalizedQuery = query?.trim();
+  if (!normalizedQuery) return [];
 
-  const conditions = ['s.is_active = true'];
-  const params = [vecLiteral];
+  const searchVector = 'film_search_vector(f.title, f.normalized_title, f.genre, f.description)';
+
+  const conditions = ['s.is_active = true', `(${searchVector}) @@ q.tsq`];
+  const params = [normalizedQuery];
   let idx = 2;
 
   if (gte) {
@@ -31,13 +33,12 @@ export async function semanticSearch({
     idx++;
   }
 
-  conditions.push(`1 - (fe.embedding <=> $1::vector) >= $${idx}::float`);
-  params.push(minSimilarity);
-  idx++;
-
   const whereClause = conditions.join(' AND ');
 
   const sql = `
+    WITH q AS (
+      SELECT websearch_to_tsquery('english', $1::text) AS tsq
+    )
     SELECT
       s.id,
       s.start_at_utc,
@@ -62,13 +63,13 @@ export async function semanticSearch({
       f.tmdb_id,
       c.id AS cinema_id,
       c.name AS cinema_name,
-      1 - (fe.embedding <=> $1::vector) AS similarity
-    FROM screening s
+      ts_rank_cd((${searchVector}), q.tsq) AS lexical_rank
+    FROM q
+    JOIN screening s ON true
     JOIN film f ON s.film_id = f.id
-    JOIN film_embedding fe ON f.id = fe.film_id
     JOIN cinema c ON s.cinema_id = c.id
     WHERE ${whereClause}
-    ORDER BY similarity DESC, s.start_at_utc ASC
+    ORDER BY lexical_rank DESC, s.start_at_utc ASC
     LIMIT $${idx} OFFSET $${idx + 1}
   `;
   params.push(Number(limit), Number(offset));
@@ -100,8 +101,8 @@ export async function semanticSearch({
     tmdb_id: r.tmdb_id,
     source_url: r.source_url,
     directors: null,
-    similarity: Number(r.similarity),
-    lexical_rank: null,
-    retrieval_source: 'vector',
+    similarity: null,
+    lexical_rank: Number(r.lexical_rank),
+    retrieval_source: 'lexical',
   }));
 }

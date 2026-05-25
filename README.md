@@ -221,7 +221,7 @@ A natural-language search system that lets users describe what they want to watc
 
 **Tech:** pgvector + HNSW index, OpenAI text-embedding-3-small (1536-dim), GPT-4o-mini / GPT-4o for verification.
 
-**Branch:** `smart-search` | **Design doc:** `docs/rag-search-plan.md`
+**Branch:** `smart-search` | **Design doc:** `docs/smart-search-design.md`
 
 ---
 

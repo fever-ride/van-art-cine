@@ -23,7 +23,7 @@ Embedding search becomes the recall step inside agentic, not an independent outp
 
 ### Tasks
 
-- [x] Update design doc (`docs/rag-search-plan.md` → v4)
+- [x] Update design doc (`docs/smart-search-design.md` → v4)
 - [x] Rename `intentClassifier.js` → `queryRouter.js`; rewrite prompt for structured/agentic routing + entity extraction
 - [x] Add circuit breaker logic in `queryRouter.js` (5 failures / 60s → degrade to keyword)
 - [x] Add structured search path in `searchOrchestrator.js` (entity resolution → SQL query)
@@ -40,8 +40,99 @@ Embedding search becomes the recall step inside agentic, not an independent outp
 
 ### Reference
 
-- Design doc: `docs/rag-search-plan.md`
+- Design doc: `docs/smart-search-design.md`
 - Branch: `smart-search`
+
+---
+
+## Smart Search — v4.1 Hybrid Retrieval
+
+**Status:** Backend implemented, frontend/tests pending
+
+### Goal
+
+Upgrade the agentic smart search path from vector-only recall to Postgres-native hybrid retrieval:
+
+```text
+vector recall + PostgreSQL full-text lexical recall + merge/dedupe + LLM rerank
+```
+
+This should improve exact-token/title/name/genre recall without adding Elasticsearch/OpenSearch or changing the current EC2 backend + Render Postgres deployment.
+
+### Tasks
+
+- [x] Update design doc (`docs/smart-search-design.md`) with v4.1 hybrid retrieval architecture
+- [x] Update test/eval plan (`docs/smart-search-test-plan.md`) with vector/lexical/hybrid/rerank ablations
+- [x] Add migration for PostgreSQL full-text `film_search_vector(...)` function and GIN index
+- [x] Add GIN index for lexical search
+- [x] Implement `backend/src/models/lexicalSearch.js` using `websearch_to_tsquery` + `ts_rank_cd`
+- [x] Update `searchOrchestrator.js` to call vector + lexical recall in the agentic path
+- [x] Merge/dedupe candidates and preserve `similarity`, `lexical_rank`, and `retrieval_source`
+- [x] Prioritize candidates found by both sources before LLM verification
+- [ ] Add unit/integration tests for lexical search and hybrid candidate merge
+- [ ] Run live API eval against the ablation query set before deployment
+- [ ] Deploy migration to Render Postgres and verify GIN index creation
+
+### Reference
+
+- Design doc: `docs/smart-search-design.md`
+- Test plan: `docs/smart-search-test-plan.md`
+
+---
+
+## Smart Search — Response Presentation Types
+
+**Status:** Backend implemented, frontend/tests pending
+
+### Goal
+
+Separate retrieval mode from response presentation. Natural-language queries can ask for recommendations, showtimes, venue schedules, person-specific screenings, or exact entities, so the API should expose a `result_type` field instead of forcing every response into a flat screening list. A future `intent_type` field should make the user's intent explicit between routing and formatting.
+
+### Taxonomy
+
+```text
+mode        = how to retrieve
+intent_type = what the user is asking for
+result_type = how to present the answer
+```
+
+Planned `intent_type` values:
+
+- `discovery_query` — recommendation/discovery query; default `film_results`
+- `constraint_heavy_query` — schedule/filter-heavy query; default `screening_results`
+- `known_film_query` — exact film query; default `film_showtimes`
+- `known_cinema_query` — exact cinema/date query; default `cinema_schedule`
+- `known_person_query` — exact director/actor query; default `person_results`
+- `style_reference_query` — entity used as style reference; default `film_results`
+
+### Planned Result Types
+
+- `film_results` — agentic discovery/recommendation results, one item per film with nested `showtimes[]`
+- `screening_results` — constraint-heavy matching screenings, sorted by time
+- `film_showtimes` — exact film query with all matching showtimes
+- `cinema_schedule` — venue/date query grouped or ordered as a schedule
+- `person_results` — exact person query with SQL/entity provenance
+- `empty_with_fallback` — no exact result or no verified match, with explicit fallback hint when appropriate
+
+### Tasks
+
+- [x] Add `result_type` to smart search responses
+- [x] Build response formatter layer after retrieval/rerank
+- [x] Change agentic discovery responses to film-level items with nested `showtimes[]`
+- [x] Add `film_showtimes` formatter for exact film queries
+- [x] Add `cinema_schedule` formatter for exact cinema/date queries
+- [x] Add `person_results` formatter for exact person queries
+- [x] Preserve `empty_with_fallback` behavior for structured no-result cases
+- [x] Add `intent_type` to router/extractor output
+- [x] Map `intent_type` to default `result_type`
+- [x] Use `constraint_heavy_query` to route normal results to `screening_results`
+- [ ] Update frontend smart search UI to render result types differently
+- [ ] Add response formatter tests and live regression cases
+
+### Reference
+
+- Design doc: `docs/smart-search-design.md`
+- Test plan: `docs/smart-search-test-plan.md`
 
 ---
 

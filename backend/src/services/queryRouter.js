@@ -54,19 +54,42 @@ If the user is looking for something that MATCHES a description → agentic.
 Respond as JSON:
 {
   "mode": "structured" | "agentic",
+  "intent_type": "known_person_query" | "known_film_query" | "known_cinema_query" | "discovery_query" | "constraint_heavy_query" | "style_reference_query",
   "entities": { "person": null | "name", "film": null | "title", "cinema": null | "name" },
   "date_hint": null | "today" | "tonight" | "tomorrow" | "this weekend"
 }
 
-Only populate "entities" for structured mode. For agentic mode, set all entity fields to null.`;
+Only populate "entities" for structured mode. For agentic mode, set all entity fields to null.
+Use "constraint_heavy_query" for agentic queries that mostly ask for available showtimes using hard constraints like date, time, cinema, or runtime.
+Do NOT use "constraint_heavy_query" when the query includes mood, genre, style, vibe, or recommendation quality words like comedy, romantic, atmospheric, fun, scary, beautiful, or date night; those are "discovery_query".
+Use "style_reference_query" when a person or film is used as a style reference rather than the exact thing being requested.`;
 
 const AGENTIC_FALLBACK = {
   mode: 'agentic',
+  intent_type: 'discovery_query',
   entities: { person: null, film: null, cinema: null },
   date_hint: null,
 };
 
-const DEGRADED_RESPONSE = { mode: 'degraded', entities: { person: null, film: null, cinema: null }, date_hint: null };
+const DEGRADED_RESPONSE = {
+  mode: 'degraded',
+  intent_type: null,
+  entities: { person: null, film: null, cinema: null },
+  date_hint: null,
+};
+
+function inferStructuredIntent(entities) {
+  if (entities.person) return 'known_person_query';
+  if (entities.film) return 'known_film_query';
+  if (entities.cinema) return 'known_cinema_query';
+  return null;
+}
+
+function normalizeAgenticIntent(intentType) {
+  return ['discovery_query', 'style_reference_query', 'constraint_heavy_query'].includes(intentType)
+    ? intentType
+    : 'discovery_query';
+}
 
 export async function routeQuery(query) {
   const state = getBreakerState();
@@ -100,8 +123,11 @@ export async function routeQuery(query) {
         }
       : { person: null, film: null, cinema: null };
     const date_hint = parsed.date_hint || null;
+    const intent_type = mode === 'structured'
+      ? inferStructuredIntent(entities)
+      : normalizeAgenticIntent(parsed.intent_type);
 
-    return { mode, entities, date_hint };
+    return { mode, intent_type, entities, date_hint };
   } catch {
     recordFailure();
 

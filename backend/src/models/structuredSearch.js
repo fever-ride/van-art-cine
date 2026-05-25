@@ -52,7 +52,6 @@ export async function searchByPerson({ personName, cinemaIds = null, gte = null,
   if (cinemaIds?.length) {
     conditions.push(`s.cinema_id = ANY($${idx}::int[])`);
     params.push(cinemaIds);
-    idx++;
   }
 
   const whereClause = conditions.join(' AND ');
@@ -120,7 +119,6 @@ export async function searchByFilm({ filmTitle, cinemaIds = null, gte = null, lt
   if (cinemaIds?.length) {
     conditions.push(`s.cinema_id = ANY($${idx}::int[])`);
     params.push(cinemaIds);
-    idx++;
   }
 
   const whereClause = conditions.join(' AND ');
@@ -181,7 +179,6 @@ export async function searchByCinema({ cinemaIds, gte = null, lt = null }) {
   if (lt) {
     conditions.push(`s.start_at_utc < $${idx}::timestamp`);
     params.push(lt);
-    idx++;
   }
 
   const whereClause = conditions.join(' AND ');
