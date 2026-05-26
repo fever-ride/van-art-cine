@@ -204,6 +204,115 @@ Run the same query set through four retrieval configurations to verify that each
 
 For variants A-C, record raw candidates and retrieval scores. For variant D, record `match_score`, `match_explanation` when present, and final rank.
 
+### Metric design
+
+Do not evaluate only final answer quality. Smart search has two layers that need separate metrics:
+
+1. **Retrieval layer** — Did the system retrieve relevant candidate films/screenings before LLM reranking?
+2. **Generation / verification layer** — Did the final answer preserve relevant results, reject bad matches, and explain itself accurately?
+
+#### Labeled eval set format
+
+Create a small hand-labeled eval set before implementing automated metrics. A suggested JSON/CSV schema:
+
+```json
+{
+  "id": "vibe_001",
+  "query": "dreamy melancholic romance",
+  "expected_mode": "agentic",
+  "expected_intent_type": "discovery_query",
+  "expected_result_type": "film_results",
+  "relevance": [
+    { "title": "The Green Ray", "grade": 3 },
+    { "title": "Two Seasons, Two Strangers", "grade": 2 },
+    { "title": "Happy Together", "grade": 0 }
+  ],
+  "must_not_return": ["Happy Together"],
+  "notes": "Reward melancholic romance; reject misleading title-only matches."
+}
+```
+
+Use graded relevance:
+
+| Grade | Meaning |
+|-------|---------|
+| 3 | Excellent match |
+| 2 | Good match |
+| 1 | Weak but acceptable match |
+| 0 | Not relevant / should not be returned |
+
+#### Planned eval harness structure
+
+Keep the eval harness lightweight and repo-local:
+
+```text
+eval/
+  smart-search/
+    labeled_queries.json
+    run-live-eval.js
+    metrics.js
+    results/
+      2026-05-25-live.json
+      2026-05-25-report.md
+```
+
+Responsibilities:
+
+| File | Purpose |
+|------|---------|
+| `labeled_queries.json` | Hand-labeled query set with expected mode/intent/result type, graded relevance, and must-not-return titles |
+| `run-live-eval.js` | Runs each query against local backend service code or API, captures raw responses, and writes timestamped results |
+| `metrics.js` | Computes `Top1 hit`, `Recall@K`, `MRR`, `nDCG@K`, bad result rate, and type accuracy |
+| `results/*.json` | Machine-readable raw eval output for future comparison |
+| `results/*.md` | Human-readable summary report with failures, examples, and next actions |
+
+#### Live eval script flow
+
+`run-live-eval.js` should:
+
+1. Load `labeled_queries.json`.
+2. For each query, call the smart search backend (`routeQuery` + `orchestrateSearch`, or the HTTP API).
+3. Record `mode`, `intent_type`, `result_type`, top K titles, retrieval source, `match_score`, and any explanations.
+4. Compare returned titles against graded labels and `must_not_return`.
+5. Compute aggregate metrics.
+6. Write a timestamped JSON result file and Markdown report.
+
+#### Retrieval metrics
+
+Compute these on raw candidates before LLM verification for each retrieval variant:
+
+| Metric | What it measures | Notes |
+|--------|------------------|-------|
+| `Recall@K` | Whether relevant items appear in the top K candidates | Useful for vector-only, lexical-only, and hybrid recall |
+| `MRR` | How early the first relevant item appears | Good for known title/entity and exact-token queries |
+| `nDCG@K` | Ranking quality with graded relevance | Best fit for vibe/style queries with multiple acceptable answers |
+| `Top1 hit rate` | Whether the first result is relevant | Easy headline metric for regression checks |
+| `Bad result rate` | Whether known-bad titles appear in top K | Important for failures like "light happy romance" returning *Happy Together* |
+
+#### Generation / verification metrics
+
+Compute or manually label these after LLM verification/reranking:
+
+| Metric | What it measures | Notes |
+|--------|------------------|-------|
+| `Final nDCG@K` | Quality of final ranked answers | Compare against retrieval-only nDCG to ensure reranking helps |
+| `Relevant retention rate` | Relevant retrieved candidates preserved after verification | Detect over-filtering |
+| `Bad result rejection rate` | Known-bad candidates filtered out | Critical for trust |
+| `Result type accuracy` | `mode`, `intent_type`, and `result_type` match expectation | Checks query understanding and presentation shape |
+| `Explanation accuracy` | `match_explanation` is grounded in film metadata and query intent | Manual or LLM-assisted review; not required for CI |
+| `No-result honesty` | Empty/fallback returned instead of weak or fabricated recommendations | Manual review for low-recall queries |
+
+#### Evaluation phases
+
+| Phase | Scope | Runs in CI? |
+|-------|-------|-------------|
+| Phase 1 | Unit tests with mocks for router/orchestrator/formatter | Yes |
+| Phase 2 | Offline eval script against labeled query set using saved/mock candidates | Yes, once fixtures exist |
+| Phase 3 | Local DB eval for lexical/structured SQL quality | Optional |
+| Phase 4 | Live API eval with OpenAI + current screenings | No, run manually before deployment |
+
+Initial implementation target: build the labeled eval set and a script that records `mode`, `intent_type`, `result_type`, top K titles, retrieval source, and match scores. Metrics can start with `Top1 hit`, `Recall@5`, and `bad result rate`, then add `MRR` and `nDCG@5`.
+
 ### v3 Baseline (2026-04-23, semantic/agentic architecture)
 
 Actual API responses recorded before v4 rewrite. Serves as a reference point — not a target to replicate, but a benchmark to improve upon.

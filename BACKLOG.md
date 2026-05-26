@@ -80,6 +80,54 @@ This should improve exact-token/title/name/genre recall without adding Elasticse
 
 ---
 
+## Smart Search — Evaluation Metrics
+
+**Status:** Planned
+
+### Goal
+
+Build a lightweight but rigorous eval system that separately measures retrieval quality and final answer quality. Do not rely only on subjective review of final responses.
+
+### Metrics
+
+Retrieval layer:
+
+- `Recall@K`
+- `MRR`
+- `nDCG@K`
+- `Top1 hit rate`
+- `Bad result rate`
+
+Generation / verification layer:
+
+- Final `nDCG@K`
+- Relevant retention rate
+- Bad result rejection rate
+- `mode` / `intent_type` / `result_type` accuracy
+- Explanation accuracy
+- No-result honesty
+
+### Tasks
+
+- [ ] Create eval harness folder (`eval/smart-search/`)
+- [ ] Create labeled smart search eval set (`query`, expected mode/intent/result type, relevant titles with graded labels, must-not-return titles)
+- [ ] Add `metrics.js` for `Top1 hit`, `Recall@K`, `MRR`, `nDCG@K`, bad result rate, and type accuracy
+- [ ] Add `run-live-eval.js` for local service/API eval runs
+- [ ] Save timestamped machine-readable results under `eval/smart-search/results/*.json`
+- [ ] Generate timestamped Markdown reports under `eval/smart-search/results/*.md`
+- [ ] Add offline eval mode for saved/mock candidate results
+- [ ] Compute initial metrics: `Top1 hit`, `Recall@5`, `bad result rate`
+- [ ] Add `MRR` and `nDCG@5`
+- [ ] Record retrieval variant results: vector-only, lexical-only, hybrid, hybrid + LLM rerank
+- [ ] Add manual review rubric for explanation accuracy and no-result honesty
+- [ ] Run live eval before deployment and save results in docs or an eval output file
+
+### Reference
+
+- Test plan: `docs/smart-search-test-plan.md`
+
+---
+
 ## Smart Search — Response Presentation Types
 
 **Status:** Backend implemented, frontend/tests pending
