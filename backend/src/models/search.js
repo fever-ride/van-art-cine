@@ -8,6 +8,7 @@ export async function semanticSearch({
   cinemaIds = null,
   gte = null,
   lt = null,
+  runtimeMax = null,
 }) {
   const vecLiteral = `[${queryVec.join(',')}]`;
 
@@ -28,6 +29,11 @@ export async function semanticSearch({
   if (cinemaIds?.length) {
     conditions.push(`s.cinema_id = ANY($${idx}::int[])`);
     params.push(cinemaIds);
+    idx++;
+  }
+  if (runtimeMax) {
+    conditions.push(`s.runtime_min <= $${idx}::int`);
+    params.push(Number(runtimeMax));
     idx++;
   }
 

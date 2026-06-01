@@ -249,18 +249,20 @@ The frontend displays the message and a CTA button. If the user opts in, the fro
 3. Vector recall:
    - Embed `vibe_keywords` → pgvector cosine search
    - Retrieve top 30-40 candidates above minimum similarity threshold (0.25)
+   - Push hard filters into SQL: active screenings, date range, cinema IDs, and runtime max
 4. Lexical recall:
    - Run PostgreSQL full-text search over film/search metadata
    - Retrieve top 30-40 candidates ranked by `ts_rank_cd`
    - Use this as a BM25-style exact-token signal for titles, names, genres, tags, and description terms
+   - Apply the same hard SQL filters as vector recall
 5. Merge + dedupe:
    - Combine vector and lexical candidates
    - Dedupe by `film_id` for verification; keep screening rows for final showtimes
    - Preserve `similarity`, `lexical_rank`, and retrieval source flags for debugging/evaluation
-6. Hard constraint filtering:
-   - Date range (from dateResolver)
-   - Cinema IDs (from cinemaResolver)
-   - Runtime max
+6. Defensive hard constraint filtering:
+   - Date range and cinema IDs are pushed down into retrieval SQL
+   - Runtime max is also pushed down into vector and lexical retrieval SQL
+   - Keep post-filtering only as a defensive backstop for malformed/null data
 7. LLM verification + scoring:
    - For each remaining candidate, LLM reads: user query + film title + genre + description
    - Scores 1-10: does this film actually match what the user is looking for?
@@ -299,6 +301,28 @@ Initial selection rule for the verification batch:
 3. Cap at 15 candidates for the existing batched LLM verifier.
 
 The LLM remains the final reranker. Retrieval scores are used only to build a diverse, high-recall candidate set; they should not override the LLM's match score.
+
+### Hard vs soft constraints
+
+Use structured filter pushdown for constraints that are objectively represented in the database:
+
+| Constraint | Handling |
+|------------|----------|
+| `is_active` | SQL filter in every retrieval path |
+| Date/time range | SQL filter via `gte` / `lt` |
+| Cinema | SQL filter via resolved `cinema_id` values |
+| `runtime_max` | SQL filter via `s.runtime_min <= runtime_max` |
+
+Keep subjective or fuzzy constraints in retrieval text and LLM verification:
+
+| Constraint | Handling |
+|------------|----------|
+| Mood / vibe / style | `vibe_keywords` + LLM verification |
+| `avoid` | Future LLM verification or metadata-aware filtering; do not hard-filter until labels are reliable |
+| "good for a first date" / personal preference | LLM verification |
+| "not too intense" / "film-buff friend would respect" | LLM verification |
+
+This gives the pipeline a clear rule: hard availability constraints determine the candidate pool; soft taste constraints determine ranking and verification.
 
 ### Verification model selection
 

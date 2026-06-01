@@ -60,14 +60,17 @@ describe('lexicalSearch', () => {
       cinemaIds: [1, 2],
       gte: new Date('2026-01-01T00:00:00Z'),
       lt: new Date('2026-01-08T00:00:00Z'),
+      runtimeMax: 120,
     });
 
     const [sql, ...params] = queryRawUnsafe.mock.calls[0];
     expect(sql).toContain('websearch_to_tsquery');
     expect(sql).toContain('film_search_vector');
     expect(sql).toContain('s.cinema_id = ANY');
+    expect(sql).toContain('s.runtime_min <=');
     expect(params[0]).toBe('happy together');
     expect(params).toContainEqual([1, 2]);
+    expect(params).toContain(120);
     expect(params.at(-2)).toBe(5);
     expect(params.at(-1)).toBe(0);
     expect(result[0]).toMatchObject({

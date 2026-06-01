@@ -7,6 +7,7 @@ export async function lexicalSearch({
   cinemaIds = null,
   gte = null,
   lt = null,
+  runtimeMax = null,
 }) {
   const normalizedQuery = query?.trim();
   if (!normalizedQuery) return [];
@@ -30,6 +31,11 @@ export async function lexicalSearch({
   if (cinemaIds?.length) {
     conditions.push(`s.cinema_id = ANY($${idx}::int[])`);
     params.push(cinemaIds);
+    idx++;
+  }
+  if (runtimeMax) {
+    conditions.push(`s.runtime_min <= $${idx}::int`);
+    params.push(Number(runtimeMax));
     idx++;
   }
 

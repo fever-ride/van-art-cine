@@ -298,5 +298,11 @@ describe('orchestrateSearch agentic responses', () => {
     expect(result.intent_type).toBe('discovery_query');
     expect(result.result_type).toBe('film_results');
     expect(result.items[0].title).toBe('Meet Me In St. Louis');
+    expect(semanticSearch).toHaveBeenCalledWith(expect.objectContaining({
+      runtimeMax: 120,
+    }));
+    expect(lexicalSearch).toHaveBeenCalledWith(expect.objectContaining({
+      runtimeMax: 120,
+    }));
   });
 });

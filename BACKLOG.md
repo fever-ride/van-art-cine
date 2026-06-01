@@ -67,6 +67,7 @@ This should improve exact-token/title/name/genre recall without adding Elasticse
 - [x] Add GIN index for lexical search
 - [x] Implement `backend/src/models/lexicalSearch.js` using `websearch_to_tsquery` + `ts_rank_cd`
 - [x] Update `searchOrchestrator.js` to call vector + lexical recall in the agentic path
+- [x] Push `runtime_max` hard filter into vector and lexical retrieval SQL
 - [x] Merge/dedupe candidates and preserve `similarity`, `lexical_rank`, and `retrieval_source`
 - [x] Prioritize candidates found by both sources before LLM verification
 - [ ] Add unit/integration tests for lexical search and hybrid candidate merge

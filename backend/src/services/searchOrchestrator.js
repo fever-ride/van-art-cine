@@ -409,6 +409,7 @@ Use "style_reference_query" + "film_results" when a person/film is used as a sty
       cinemaIds: recallCinemaIds,
       gte,
       lt,
+      runtimeMax: constraints.runtime_max,
     });
   } catch {
     // best-effort: lexical recall can still provide candidates if embedding search fails
@@ -423,6 +424,7 @@ Use "style_reference_query" + "film_results" when a person/film is used as a sty
       cinemaIds: recallCinemaIds,
       gte,
       lt,
+      runtimeMax: constraints.runtime_max,
     });
   } catch {
     // best-effort: vector recall can still provide candidates if lexical search fails

@@ -84,9 +84,9 @@ Unit tests — mock all downstream services (queryRouter, embeddingService, sema
 
 | # | Case | Expected |
 |---|------|----------|
-| 3.7 | Normal flow end-to-end | constraint extraction → vector recall + lexical recall → merge/dedup → filter → verify → score filter → return |
+| 3.7 | Normal flow end-to-end | constraint extraction → vector recall + lexical recall with hard filter pushdown → merge/dedup → defensive filter → verify → score filter → return |
 | 3.8 | Constraint extraction returns malformed JSON | Falls back to `{ vibe_keywords: query, complex: false }` |
-| 3.9 | runtime_max constraint | Candidates exceeding runtime are filtered out |
+| 3.9 | runtime_max constraint | Passed into vector/lexical SQL retrieval and defensively post-filtered |
 | 3.10 | Duplicate film_ids across vector + lexical candidates | Merges into one verification candidate with combined retrieval metadata |
 | 3.11 | Verification throws | Returns candidates unscored (best-effort) |
 | 3.12 | All candidates score < 5 | Returns empty items + "No good matches" message |
