@@ -56,14 +56,15 @@ Query Router (GPT-4o-mini)
          - vibe_keywords (for embedding recall)
          - hard constraints (date, cinema, runtime)
       2. Vector recall:
-         - Embed vibe_keywords → pgvector cosine recall (top 30-40 candidates)
+         - Embed vibe_keywords → pgvector cosine recall over film embeddings
+         - Join screenings so only currently available films are returned
       3. Lexical recall:
-         - PostgreSQL full-text search over title, normalized title, genre, description, tags, and optionally directors
+         - PostgreSQL full-text search over film title, normalized title, genre, and description
          - Rank with ts_rank_cd as a lightweight BM25-style signal
       4. Merge + dedupe:
          - Combine vector and lexical candidates by film_id/screening id
-         - Keep retrieval provenance and normalized recall scores
-      5. Apply hard constraint filters (date range, cinema, runtime)
+         - Keep retrieval provenance (`vector`, `lexical`, `both`) and recall scores
+      5. Push hard constraint filters into retrieval SQL (active screenings, date range, cinema, runtime)
       6. LLM verification + scoring:
          - GPT-4o-mini for simple vibe queries (score 1-10)
          - GPT-4o for complex reasoning queries (score 1-10 + explanation)
@@ -73,7 +74,65 @@ Query Router (GPT-4o-mini)
 
 ### Key insight: recall needs both semantic and lexical signals
 
-Embedding search is good at narrowing 800 films to 30 plausible candidates for mood/style queries. It is weak on exact tokens, title fragments, names, and unusual vocabulary. PostgreSQL full-text search complements it by retrieving candidates with strong lexical overlap. Both are still recall mechanisms, not final judgment: LLM verification closes the precision gap by reading the user's intent and the film metadata before scoring.
+Embedding search is good at narrowing the film catalog to plausible candidates for mood/style queries. It is weak on exact tokens, title fragments, genre labels, and unusual vocabulary. PostgreSQL full-text search complements it by retrieving candidates with strong lexical overlap in film-local text fields. Both are still recall mechanisms, not final judgment: LLM verification closes the precision gap by reading the user's intent and the film metadata before scoring.
+
+Current lexical recall intentionally indexes film-local fields only: `title`, `normalized_title`, `genre`, and `description`. Director/person names are handled by the structured SQL path when the user is asking for that person directly. If person names should also work as lexical style/reference terms, add them later as a separate indexed text source or joined lexical retriever.
+
+---
+
+## Retrieval Strategy Model
+
+Smart search uses three retrieval strategies, but they are not exposed as three separate user modes. The router/orchestrator chooses or combines them based on the query:
+
+| Strategy | Used when | Retrieves by | Output role |
+|----------|-----------|--------------|-------------|
+| Structured SQL lookup | User asks for a known film, person, or cinema | Exact/entity SQL joins over `film`, `screening`, `cinema`, `person` | Final results for exact entity queries |
+| Semantic vector recall | User describes mood, style, theme, or preference | OpenAI embedding of `vibe_keywords` compared against `film_embedding.embedding` via pgvector cosine similarity | Candidate recall for discovery/style queries |
+| Lexical full-text recall | User includes important title/genre/description keywords | PostgreSQL full-text search over `film_search_vector(title, normalized_title, genre, description)` | Candidate recall that catches exact-token matches vector search can miss |
+
+The key distinction is that structured SQL can be a final retrieval path, while semantic and lexical search are recall paths inside the agentic pipeline. Discovery/style queries run both recall sources, merge candidates, and then use LLM verification to decide final relevance.
+
+### Film-level embeddings, screening-level availability
+
+The embedding table is film-level, not screening-level:
+
+```text
+film.id ── 1:1 ── film_embedding.film_id
+film.id ── 1:N ── screening.film_id
+screening.cinema_id ── N:1 ── cinema.id
+```
+
+This is intentional. The semantic content that answers "does this match the user's vibe?" lives on the film: title, genre, description, tags, and metadata. The screening rows answer a different question: "is this film currently available, where, and when?"
+
+Vector recall therefore joins `screening`, `film`, `film_embedding`, and `cinema` in one query:
+
+```sql
+FROM screening s
+JOIN film f ON s.film_id = f.id
+JOIN film_embedding fe ON f.id = fe.film_id
+JOIN cinema c ON s.cinema_id = c.id
+```
+
+That query ranks by film embedding similarity but filters and returns screening availability. This lets the system answer mixed queries like "light comedy tonight under 2 hours": the vibe is evaluated against film embeddings, while "tonight" and "under 2 hours" are pushed down as SQL filters on screenings.
+
+### Why keep `retrieval_source`
+
+Hybrid retrieval should not collapse vector and lexical candidates into an anonymous list. Each candidate keeps provenance:
+
+| `retrieval_source` | Meaning |
+|--------------------|---------|
+| `vector` | Found by semantic vector recall only |
+| `lexical` | Found by PostgreSQL full-text recall only |
+| `both` | Found by both recall sources |
+
+This provenance has concrete uses:
+
+1. **Candidate selection:** candidates found by both sources are prioritized before LLM verification because they have two independent recall signals.
+2. **Deduplication:** the merge step can combine vector `similarity` and lexical `lexical_rank` for the same screening/film instead of treating them as separate results.
+3. **Debugging:** poor results can be traced to vector recall, lexical recall, merge logic, or LLM verification.
+4. **Evaluation:** retrieval ablations can compare vector-only, lexical-only, hybrid, and hybrid + LLM rerank using the same result metadata.
+
+The final LLM score remains the precision layer. Retrieval provenance helps build and inspect the candidate pool; it does not override verification.
 
 ---
 
@@ -253,11 +312,13 @@ The frontend displays the message and a CTA button. If the user opts in, the fro
 4. Lexical recall:
    - Run PostgreSQL full-text search over film/search metadata
    - Retrieve top 30-40 candidates ranked by `ts_rank_cd`
-   - Use this as a BM25-style exact-token signal for titles, names, genres, tags, and description terms
+   - Use this as a BM25-style exact-token signal for title, genre, and description terms
    - Apply the same hard SQL filters as vector recall
 5. Merge + dedupe:
    - Combine vector and lexical candidates
-   - Dedupe by `film_id` for verification; keep screening rows for final showtimes
+   - Merge duplicate recall rows by screening id so a screening can carry both vector and lexical metadata
+   - Select at most one candidate per `film_id` for LLM verification
+   - Keep screening rows for final showtime grouping
    - Preserve `similarity`, `lexical_rank`, and retrieval source flags for debugging/evaluation
 6. Defensive hard constraint filtering:
    - Date range and cinema IDs are pushed down into retrieval SQL
@@ -272,7 +333,7 @@ The frontend displays the message and a CTA button. If the user opts in, the fro
 
 ### Why add lexical recall
 
-Vector search handles fuzzy semantic intent well, but it can underperform when the query contains exact words that matter: partial film titles, director names, cinema names, genre labels, unusual proper nouns, or keywords like "silent", "anime", "noir", and "restoration". Lexical recall provides a second candidate source that is stable for exact tokens and cheap to run inside the existing PostgreSQL database.
+Vector search handles fuzzy semantic intent well, but it can underperform when the query contains exact words that matter: partial film titles, genre labels, unusual proper nouns, or keywords like "silent", "anime", "noir", and "restoration". Lexical recall provides a second candidate source that is stable for exact tokens in film-local text and cheap to run inside the existing PostgreSQL database.
 
 This is intentionally Postgres-native rather than Elasticsearch/OpenSearch:
 - Current catalog size and traffic do not justify another managed search service.
@@ -288,16 +349,20 @@ The agentic path should retrieve candidates from both sources before LLM verific
 vectorCandidates  = semanticSearch(queryVec, filters, limit=40)
 lexicalCandidates = lexicalSearch(queryText, filters, limit=40)
 
-merged = merge by film_id:
-  - keep best vector similarity if present
-  - keep best lexical rank if present
+merged = merge by screening id:
+  - keep vector similarity if present
+  - keep lexical rank if present
   - mark source: vector | lexical | both
-  - prefer candidates found by both sources when selecting verification batch
+  - sort both-source candidates before single-source candidates
+
+verification_batch = dedupe merged candidates by film_id:
+  - avoid asking the LLM to score the same film repeatedly
+  - keep screening rows in the final response so film_results can include showtimes[]
 ```
 
 Initial selection rule for the verification batch:
-1. Include candidates found by both vector and lexical recall first.
-2. Fill remaining slots with top vector candidates and top lexical candidates in alternating order.
+1. Sort merged candidates by retrieval source (`both` before `vector` before `lexical`), then by best available recall score.
+2. Walk the sorted list and keep at most one candidate per `film_id`.
 3. Cap at 15 candidates for the existing batched LLM verifier.
 
 The LLM remains the final reranker. Retrieval scores are used only to build a diverse, high-recall candidate set; they should not override the LLM's match score.
@@ -630,7 +695,7 @@ PostgreSQL full-text recall adds no external API cost. It adds a small amount of
 |----------|--------|-----|
 | Remove standalone semantic tier | Embedding is recall-only, always followed by LLM verification | Similarity score alone cannot reliably judge match quality |
 | Add structured mode | SQL entity lookup for named persons/films/cinemas | Exact entities should use exact matching; embedding introduces noise for known-item queries |
-| Add lexical recall to agentic mode | PostgreSQL full-text search runs alongside vector recall | Exact tokens, title fragments, names, and genre terms are more stable with lexical retrieval |
+| Add lexical recall to agentic mode | PostgreSQL full-text search runs alongside vector recall | Exact tokens, title fragments, genre terms, and description keywords are more stable with lexical retrieval |
 | Avoid Elasticsearch/OpenSearch | Use Postgres-native full-text search | Current data size and QPS do not justify another service or index synchronization pipeline |
 | Merge vector + lexical candidates before verification | Dedupe by film/screening and keep retrieval provenance | Improves recall while preserving LLM as final precision layer |
 | Add `result_type` | Separate retrieval mode from presentation shape | Natural-language queries can ask for recommendations, showtimes, schedules, or person-specific results |

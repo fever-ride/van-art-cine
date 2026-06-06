@@ -191,6 +191,20 @@ Integration tests — mock orchestrator, test HTTP layer.
 
 Live API tests against real database + OpenAI. Not for CI — run manually after deployment to validate search quality.
 
+### Retrieval model coverage
+
+The eval set should deliberately cover the three retrieval strategies and the handoff between film-level retrieval and screening-level availability:
+
+| Area | What to verify | Example query |
+|------|----------------|---------------|
+| Structured SQL lookup | Exact entity queries do not use fuzzy vector substitution | "when is The Green Ray playing" |
+| Semantic vector recall | Mood/style queries retrieve films with similar meaning even without exact token overlap | "dreamy melancholic romance" |
+| Lexical full-text recall | Exact title/genre/description terms can be recovered even when vector recall is weak | "silent german expressionism" |
+| Hybrid provenance | Candidates found by both sources carry `retrieval_source: "both"` with both `similarity` and `lexical_rank` where available | "noir restoration tonight" |
+| Screening join / hard filters | Film-level matches only return currently available screenings satisfying date/cinema/runtime constraints | "light comedy tonight under 2 hours" |
+
+When reviewing failures, classify whether the miss happened in vector recall, lexical recall, hybrid merge/provenance, hard filter pushdown, or LLM verification. This keeps retrieval quality separate from final answer quality.
+
 ### Retrieval ablation design
 
 Run the same query set through four retrieval configurations to verify that each layer improves quality:

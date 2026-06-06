@@ -197,6 +197,52 @@ Planned `intent_type` values:
 
 **Potential fix:** Regenerate `source_uid` after film merges, or switch to a `film_id`-independent UID (e.g. `sha256(cinema_id|normalized_title|start_at_utc)`).
 
+### Rio detail_url missing can fail staging load
+
+**Status:** Open
+
+The Rio scraper initializes each event with `detail_url = null` during calendar scraping, then fills it only if the detail-page click succeeds. If a Rio event is scraped from the calendar but the click/detail URL step fails, `load_json.py` passes `r.get("detail_url")` into `stg_screening.source_url`, which is `NOT NULL`, causing the whole staging load transaction to roll back.
+
+### Observed failure
+
+Production pipeline run on 2026-05-31 failed during `load_json` with:
+
+```text
+null value in column "source_url" of relation "stg_screening" violates not-null constraint
+Failing row:
+film_id=798
+cinema_id=166
+source=rio
+start_at_utc=2026-06-05 04:00:00
+raw_date=Thursday June 4
+raw_time=9:00 p.m.
+source_url=null
+```
+
+Resolved DB context:
+
+- Film: `NOFX: 40 Years Of Fuckin' Up`
+- Cinema: `Rio Theatre`
+- Showtime: `Thursday June 4, 9:00 p.m.`
+- Previous staging row for the same screening had a valid URL: `https://riotheatre.ca/movie/nofx-40-years-of-fuckin-up/`
+
+Likely cause: the new Rio scrape captured the calendar showtime but failed to populate the event-level `detail_url` during the click/detail phase. This can happen if the event click does not navigate, the title match fails, or Rio changes the calendar/card behavior for a specific event.
+
+**Impact:** Medium. The transaction protects against partial staging writes, but `run_all.py` currently continues after `load_json` fails unless `--stop-on-error` is provided, so later steps may operate on older staging data.
+
+In the observed run, `merge_staging_to_live` still ran after `load_json` failed and reported `rows_in=183`, likely because the failed transaction rolled back to the previous staging snapshot. That avoided half-written new staging data, but made the pipeline behavior confusing and could hide ingest failures.
+
+**Potential fixes:**
+
+- [ ] Add a loader fallback for missing `detail_url` before inserting `source_url`:
+  - Rio fallback: `https://riotheatre.ca/calendar/`
+  - Generic fallback: source cinema website
+- [ ] Log missing source URLs with title, source, date, time, generated `source_uid`, and fallback URL used.
+- [ ] Make production pipeline runs stop on ingest failure by default, or require `--stop-on-error` in deploy/runbook usage.
+- [ ] Consider scraper-side fallback by reading a link/href directly from the Rio calendar card if available.
+- [ ] Add a regression test / fixture with a Rio event that has `detail_url = null`.
+- [ ] Consider reporting "staging snapshot age" before `merge_staging_to_live` so old staging data is not mistaken for a successful fresh load.
+
 ---
 
 ## Frontend — Phase 3 (Smart Search UI)

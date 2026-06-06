@@ -211,17 +211,20 @@ A natural-language search system that lets users describe what they want to watc
 | Path | When | How |
 |------|------|-----|
 | **Structured** | Query references a known entity (director, film title, cinema) | Entity extraction → SQL lookup |
-| **Agentic** | Query describes mood/vibe/style or has complex constraints | Embedding recall (pgvector) → LLM verification + scoring |
+| **Agentic hybrid** | Query describes mood/vibe/style or has recommendation constraints | pgvector semantic recall + PostgreSQL full-text lexical recall → merge/dedupe → LLM verification + scoring |
+
+Agentic retrieval uses film-level embeddings for semantic matching, joins screenings for availability/date/cinema/runtime filters, and keeps retrieval provenance (`vector`, `lexical`, `both`) for debugging and evaluation.
 
 **Key components:**
 - `queryRouter.js` — GPT-4o-mini classifier with circuit breaker (degrades to keyword ILIKE on repeated failure)
 - `structuredSearch.js` — SQL entity lookup (person/film/cinema + screening join)
-- `verificationService.js` — Batched LLM scoring of embedding recall candidates (max 15 per call)
+- `lexicalSearch.js` — PostgreSQL full-text recall over film title, normalized title, genre, and description
+- `verificationService.js` — Batched LLM scoring of merged recall candidates (max 15 per call)
 - `searchOrchestrator.js` — Coordinates routing, recall, filtering, and verification
 
-**Tech:** pgvector + HNSW index, OpenAI text-embedding-3-small (1536-dim), GPT-4o-mini / GPT-4o for verification.
+**Tech:** PostgreSQL full-text search + GIN index, pgvector + HNSW index, OpenAI text-embedding-3-small (1536-dim), GPT-4o-mini / GPT-4o for routing, extraction, and verification.
 
-**Branch:** `smart-search` | **Design doc:** `docs/smart-search-design.md`
+**Branch:** `smart-search` | **Design doc:** `docs/smart-search-design.md` | **Test plan:** `docs/smart-search-test-plan.md`
 
 ---
 
