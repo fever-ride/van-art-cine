@@ -343,4 +343,29 @@ describe('orchestrateSearch agentic responses', () => {
       query: 'melancholic romance',
     }));
   });
+
+  test('falls back to original query when agentic extraction API fails', async () => {
+    openAICreate.mockRejectedValue(new Error('OpenAI unavailable'));
+    semanticSearch.mockResolvedValue([
+      screeningRow({ id: 1, film_id: 10, title: 'The Green Ray' }),
+    ]);
+    verifyMatches.mockResolvedValue([{ film_id: 10, score: 8 }]);
+
+    const result = await orchestrateSearch({
+      query: 'dreamy melancholic romance',
+      routing: {
+        mode: 'agentic',
+        intent_type: 'discovery_query',
+        entities: { person: null, film: null, cinema: null },
+        date_hint: null,
+      },
+      filters: { cinemaIds: [], limit: 5 },
+    });
+
+    expect(result.result_type).toBe('film_results');
+    expect(embedQuery).toHaveBeenCalledWith('dreamy melancholic romance');
+    expect(lexicalSearch).toHaveBeenCalledWith(expect.objectContaining({
+      query: 'dreamy melancholic romance',
+    }));
+  });
 });

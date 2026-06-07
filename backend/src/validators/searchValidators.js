@@ -1,7 +1,12 @@
 import { query } from 'express-validator';
 
 export const searchValidator = [
-  query('q').notEmpty().withMessage('q is required').trim(),
+  query('q')
+    .notEmpty()
+    .withMessage('q is required')
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('q must be 500 characters or less'),
   query('date').optional().isISO8601().withMessage('date must be YYYY-MM-DD'),
   query('from').optional().isISO8601().withMessage('from must be YYYY-MM-DD'),
   query('to').optional().isISO8601().withMessage('to must be YYYY-MM-DD'),

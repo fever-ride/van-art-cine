@@ -134,4 +134,33 @@ describe('routeQuery', () => {
       runtime_max: null,
     });
   });
+
+  test('short-circuits clearly out-of-scope queries before OpenAI call', async () => {
+    await expect(routeQuery('write me a python script')).resolves.toEqual({
+      mode: 'unsupported',
+      intent_type: 'out_of_scope',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: null,
+      runtime_max: null,
+    });
+    expect(openAICreate).not.toHaveBeenCalled();
+  });
+
+  test('normalizes model out-of-scope response', async () => {
+    mockRouterResponse({
+      mode: 'unsupported',
+      intent_type: 'out_of_scope',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: null,
+      runtime_max: null,
+    });
+
+    await expect(routeQuery('tell me a joke')).resolves.toEqual({
+      mode: 'unsupported',
+      intent_type: 'out_of_scope',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: null,
+      runtime_max: null,
+    });
+  });
 });

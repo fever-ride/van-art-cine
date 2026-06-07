@@ -224,7 +224,7 @@ Agentic retrieval uses film-level embeddings for semantic matching, joins screen
 
 **Tech:** PostgreSQL full-text search + GIN index, pgvector + HNSW index, OpenAI text-embedding-3-small (1536-dim), GPT-4o-mini / GPT-4o for routing, extraction, and verification.
 
-**Branch:** `smart-search` | **Design doc:** `docs/smart-search-design.md` | **Test plan:** `docs/smart-search-test-plan.md`
+**Branch:** `smart-search` | **Design doc:** `docs/smart-search-design.md` | **Frontend plan:** `docs/smart-search-frontend-plan.md` | **Test plan:** `docs/smart-search-test-plan.md`
 
 ---
 

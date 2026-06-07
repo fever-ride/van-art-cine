@@ -326,15 +326,18 @@ async function fetchConstraintScreenings({ cinemaIds, gte, lt, runtimeMax, limit
 }
 
 async function handleAgentic({ query, routing, filters }) {
-  const res = await getClient().chat.completions.create({
-    model: 'gpt-4o-mini',
-    temperature: 0,
-    max_tokens: 300,
-    response_format: { type: 'json_object' },
-    messages: [
-      {
-        role: 'system',
-        content: `You decompose a movie search query into concrete constraints for a screening database in Vancouver. Extract as many structured constraints as possible.
+  let extractionContent = null;
+
+  try {
+    const res = await getClient().chat.completions.create({
+      model: 'gpt-4o-mini',
+      temperature: 0,
+      max_tokens: 300,
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content: `You decompose a movie search query into concrete constraints for a screening database in Vancouver. Extract as many structured constraints as possible.
 
 IMPORTANT: "vibe_keywords" is used for semantic embedding search against a film database. Make it descriptive and rich — include mood, genre, tone, and style words. For example, instead of just "light", write "light romantic comedy fun uplifting cheerful date night".
 
@@ -355,14 +358,19 @@ Respond as JSON:
 
 Use "discovery_query" + "film_results" when the user asks for recommendation quality, mood, style, genre, or personal preference, even if they also include hard constraints like tonight, at a cinema, or under 2 hours.
 Use "style_reference_query" + "film_results" when a person/film is used as a style reference.}`,
-      },
-      { role: 'user', content: query },
-    ],
-  });
+        },
+        { role: 'user', content: query },
+      ],
+    });
+    extractionContent = res.choices[0].message.content;
+  } catch {
+    // fall through to deterministic extraction fallback below
+  }
 
   let constraints;
   try {
-    constraints = JSON.parse(res.choices[0].message.content);
+    if (!extractionContent) throw new Error('missing extraction content');
+    constraints = JSON.parse(extractionContent);
   } catch {
     constraints = {
       vibe_keywords: query,

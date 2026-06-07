@@ -67,7 +67,16 @@ Respond as JSON:
 Only populate "entities" for structured entity queries. For structured pure constraint queries, entities may all be null.
 Use "constraint_heavy_query" + "structured" for queries that only ask for available showtimes using hard constraints like date, time, cinema, or runtime.
 Do NOT use "constraint_heavy_query" when the query includes mood, genre, style, vibe, or recommendation quality words like comedy, romantic, atmospheric, fun, scary, beautiful, or date night; those are "discovery_query" and should be agentic.
-Use "style_reference_query" when a person or film is used as a style reference rather than the exact thing being requested.`;
+Use "style_reference_query" when a person or film is used as a style reference rather than the exact thing being requested.
+
+If the query is unrelated to Vancouver movie screenings, films, cinemas, showtimes, or movie recommendations, respond with:
+{
+  "mode": "unsupported",
+  "intent_type": "out_of_scope",
+  "entities": { "person": null, "film": null, "cinema": null },
+  "date_hint": null,
+  "runtime_max": null
+}`;
 
 const AGENTIC_FALLBACK = {
   mode: 'agentic',
@@ -84,6 +93,17 @@ const DEGRADED_RESPONSE = {
   date_hint: null,
   runtime_max: null,
 };
+
+export const OUT_OF_SCOPE_RESPONSE = {
+  mode: 'unsupported',
+  intent_type: 'out_of_scope',
+  entities: { person: null, film: null, cinema: null },
+  date_hint: null,
+  runtime_max: null,
+};
+
+export const OUT_OF_SCOPE_MESSAGE =
+  'Smart Search can help you find Vancouver indie film screenings. Try asking for a film, cinema, showtime, or movie mood.';
 
 function inferStructuredIntent(entities, parsedIntent) {
   if (parsedIntent === 'constraint_heavy_query') return 'constraint_heavy_query';
@@ -108,8 +128,21 @@ function hasSubjectiveSearchSignal(query) {
   return /\b(comedy|fun|funny|romantic|romance|atmospheric|dreamy|melancholic|scary|horror|beautiful|thriller|noir|anime|intense|cheerful|uplifting|date night|style|vibe|like)\b/i.test(query);
 }
 
+function isClearlyOutOfScope(query) {
+  const filmScope =
+    /\b(movie|movies|film|films|cinema|screening|screenings|showtime|showtimes|director|actor|actress|genre|rio|viff|cinematheque|vancouver|tonight|tomorrow|weekend|noir|anime|horror|thriller|comedy|romance|documentary|drama)\b/i;
+  const commonOffTopic =
+    /\b(python|javascript|code|homework|essay|recipe|weather|stock|stocks|crypto|math|calculus|politics|relationship advice|cover letter|resume)\b/i;
+
+  return commonOffTopic.test(query) && !filmScope.test(query);
+}
+
 export async function routeQuery(query) {
   const state = getBreakerState();
+
+  if (isClearlyOutOfScope(query)) {
+    return OUT_OF_SCOPE_RESPONSE;
+  }
 
   if (state === 'open') {
     return DEGRADED_RESPONSE;
@@ -130,6 +163,10 @@ export async function routeQuery(query) {
     const parsed = JSON.parse(res.choices[0].message.content);
 
     recordSuccess();
+
+    if (parsed.mode === 'unsupported' || parsed.intent_type === 'out_of_scope') {
+      return OUT_OF_SCOPE_RESPONSE;
+    }
 
     const mode = parsed.mode === 'structured'
       || (parsed.intent_type === 'constraint_heavy_query' && !hasSubjectiveSearchSignal(query))

@@ -266,6 +266,36 @@ Implementation: in-memory counter + timestamp in `queryRouter.js`. No external d
 
 Rate limiting (existing): 30 req/min per IP on `/api/search`. This remains unchanged and acts as the first line of defense against abuse regardless of circuit breaker state.
 
+### Defense gaps to close before public frontend rollout
+
+Current backend resilience is partial:
+
+- Router calls are protected by a circuit breaker.
+- Degraded mode can fall back to title search.
+- Clearly out-of-scope queries return a fixed unsupported response before expensive retrieval work.
+- Smart search query length is capped at 500 characters by request validation.
+- Agentic extraction API failure falls back to the original query instead of returning 500.
+- Vector and lexical recall failures are best-effort and do not crash the whole agentic path.
+- Verification failures return unscored candidates instead of failing the request.
+
+Known gaps:
+
+1. **Out-of-scope guard is conservative.** The first version catches obvious off-topic requests before the router call and accepts model-returned `unsupported` responses. Future work should tune this with real logs.
+
+   Fixed response:
+
+   ```text
+   I can help you search Vancouver indie film screenings. Try asking for a film, cinema, showtime, or movie mood.
+   ```
+
+2. **No smart-search-specific cost budget yet.** Existing `/api/smart-search` rate limiting is useful, but smart search has OpenAI cost. Consider a stricter route-level limit, user/session budget, or abuse monitoring before public launch.
+
+3. **No explicit LLM timeout policy.** Define request timeout/retry behavior for router, extraction, embedding, and verification calls.
+
+4. **No frontend defensive UX yet.** The frontend should show clear error/degraded/empty states and should not expose internal debug scores to users.
+
+These defenses should be treated as launch blockers for a public-facing Smart Search UI.
+
 ---
 
 ## Structured Path

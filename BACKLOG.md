@@ -129,6 +129,33 @@ Generation / verification layer:
 
 ---
 
+## Smart Search — Defense & Abuse Prevention
+
+**Status:** Planned before public frontend rollout
+
+### Goal
+
+Prevent LLM/API failures, off-topic usage, and accidental token/cost abuse from breaking or inflating Smart Search.
+
+### Tasks
+
+- [x] Wrap agentic extraction OpenAI call in `searchOrchestrator.js` with API-failure fallback, not only JSON-parse fallback
+- [x] Add conservative out-of-scope detection/guard before expensive embedding/verification work
+- [x] Add max query length validation for `/api/smart-search`
+- [ ] Add smart-search-specific cost/session budget or abuse monitoring beyond basic route rate limiting
+- [ ] Define timeout/retry policy for router, extraction, embedding, and verification calls
+- [x] Return a stable out-of-scope response shape/message for frontend rendering
+- [ ] Frontend: reject empty/too-long queries before calling API
+- [ ] Frontend: render degraded, error, empty, and out-of-scope states explicitly
+- [ ] Frontend: keep raw `match_score`, `similarity`, `lexical_rank`, and `retrieval_source` hidden from normal users
+
+### Reference
+
+- Design doc: `docs/smart-search-design.md`
+- Frontend plan: `docs/smart-search-frontend-plan.md`
+
+---
+
 ## Smart Search — Response Presentation Types
 
 **Status:** Backend implemented, frontend/tests pending
@@ -182,6 +209,7 @@ Planned `intent_type` values:
 
 - Design doc: `docs/smart-search-design.md`
 - Test plan: `docs/smart-search-test-plan.md`
+- Frontend plan: `docs/smart-search-frontend-plan.md`
 
 ---
 
@@ -249,11 +277,16 @@ In the observed run, `merge_staging_to_live` still ran after `load_json` failed 
 
 **Status:** Not started
 
-- [ ] `frontend/app/lib/search.ts` — API client for `GET /api/search`
-- [ ] `frontend/lib/hooks/useSearchData.ts` — hook for smart search results
-- [ ] Add search mode toggle in `Filters.tsx` ("Title search" / "Smart search")
-- [ ] Show `match_score` and `match_explanation` in results
-- [ ] Debounce: 800ms for smart search (vs 350ms for keyword)
+Reference: `docs/smart-search-frontend-plan.md`
+
+- [ ] `frontend/app/lib/smartSearch.ts` — API client for `GET /api/smart-search`
+- [ ] `frontend/lib/hooks/useSmartSearch.ts` — hook for smart search result state
+- [ ] Add standalone homepage Smart Search section below existing screenings/pagination, above footer
+- [ ] Keep existing title search/filter sidebar unchanged in the first version
+- [ ] Render `result_type` variants: `film_results`, `screening_results`, `film_showtimes`, `cinema_schedule`, `person_results`, `empty_with_fallback`
+- [ ] Do not show raw `match_score`, `similarity`, `lexical_rank`, or `retrieval_source` to normal users
+- [ ] Optionally show `match_explanation` as "Why this might fit" after manual copy review
+- [ ] Use explicit submit for initial version; defer debounce until usage/cost is understood
 - [ ] Handle "no good matches" message gracefully in UI
 
 ---

@@ -5,6 +5,8 @@ const orchestrateSearch = jest.fn();
 
 jest.unstable_mockModule('../../src/services/queryRouter.js', () => ({
   routeQuery,
+  OUT_OF_SCOPE_MESSAGE:
+    'Smart Search can help you find Vancouver indie film screenings. Try asking for a film, cinema, showtime, or movie mood.',
 }));
 
 jest.unstable_mockModule('../../src/services/searchOrchestrator.js', () => ({
@@ -81,8 +83,39 @@ describe('GET /api/smart-search', () => {
     expect(res.headers['x-search-degraded']).toBe('true');
   });
 
+  test('returns stable out-of-scope response without orchestrating', async () => {
+    routeQuery.mockResolvedValue({
+      mode: 'unsupported',
+      intent_type: 'out_of_scope',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: null,
+      runtime_max: null,
+    });
+
+    const res = await request(app).get('/api/smart-search?q=write%20me%20a%20python%20script');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      mode: 'unsupported',
+      intent_type: 'out_of_scope',
+      result_type: 'empty_with_fallback',
+      items: [],
+    });
+    expect(res.body.message).toContain('Vancouver indie film screenings');
+    expect(orchestrateSearch).not.toHaveBeenCalled();
+  });
+
   test('rejects missing q with validation error', async () => {
     const res = await request(app).get('/api/smart-search');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('VALIDATION_ERROR');
+    expect(routeQuery).not.toHaveBeenCalled();
+  });
+
+  test('rejects overly long query before routing', async () => {
+    const longQuery = 'a'.repeat(501);
+    const res = await request(app).get(`/api/smart-search?q=${longQuery}`);
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('VALIDATION_ERROR');
