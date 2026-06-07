@@ -42,26 +42,31 @@ const SYSTEM_PROMPT = `You route natural language queries for a movie screening 
 
 Classify into exactly one mode:
 
-- "structured": The query asks about a SPECIFIC entity — a named director, actor, film title, or cinema — and wants to find screenings of/by/at that entity.
-  Examples: "Tarantino films", "when is Nosferatu playing", "what's at the Rio this week"
+- "structured": The query can be answered with deterministic SQL filters and does NOT require subjective recommendation judgment.
+  This includes:
+  - a SPECIFIC entity — a named director, actor, film title, or cinema — where the user wants screenings of/by/at that entity.
+  - pure availability/filter queries using hard constraints like date, time, cinema, or runtime.
+  Examples: "Tarantino films", "when is Nosferatu playing", "what's at the Rio this week", "tonight under 90 minutes", "what's playing tomorrow under 2 hours"
 
 - "agentic": The query describes what kind of experience or film the user wants, using mood, style, genre, theme, personal preferences, or any description that requires judgment to match against films. Also use this when the user references a person/film as a STYLE REFERENCE rather than looking for that specific entity.
-  Examples: "dark atmospheric noir", "light fun date movie", "something my film-buff friend would respect", "dreamy melancholic romance", "Wong Kar-wai style visual aesthetic"
+  Examples: "dark atmospheric noir", "light fun date movie", "something my film-buff friend would respect", "dreamy melancholic romance", "Wong Kar-wai style visual aesthetic", "light comedy tonight under 2 hours"
 
-Key distinction: if the user is looking FOR a known thing → structured.
-If the user is looking for something that MATCHES a description → agentic.
+Key distinction:
+- If the user is looking FOR a known thing or asking for objective availability constraints only → structured.
+- If the user is looking for something that MATCHES a mood/style/preference description → agentic, even if the query also has hard constraints like tonight, a cinema, or under 2 hours.
 
 Respond as JSON:
 {
   "mode": "structured" | "agentic",
   "intent_type": "known_person_query" | "known_film_query" | "known_cinema_query" | "discovery_query" | "constraint_heavy_query" | "style_reference_query",
   "entities": { "person": null | "name", "film": null | "title", "cinema": null | "name" },
-  "date_hint": null | "today" | "tonight" | "tomorrow" | "this weekend"
+  "date_hint": null | "today" | "tonight" | "tomorrow" | "this weekend",
+  "runtime_max": null | number in minutes
 }
 
-Only populate "entities" for structured mode. For agentic mode, set all entity fields to null.
-Use "constraint_heavy_query" for agentic queries that mostly ask for available showtimes using hard constraints like date, time, cinema, or runtime.
-Do NOT use "constraint_heavy_query" when the query includes mood, genre, style, vibe, or recommendation quality words like comedy, romantic, atmospheric, fun, scary, beautiful, or date night; those are "discovery_query".
+Only populate "entities" for structured entity queries. For structured pure constraint queries, entities may all be null.
+Use "constraint_heavy_query" + "structured" for queries that only ask for available showtimes using hard constraints like date, time, cinema, or runtime.
+Do NOT use "constraint_heavy_query" when the query includes mood, genre, style, vibe, or recommendation quality words like comedy, romantic, atmospheric, fun, scary, beautiful, or date night; those are "discovery_query" and should be agentic.
 Use "style_reference_query" when a person or film is used as a style reference rather than the exact thing being requested.`;
 
 const AGENTIC_FALLBACK = {
@@ -69,6 +74,7 @@ const AGENTIC_FALLBACK = {
   intent_type: 'discovery_query',
   entities: { person: null, film: null, cinema: null },
   date_hint: null,
+  runtime_max: null,
 };
 
 const DEGRADED_RESPONSE = {
@@ -76,9 +82,11 @@ const DEGRADED_RESPONSE = {
   intent_type: null,
   entities: { person: null, film: null, cinema: null },
   date_hint: null,
+  runtime_max: null,
 };
 
-function inferStructuredIntent(entities) {
+function inferStructuredIntent(entities, parsedIntent) {
+  if (parsedIntent === 'constraint_heavy_query') return 'constraint_heavy_query';
   if (entities.person) return 'known_person_query';
   if (entities.film) return 'known_film_query';
   if (entities.cinema) return 'known_cinema_query';
@@ -86,9 +94,18 @@ function inferStructuredIntent(entities) {
 }
 
 function normalizeAgenticIntent(intentType) {
-  return ['discovery_query', 'style_reference_query', 'constraint_heavy_query'].includes(intentType)
+  return ['discovery_query', 'style_reference_query'].includes(intentType)
     ? intentType
     : 'discovery_query';
+}
+
+function normalizeRuntimeMax(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function hasSubjectiveSearchSignal(query) {
+  return /\b(comedy|fun|funny|romantic|romance|atmospheric|dreamy|melancholic|scary|horror|beautiful|thriller|noir|anime|intense|cheerful|uplifting|date night|style|vibe|like)\b/i.test(query);
 }
 
 export async function routeQuery(query) {
@@ -114,7 +131,10 @@ export async function routeQuery(query) {
 
     recordSuccess();
 
-    const mode = parsed.mode === 'structured' ? 'structured' : 'agentic';
+    const mode = parsed.mode === 'structured'
+      || (parsed.intent_type === 'constraint_heavy_query' && !hasSubjectiveSearchSignal(query))
+      ? 'structured'
+      : 'agentic';
     const entities = mode === 'structured'
       ? {
           person: parsed.entities?.person || null,
@@ -123,11 +143,12 @@ export async function routeQuery(query) {
         }
       : { person: null, film: null, cinema: null };
     const date_hint = parsed.date_hint || null;
+    const runtime_max = normalizeRuntimeMax(parsed.runtime_max);
     const intent_type = mode === 'structured'
-      ? inferStructuredIntent(entities)
+      ? inferStructuredIntent(entities, parsed.intent_type)
       : normalizeAgenticIntent(parsed.intent_type);
 
-    return { mode, intent_type, entities, date_hint };
+    return { mode, intent_type, entities, date_hint, runtime_max };
   } catch {
     recordFailure();
 

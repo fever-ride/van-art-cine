@@ -148,27 +148,27 @@ Recommendation-style searches now return one item per film with nested `showtime
 
 Good story for API design, product modeling, and realizing that "search result" is not one universal object.
 
-## Smart Search: Router vs Extraction Conflict
+## Smart Search: SQL-Only Constraints vs Constrained Recommendations
 
 ### Situation
 
-The query router performs a fast, coarse classification, while the agentic extraction step reads the query more deeply to extract constraints and presentation hints.
+Natural-language search queries can mix objective availability constraints with subjective recommendation language.
 
 ### Challenge
 
-A query like "light comedy tonight under 2 hours" contains hard constraints (`tonight`, `under 2 hours`) but also subjective recommendation intent (`light comedy`). The router initially classified it as constraint-heavy, which would push the response toward `screening_results`, even though the user likely wanted film recommendations constrained by time/runtime.
+Queries like "tonight under 90 minutes" and "light comedy tonight under 2 hours" both contain hard constraints, but they are different user tasks. The first can be fully answered with SQL filters; the second needs recommendation judgment plus SQL filters. Treating both as agentic would waste embedding/LLM work for deterministic queries, while treating both as SQL-only would ignore subjective taste.
 
 ### Action
 
-Made the router responsible for coarse retrieval mode, but let the extraction step refine `intent_type` and `presentation_hint`. Tightened the prompts so pure availability filters use `constraint_heavy_query` + `screening_results`, while queries with mood, genre, style, or recommendation quality use `discovery_query` + `film_results` even when they include hard constraints.
+Refined the routing boundary so SQL-only availability/filter queries use `structured` + `constraint_heavy_query` and go directly to screening lookup. Queries with mood, genre, style, or recommendation quality use agentic discovery even when they include hard constraints; those constraints are pushed down into retrieval SQL while the subjective part is handled by semantic/lexical recall and LLM verification.
 
 ### Result
 
-The system can treat "tonight under 90 minutes" as a screening filter while treating "light comedy tonight under 2 hours" as a constrained recommendation. This keeps the response aligned with the user's actual task.
+The system treats "tonight under 90 minutes" as a deterministic screening filter and "light comedy tonight under 2 hours" as a constrained recommendation. This keeps retrieval cost lower for SQL-only queries and keeps response shape aligned with the user's actual task.
 
 ### Interview Angle
 
-Good story for handling ambiguity, layering LLM decisions, and designing guardrails when multiple classifiers can disagree.
+Good story for handling ambiguity, separating objective constraints from subjective intent, and avoiding unnecessary LLM/embedding work.
 
 ## Data Pipeline: `source_uid` Became Unstable After Film Merges
 

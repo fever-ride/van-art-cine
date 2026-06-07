@@ -6,6 +6,7 @@ v4.1 adds PostgreSQL full-text lexical recall to the agentic path. The evaluatio
 
 ```text
 structured exact search
+structured constraint search = SQL-only screening lookup
 agentic hybrid search = vector recall + lexical recall + merge/dedupe + LLM rerank
 ```
 
@@ -39,7 +40,7 @@ Router/extractor output now includes `intent_type`; add tests for the mapping be
 | # | Query | Expected `mode` | Expected `intent_type` | Expected `result_type` |
 |---|-------|-----------------|------------------------|------------------------|
 | 1.11 | "dreamy melancholic romance" | `agentic` | `discovery_query` | `film_results` |
-| 1.12 | "tonight under 90 minutes" | `agentic` | `constraint_heavy_query` | `screening_results` |
+| 1.12 | "tonight under 90 minutes" | `structured` | `constraint_heavy_query` | `screening_results` |
 | 1.13 | "when is Happy Together playing" | `structured` | `known_film_query` | `film_showtimes` |
 | 1.14 | "what's at the Rio tonight" | `structured` | `known_cinema_query` | `cinema_schedule` |
 | 1.15 | "Tarantino this week" | `structured` | `known_person_query` | `person_results` |
@@ -79,6 +80,7 @@ Unit tests — mock all downstream services (queryRouter, embeddingService, sema
 | 3.4 | Structured returns empty array | Response includes `fallback_available: true`, `fallback_hint` |
 | 3.5 | filters.cinemaIds provided | Overrides entities.cinema resolution |
 | 3.6 | date_hint = "this weekend" | Resolved to correct gte/lt range |
+| 3.6a | routing.mode = "structured", intent_type = "constraint_heavy_query" | Calls SQL screening lookup directly; no embedding, lexical recall, or LLM verification |
 
 ### Agentic path
 
@@ -88,23 +90,24 @@ Unit tests — mock all downstream services (queryRouter, embeddingService, sema
 | 3.8 | Constraint extraction returns malformed JSON | Falls back to `{ vibe_keywords: query, complex: false }` |
 | 3.9 | runtime_max constraint | Passed into vector/lexical SQL retrieval and defensively post-filtered |
 | 3.10 | Duplicate film_ids across vector + lexical candidates | Merges into one verification candidate with combined retrieval metadata |
-| 3.11 | Verification throws | Returns candidates unscored (best-effort) |
-| 3.12 | All candidates score < 5 | Returns empty items + "No good matches" message |
-| 3.13 | Mixed scores: some ≥5, some <5 | Only ≥5 returned, sorted by score desc |
-| 3.14 | filters.limit = 5 | Returns at most 5 items |
-| 3.15 | No date filter and no date_hint | Defaults gte to now |
-| 3.16 | Candidate appears in both recall sources | Sets `retrieval_source: "both"` and preserves `similarity` + `lexical_rank` |
-| 3.17 | More than 15 merged candidates | Verification batch prioritizes candidates found by both sources, then alternates vector/lexical |
-| 3.18 | Lexical search throws | Continues with vector candidates only |
-| 3.19 | Vector search throws | Continues with lexical candidates only if embedding/semantic recall fails after query embedding |
+| 3.11 | Extraction includes `vibe_keywords` and `keyword_terms` | Vector recall uses enriched `vibe_keywords`; lexical recall uses conservative `keyword_terms` |
+| 3.12 | Verification throws | Returns candidates unscored (best-effort) |
+| 3.13 | All candidates score < 5 | Returns empty items + "No good matches" message |
+| 3.14 | Mixed scores: some ≥5, some <5 | Only ≥5 returned, sorted by score desc |
+| 3.15 | filters.limit = 5 | Returns at most 5 items |
+| 3.16 | No date filter and no date_hint | Defaults gte to now |
+| 3.17 | Candidate appears in both recall sources | Sets `retrieval_source: "both"` and preserves `similarity` + `lexical_rank` |
+| 3.18 | More than 15 merged candidates | Verification batch prioritizes candidates found by both sources, then alternates vector/lexical |
+| 3.19 | Lexical search throws | Continues with vector candidates only |
+| 3.20 | Vector search throws | Continues with lexical candidates only if embedding/semantic recall fails after query embedding |
 
 ### Degraded path
 
 | # | Case | Expected |
 |---|------|----------|
-| 3.20 | routing.mode = "degraded" | Uses Prisma ILIKE on film title |
-| 3.21 | Degraded with cinemaIds filter | Adds cinema_id constraint to query |
-| 3.22 | Degraded with no results | Returns empty items + limited search message |
+| 3.21 | routing.mode = "degraded" | Uses Prisma ILIKE on film title |
+| 3.22 | Degraded with cinemaIds filter | Adds cinema_id constraint to query |
+| 3.23 | Degraded with no results | Returns empty items + limited search message |
 
 ---
 
@@ -117,11 +120,12 @@ Unit tests — mock search results and verify response shaping.
 | 4.1 | Agentic discovery query (`"dreamy melancholic romance"`) | Returns `result_type: "film_results"` |
 | 4.2 | Agentic results contain multiple screenings for the same film | Response dedupes by `film_id` and nests matching rows in `showtimes[]` |
 | 4.3 | Known film query (`"when is Happy Together playing"`) | Returns `result_type: "film_showtimes"` with one film and all matching showtimes |
-| 4.4 | Known cinema/date query (`"what's at the Rio tonight"`) | Returns `result_type: "cinema_schedule"` or `screening_results`, ordered by start time |
+| 4.4 | Known cinema/date query (`"what's at the Rio tonight"`) | Returns `result_type: "cinema_schedule"`, ordered by start time |
 | 4.5 | Known person query (`"Tarantino this week"`) | Returns `result_type: "person_results"` and preserves exact SQL/entity provenance |
-| 4.6 | Structured path with no results | Returns `result_type: "empty_with_fallback"` with `fallback_available` and `fallback_hint` |
-| 4.7 | Agentic verification rejects all candidates | Returns `result_type: "empty_with_fallback"` or `film_results` with empty items and clear message |
-| 4.8 | Film-level item includes showtimes | Each `showtimes[]` entry includes screening id, cinema, start/end time, runtime, and source URL |
+| 4.6 | Constraint-heavy SQL-only query (`"tonight under 90 minutes"`) | Returns `result_type: "screening_results"`, one item per screening sorted by time |
+| 4.7 | Structured path with no results | Returns `result_type: "empty_with_fallback"` with `fallback_available`/`fallback_hint` for entity queries or a clear no-screenings message for constraint queries |
+| 4.8 | Agentic verification rejects all candidates | Returns `result_type: "empty_with_fallback"` or `film_results` with empty items and clear message |
+| 4.9 | Film-level item includes showtimes | Each `showtimes[]` entry includes screening id, cinema, start/end time, runtime, and source URL |
 
 ---
 
@@ -383,7 +387,7 @@ New queries to stress-test v4-specific features. No v3 baseline exists for these
 | Query | Expected Route | What it tests |
 |-------|---------------|---------------|
 | "tonight at the cinematheque" | structured | Cinema + date resolution, no vibe component |
-| "short film under 90 minutes tomorrow" | agentic | runtime_max + date constraint extraction |
+| "short film under 90 minutes tomorrow" | structured | SQL-only runtime + date constraint extraction |
 | "NOT horror, something cheerful" | agentic | `avoid` field in constraint extraction |
 | "visually stunning but emotionally heavy" | agentic | Contradictory vibes — tests verification nuance |
 | "something like In the Mood for Love" | agentic | Film name used as style reference, NOT structured lookup |

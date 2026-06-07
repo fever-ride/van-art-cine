@@ -163,16 +163,9 @@ function buildScreeningResults(items, { limit } = {}) {
 }
 
 function normalizeAgenticIntent(intentType) {
-  return ['discovery_query', 'style_reference_query', 'constraint_heavy_query'].includes(intentType)
+  return ['discovery_query', 'style_reference_query'].includes(intentType)
     ? intentType
     : 'discovery_query';
-}
-
-function normalizePresentationHint(hint, intentType) {
-  if (hint === 'screening_results' && intentType === 'constraint_heavy_query') {
-    return 'screening_results';
-  }
-  return 'film_results';
 }
 
 export async function orchestrateSearch({ query, routing, filters }) {
@@ -233,7 +226,7 @@ async function handleDegraded({ query, filters }) {
 }
 
 async function handleStructured({ routing, filters }) {
-  const { entities, date_hint } = routing;
+  const { entities, date_hint, runtime_max } = routing;
   const { gte, lt } = resolveTimeRange(date_hint, filters);
 
   const cinemaIds = filters.cinemaIds?.length
@@ -241,6 +234,26 @@ async function handleStructured({ routing, filters }) {
     : entities.cinema
       ? await resolveCinemaHint(entities.cinema)
       : null;
+
+  if (routing.intent_type === 'constraint_heavy_query') {
+    const items = await fetchConstraintScreenings({
+      cinemaIds,
+      gte,
+      lt,
+      runtimeMax: runtime_max,
+      limit: filters.limit,
+    });
+
+    return {
+      mode: 'structured',
+      intent_type: 'constraint_heavy_query',
+      result_type: items.length ? 'screening_results' : 'empty_with_fallback',
+      items,
+      message: items.length
+        ? undefined
+        : 'No screenings found for those constraints.',
+    };
+  }
 
   let items = [];
 
@@ -325,11 +338,14 @@ async function handleAgentic({ query, routing, filters }) {
 
 IMPORTANT: "vibe_keywords" is used for semantic embedding search against a film database. Make it descriptive and rich — include mood, genre, tone, and style words. For example, instead of just "light", write "light romantic comedy fun uplifting cheerful date night".
 
+IMPORTANT: "keyword_terms" is used for PostgreSQL full-text lexical search. Keep it conservative and close to the user's meaningful film words: title fragments, genre/style keywords, and distinctive descriptors. Do not include date/time/runtime/cinema constraints, and do not over-expand with many synonyms.
+
 Respond as JSON:
 {
   "vibe_keywords": "rich descriptive string for semantic embedding search (multiple words)",
-  "intent_type": "discovery_query" or "constraint_heavy_query" or "style_reference_query",
-  "presentation_hint": "film_results" or "screening_results",
+  "keyword_terms": "short conservative keyword string for lexical full-text search",
+  "intent_type": "discovery_query" or "style_reference_query",
+  "presentation_hint": "film_results",
   "runtime_max": null or number in minutes,
   "cinema_hint": null or string (e.g. "rio", "cinematheque"),
   "date_hint": null or "today" or "tonight" or "tomorrow" or "this weekend",
@@ -337,7 +353,6 @@ Respond as JSON:
   "complex": true if the query requires reasoning about social context or personal preferences, false otherwise
 }
 
-Use "constraint_heavy_query" + "screening_results" ONLY when the user mostly asks for available showtimes using hard constraints (date/time/cinema/runtime) without mood, genre, style, vibe, or recommendation quality words.
 Use "discovery_query" + "film_results" when the user asks for recommendation quality, mood, style, genre, or personal preference, even if they also include hard constraints like tonight, at a cinema, or under 2 hours.
 Use "style_reference_query" + "film_results" when a person/film is used as a style reference.}`,
       },
@@ -351,6 +366,7 @@ Use "style_reference_query" + "film_results" when a person/film is used as a sty
   } catch {
     constraints = {
       vibe_keywords: query,
+      keyword_terms: query,
       intent_type: routing?.intent_type || 'discovery_query',
       presentation_hint: 'film_results',
       complex: false,
@@ -360,38 +376,14 @@ Use "style_reference_query" + "film_results" when a person/film is used as a sty
   const intentType = normalizeAgenticIntent(
     constraints.intent_type || routing?.intent_type
   );
-  const presentationHint = normalizePresentationHint(
-    constraints.presentation_hint,
-    intentType
-  );
-
   const cinemaIds = constraints.cinema_hint
     ? await resolveCinemaHint(constraints.cinema_hint)
     : [];
 
   const { gte, lt } = resolveTimeRange(constraints.date_hint, filters);
 
-  if (presentationHint === 'screening_results') {
-    const items = await fetchConstraintScreenings({
-      cinemaIds: filters.cinemaIds?.length ? filters.cinemaIds : cinemaIds,
-      gte,
-      lt,
-      runtimeMax: constraints.runtime_max,
-      limit: filters.limit,
-    });
-
-    return {
-      mode: 'agentic',
-      intent_type: intentType,
-      result_type: items.length ? 'screening_results' : 'empty_with_fallback',
-      items,
-      message: items.length
-        ? undefined
-        : 'No screenings found for those constraints.',
-    };
-  }
-
-  const recallQuery = constraints.vibe_keywords || query;
+  const semanticRecallQuery = constraints.vibe_keywords || query;
+  const lexicalRecallQuery = constraints.keyword_terms || constraints.vibe_keywords || query;
   const recallCinemaIds = filters.cinemaIds?.length
     ? filters.cinemaIds
     : cinemaIds.length
@@ -400,7 +392,7 @@ Use "style_reference_query" + "film_results" when a person/film is used as a sty
 
   let vectorCandidates = [];
   try {
-    const queryVec = await embedQuery(recallQuery);
+    const queryVec = await embedQuery(semanticRecallQuery);
     vectorCandidates = await semanticSearch({
       queryVec,
       minSimilarity: 0.2,
@@ -418,7 +410,7 @@ Use "style_reference_query" + "film_results" when a person/film is used as a sty
   let lexicalCandidates = [];
   try {
     lexicalCandidates = await lexicalSearch({
-      query: recallQuery,
+      query: lexicalRecallQuery,
       limit: 40,
       offset: 0,
       cinemaIds: recallCinemaIds,

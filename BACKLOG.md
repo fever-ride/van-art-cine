@@ -148,7 +148,7 @@ result_type = how to present the answer
 Planned `intent_type` values:
 
 - `discovery_query` — recommendation/discovery query; default `film_results`
-- `constraint_heavy_query` — schedule/filter-heavy query; default `screening_results`
+- `constraint_heavy_query` — SQL-only schedule/filter-heavy query; default `screening_results`
 - `known_film_query` — exact film query; default `film_showtimes`
 - `known_cinema_query` — exact cinema/date query; default `cinema_schedule`
 - `known_person_query` — exact director/actor query; default `person_results`
@@ -174,7 +174,7 @@ Planned `intent_type` values:
 - [x] Preserve `empty_with_fallback` behavior for structured no-result cases
 - [x] Add `intent_type` to router/extractor output
 - [x] Map `intent_type` to default `result_type`
-- [x] Use `constraint_heavy_query` to route normal results to `screening_results`
+- [x] Route pure `constraint_heavy_query` requests through structured SQL lookup to `screening_results`
 - [ ] Update frontend smart search UI to render result types differently
 - [ ] Add response formatter tests and live regression cases
 

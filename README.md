@@ -210,8 +210,8 @@ A natural-language search system that lets users describe what they want to watc
 
 | Path | When | How |
 |------|------|-----|
-| **Structured** | Query references a known entity (director, film title, cinema) | Entity extraction → SQL lookup |
-| **Agentic hybrid** | Query describes mood/vibe/style or has recommendation constraints | pgvector semantic recall + PostgreSQL full-text lexical recall → merge/dedupe → LLM verification + scoring |
+| **Structured SQL** | Query references a known entity or uses only objective filters (date/cinema/runtime) | Entity/constraint extraction → SQL lookup |
+| **Agentic hybrid** | Query describes mood/vibe/style or subjective recommendation constraints | pgvector semantic recall + PostgreSQL full-text lexical recall → merge/dedupe → LLM verification + scoring |
 
 Agentic retrieval uses film-level embeddings for semantic matching, joins screenings for availability/date/cinema/runtime filters, and keeps retrieval provenance (`vector`, `lexical`, `both`) for debugging and evaluation.
 

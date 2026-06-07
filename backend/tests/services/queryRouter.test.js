@@ -37,6 +37,7 @@ describe('routeQuery', () => {
       intent_type: 'known_film_query',
       entities: { person: null, film: 'The Green Ray', cinema: null },
       date_hint: null,
+      runtime_max: null,
     });
 
     await expect(routeQuery('when is The Green Ray playing')).resolves.toEqual({
@@ -44,6 +45,7 @@ describe('routeQuery', () => {
       intent_type: 'known_film_query',
       entities: { person: null, film: 'The Green Ray', cinema: null },
       date_hint: null,
+      runtime_max: null,
     });
   });
 
@@ -53,6 +55,7 @@ describe('routeQuery', () => {
       intent_type: 'known_cinema_query',
       entities: { person: null, film: null, cinema: 'Rio' },
       date_hint: 'tonight',
+      runtime_max: null,
     });
 
     await expect(routeQuery("what's at the Rio tonight")).resolves.toEqual({
@@ -60,22 +63,61 @@ describe('routeQuery', () => {
       intent_type: 'known_cinema_query',
       entities: { person: null, film: null, cinema: 'Rio' },
       date_hint: 'tonight',
+      runtime_max: null,
     });
   });
 
-  test('normalizes valid agentic constraint-heavy intent', async () => {
+  test('routes pure constraint-heavy queries to structured SQL mode', async () => {
+    mockRouterResponse({
+      mode: 'structured',
+      intent_type: 'constraint_heavy_query',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: 'tonight',
+      runtime_max: 90,
+    });
+
+    await expect(routeQuery('tonight under 90 minutes')).resolves.toEqual({
+      mode: 'structured',
+      intent_type: 'constraint_heavy_query',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: 'tonight',
+      runtime_max: 90,
+    });
+  });
+
+  test('normalizes constraint-heavy intent to structured even if model returns agentic', async () => {
+    mockRouterResponse({
+      mode: 'agentic',
+      intent_type: 'constraint_heavy_query',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: 'tomorrow',
+      runtime_max: 120,
+    });
+
+    await expect(routeQuery("what's playing tomorrow under 2 hours")).resolves.toEqual({
+      mode: 'structured',
+      intent_type: 'constraint_heavy_query',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: 'tomorrow',
+      runtime_max: 120,
+    });
+  });
+
+  test('keeps subjective constraint-heavy model output on agentic discovery path', async () => {
     mockRouterResponse({
       mode: 'agentic',
       intent_type: 'constraint_heavy_query',
       entities: { person: null, film: null, cinema: null },
       date_hint: 'tonight',
+      runtime_max: 120,
     });
 
-    await expect(routeQuery('tonight under 90 minutes')).resolves.toEqual({
+    await expect(routeQuery('light comedy tonight under 2 hours')).resolves.toEqual({
       mode: 'agentic',
-      intent_type: 'constraint_heavy_query',
+      intent_type: 'discovery_query',
       entities: { person: null, film: null, cinema: null },
       date_hint: 'tonight',
+      runtime_max: 120,
     });
   });
 
@@ -89,6 +131,7 @@ describe('routeQuery', () => {
       intent_type: 'discovery_query',
       entities: { person: null, film: null, cinema: null },
       date_hint: null,
+      runtime_max: null,
     });
   });
 });

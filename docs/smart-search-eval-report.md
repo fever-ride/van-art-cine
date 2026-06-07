@@ -48,8 +48,8 @@ Manual live smoke tests run during backend development:
 | `light happy romance` | `agentic` / `discovery_query` / `film_results` | `agentic` / `discovery_query` / `film_results` | Returned `Meet Me In St. Louis`, `The Green Ray`; did not return `Happy Together` | Yes |
 | `when is The Green Ray playing` | `structured` / `known_film_query` / `film_showtimes` | `structured` / `known_film_query` / `film_showtimes` | One film result with 3 showtimes | Yes |
 | `what is at The Cinematheque` | `structured` / `known_cinema_query` / `cinema_schedule` | `structured` / `known_cinema_query` / `cinema_schedule` | Screening-level schedule sorted by start time | Yes |
-| `tonight under 90 minutes` | `agentic` / `constraint_heavy_query` / `screening_results` or empty fallback | `agentic` / `constraint_heavy_query` / `empty_with_fallback` | No matching screenings in local snapshot | Yes |
-| `light comedy tonight under 2 hours` | `agentic` / `discovery_query` / `film_results` | `agentic` / `discovery_query` / `empty_with_fallback` | Router coarse intent was constraint-heavy, extractor refined to discovery; no verified matches under constraints | Partial |
+| `tonight under 90 minutes` | `structured` / `constraint_heavy_query` / `screening_results` or empty fallback | Pending rerun after taxonomy update | SQL-only constraint query; should not use embedding, lexical recall, or LLM verification | Pending |
+| `light comedy tonight under 2 hours` | `agentic` / `discovery_query` / `film_results` | `agentic` / `discovery_query` / `empty_with_fallback` | Constrained recommendation; no verified matches under constraints in local snapshot | Partial |
 
 ## Notable Examples
 
@@ -65,21 +65,25 @@ The Green Ray | result_type=film_results | showtimes=3
 
 The response now has one film-level item with nested `showtimes[]`.
 
-### Router vs Extractor Refinement
+### SQL-Only vs Constrained Recommendation
 
-`light comedy tonight under 2 hours` contains hard constraints and recommendation intent. The router may classify it as constraint-heavy, but the extraction step can refine it:
+`tonight under 90 minutes` and `light comedy tonight under 2 hours` both contain hard constraints, but they should use different retrieval behavior:
 
 ```text
-router intent_type: constraint_heavy_query
-final intent_type: discovery_query
-final result_type: film_results or empty_with_fallback
+tonight under 90 minutes
+  -> structured / constraint_heavy_query / screening_results
+  -> SQL-only screening lookup
+
+light comedy tonight under 2 hours
+  -> agentic / discovery_query / film_results
+  -> semantic + lexical recall with date/runtime SQL filters
 ```
 
-This is expected: router handles coarse retrieval mode, while extraction handles nuanced presentation intent.
+This is expected: pure objective constraints should stay deterministic, while subjective recommendation language should route to agentic discovery.
 
 ### No-Result Honesty
 
-For `tonight under 90 minutes`, the system returned an empty fallback rather than fabricating weak matches.
+For `tonight under 90 minutes`, the expected behavior is an empty fallback if SQL finds no matching screenings, rather than fabricating weak semantic matches.
 
 ```text
 message: No screenings found for those constraints.

@@ -6,8 +6,8 @@ The app has two search modes, unified under a single smart search endpoint:
 
 | Mode | When | Strategy | External API calls |
 |------|------|----------|-------------------|
-| **Structured** | Query references a specific entity (director, film title, cinema) | Entity extraction → SQL lookup + filters | 1× GPT-4o-mini (router) |
-| **Agentic hybrid** | Query describes mood/vibe/style OR has complex constraints OR requires reasoning | Vector recall + PostgreSQL full-text lexical recall → merge/dedupe → LLM verification + scoring | 2× GPT-4o-mini (router + constraint extraction) + 1× embedding + 1× GPT-4o-mini or GPT-4o (verify/score) |
+| **Structured SQL** | Query can be answered with deterministic SQL: known entity lookup or pure hard constraints | Entity/constraint extraction → SQL lookup + filters | 1× GPT-4o-mini (router) |
+| **Agentic hybrid** | Query describes mood/vibe/style, subjective preference, or recommendation quality | Vector recall + PostgreSQL full-text lexical recall → merge/dedupe → LLM verification + scoring | 2× GPT-4o-mini (router + constraint extraction) + 1× embedding + 1× GPT-4o-mini or GPT-4o (verify/score) |
 
 The existing keyword search (`GET /api/screenings?q=...`) remains available as a simple title ILIKE fallback. v4.1 adds PostgreSQL full-text lexical recall inside the smart search agentic path; this is BM25-style keyword retrieval, not a separate Elasticsearch/OpenSearch service.
 
@@ -40,12 +40,12 @@ GET /api/smart-search?q=...
   ▼
 Query Router (GPT-4o-mini)
   │
-  ├─ STRUCTURED
-  │   Query contains a recognizable entity (person name, film title, cinema)
+  ├─ STRUCTURED SQL
+  │   Query is deterministic: known entity OR pure hard constraints
   │   │
   │   ▼
-  │   Entity extraction → SQL lookup (person/film/cinema tables)
-  │   → Apply optional filters (date, cinema, runtime)
+  │   Entity/constraint extraction → SQL lookup (person/film/cinema/screening tables)
+  │   → Apply hard filters (date, cinema, runtime)
   │   → Return results directly (no embedding needed)
   │
   └─ AGENTIC
@@ -86,11 +86,11 @@ Smart search uses three retrieval strategies, but they are not exposed as three 
 
 | Strategy | Used when | Retrieves by | Output role |
 |----------|-----------|--------------|-------------|
-| Structured SQL lookup | User asks for a known film, person, or cinema | Exact/entity SQL joins over `film`, `screening`, `cinema`, `person` | Final results for exact entity queries |
+| Structured SQL lookup | User asks for a known film/person/cinema, or asks only for objective availability filters | Exact/entity SQL joins and screening filters over `film`, `screening`, `cinema`, `person` | Final results for deterministic SQL queries |
 | Semantic vector recall | User describes mood, style, theme, or preference | OpenAI embedding of `vibe_keywords` compared against `film_embedding.embedding` via pgvector cosine similarity | Candidate recall for discovery/style queries |
 | Lexical full-text recall | User includes important title/genre/description keywords | PostgreSQL full-text search over `film_search_vector(title, normalized_title, genre, description)` | Candidate recall that catches exact-token matches vector search can miss |
 
-The key distinction is that structured SQL can be a final retrieval path, while semantic and lexical search are recall paths inside the agentic pipeline. Discovery/style queries run both recall sources, merge candidates, and then use LLM verification to decide final relevance.
+The key distinction is that structured SQL can be a final retrieval path whenever the query is fully objective. Semantic and lexical search are recall paths inside the agentic pipeline, used only when subjective meaning, style, or preference must be interpreted. Discovery/style queries run both recall sources, merge candidates, and then use LLM verification to decide final relevance.
 
 ### Film-level embeddings, screening-level availability
 
@@ -142,7 +142,7 @@ The router replaces the old "intent classifier" (which only decided semantic vs 
 
 ```
 Input: user query string
-Output: { mode: "structured" | "agentic", entities?: {...}, date_hint?: string }
+Output: { mode: "structured" | "agentic", intent_type, entities?: {...}, date_hint?: string, runtime_max?: number }
 ```
 
 ### Routing logic
@@ -152,6 +152,7 @@ Output: { mode: "structured" | "agentic", entities?: {...}, date_hint?: string }
 | Named person (director, actor) | structured | "Tarantino movies this week" |
 | Specific film title | structured | "when is Happy Together playing" |
 | Named cinema without vibe | structured | "what's on at the Rio" |
+| Pure hard constraints only | structured | "tonight under 90 minutes" |
 | Mood/style/genre description | agentic | "dark atmospheric noir" |
 | Personal preference / reasoning needed | agentic | "something my partner won't hate" |
 | Hard constraints + vibe | agentic | "light comedy tonight under 2 hours" |
@@ -169,7 +170,7 @@ result_type = how to present the answer
 | `intent_type` | Typical `mode` | Default `result_type` | Examples |
 |---------------|----------------|------------------------|----------|
 | `discovery_query` | `agentic` | `film_results` | "dreamy melancholic romance", "something fun for a first date" |
-| `constraint_heavy_query` | `agentic` | `screening_results` | "tonight under 90 minutes", "movies after 7 at Cinematheque" |
+| `constraint_heavy_query` | `structured` | `screening_results` | "tonight under 90 minutes", "movies after 7 at Cinematheque" |
 | `known_film_query` | `structured` | `film_showtimes` | "when is Happy Together playing?" |
 | `known_cinema_query` | `structured` | `cinema_schedule` | "what's at the Rio tonight?" |
 | `known_person_query` | `structured` | `person_results` | "Tarantino this week", "Wong Kar-wai films" |
@@ -177,7 +178,7 @@ result_type = how to present the answer
 
 `empty_with_fallback` is not an intent. It is a result state used when exact structured search has no results or agentic verification rejects all candidates.
 
-Current backend implementation has `mode`, `intent_type`, and `result_type`. The router returns coarse `intent_type`, and the agentic constraint extraction step can refine it with a `presentation_hint`, especially for `constraint_heavy_query` vs `discovery_query`.
+Current backend implementation has `mode`, `intent_type`, and `result_type`. The router returns coarse `intent_type` and hard constraints for SQL-only queries. The agentic constraint extraction step refines subjective discovery/style queries with `vibe_keywords`, hard filters, and `presentation_hint`.
 
 ### Valid combinations
 
@@ -188,12 +189,12 @@ Not every combination is valid. The allowed mapping should stay conservative:
 | `structured` | `known_film_query` | `film_showtimes`, `empty_with_fallback` |
 | `structured` | `known_cinema_query` | `cinema_schedule`, `empty_with_fallback` |
 | `structured` | `known_person_query` | `person_results`, `empty_with_fallback` |
+| `structured` | `constraint_heavy_query` | `screening_results`, `empty_with_fallback` |
 | `agentic` | `discovery_query` | `film_results`, `empty_with_fallback` |
 | `agentic` | `style_reference_query` | `film_results`, `empty_with_fallback` |
-| `agentic` | `constraint_heavy_query` | `screening_results`, `film_results`, `empty_with_fallback` |
 | `degraded` | null | `screening_results`, `empty_with_fallback` |
 
-The only intentionally flexible case is `constraint_heavy_query`: if the query is mostly schedule/filter oriented, use `screening_results`; if it still asks for subjective recommendation quality, use `film_results`.
+The key boundary is subjective recommendation language. If a query has only hard constraints, keep it structured SQL. If it has hard constraints plus mood/style/preference, route it to agentic discovery and push the hard constraints into retrieval SQL.
 
 ### Why a named entity triggers structured instead of embedding search
 
@@ -214,9 +215,11 @@ You route natural language queries for a movie screening search engine in Vancou
 
 Classify into exactly one mode:
 
-- "structured": The query asks about a SPECIFIC entity — a named director, actor, 
-  film title, or cinema — and wants to find screenings of/by/at that entity.
-  Examples: "Tarantino films", "when is Nosferatu playing", "what's at the Rio this week"
+- "structured": The query can be answered with deterministic SQL filters and does NOT
+  require subjective recommendation judgment. This includes known entity queries and
+  pure availability/filter queries.
+  Examples: "Tarantino films", "when is Nosferatu playing", "what's at the Rio this week",
+  "tonight under 90 minutes", "what's playing tomorrow under 2 hours"
 
 - "agentic": The query describes what kind of experience or film the user wants, 
   using mood, style, genre, theme, personal preferences, or any description 
@@ -233,11 +236,15 @@ If the user is looking for something that MATCHES a description → agentic.
 Respond as JSON:
 {
   "mode": "structured" | "agentic",
+  "intent_type": "known_person_query" | "known_film_query" | "known_cinema_query" | "discovery_query" | "constraint_heavy_query" | "style_reference_query",
   "entities": { "person": null | "name", "film": null | "title", "cinema": null | "name" },
-  "date_hint": null | "today" | "tonight" | "tomorrow" | "this weekend"
+  "date_hint": null | "today" | "tonight" | "tomorrow" | "this weekend",
+  "runtime_max": null | number in minutes
 }
 
-Only populate "entities" for structured mode. For agentic mode, set all entity fields to null.
+Use "constraint_heavy_query" + "structured" for SQL-only availability/filter queries.
+Use "discovery_query" + "agentic" when mood/style/preference language appears, even if
+the query also contains hard constraints.
 ```
 
 Fallback on error: `{ mode: "agentic" }` (safe — agentic always produces verified results).
@@ -300,6 +307,7 @@ The frontend displays the message and a CTA button. If the user opts in, the fro
 1. Router classifies as agentic
 2. Constraint extraction (separate GPT-4o-mini call, distinct from router):
    - `vibe_keywords`: rich descriptive string for embedding recall
+   - `keyword_terms`: short conservative keyword string for lexical recall
    - `date_hint`: "today" / "this weekend" / null → resolved via `dateResolver.js`
    - `cinema_hint`: "rio" / "cinematheque" / null → resolved via `cinemaResolver.js`
    - `runtime_max`: number or null
@@ -310,7 +318,7 @@ The frontend displays the message and a CTA button. If the user opts in, the fro
    - Retrieve top 30-40 candidates above minimum similarity threshold (0.25)
    - Push hard filters into SQL: active screenings, date range, cinema IDs, and runtime max
 4. Lexical recall:
-   - Run PostgreSQL full-text search over film/search metadata
+   - Run PostgreSQL full-text search over film/search metadata using `keyword_terms`
    - Retrieve top 30-40 candidates ranked by `ts_rank_cd`
    - Use this as a BM25-style exact-token signal for title, genre, and description terms
    - Apply the same hard SQL filters as vector recall
@@ -341,13 +349,38 @@ This is intentionally Postgres-native rather than Elasticsearch/OpenSearch:
 - Full-text search avoids index synchronization between the primary DB and a separate search cluster.
 - Render Postgres can support native full-text search and GIN indexes without new infrastructure.
 
+### Semantic vs lexical query text
+
+The agentic extraction step produces two retrieval strings:
+
+| Field | Used by | Style |
+|-------|---------|-------|
+| `vibe_keywords` | pgvector semantic recall | Rich, descriptive, can include mood/tone/style expansion |
+| `keyword_terms` | PostgreSQL full-text lexical recall | Conservative, close to user wording, focused on title/genre/description keywords |
+
+This separation prevents lexical recall from being diluted by over-expanded semantic language. For example, `light comedy tonight under two hours` may produce:
+
+```json
+{
+  "vibe_keywords": "light comedy fun uplifting cheerful date night",
+  "keyword_terms": "light comedy",
+  "date_hint": "tonight",
+  "runtime_max": 120
+}
+```
+
+The semantic retriever benefits from the richer phrase, while the lexical retriever stays anchored to exact film-local terms. If `keyword_terms` is missing, the backend falls back to `vibe_keywords`, then to the original query.
+
 ### Candidate merge strategy
 
 The agentic path should retrieve candidates from both sources before LLM verification:
 
 ```text
-vectorCandidates  = semanticSearch(queryVec, filters, limit=40)
-lexicalCandidates = lexicalSearch(queryText, filters, limit=40)
+semanticQuery     = constraints.vibe_keywords || originalQuery
+lexicalQuery      = constraints.keyword_terms || constraints.vibe_keywords || originalQuery
+
+vectorCandidates  = semanticSearch(embed(semanticQuery), filters, limit=40)
+lexicalCandidates = lexicalSearch(lexicalQuery, filters, limit=40)
 
 merged = merge by screening id:
   - keep vector similarity if present

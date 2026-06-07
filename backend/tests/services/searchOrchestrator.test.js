@@ -149,6 +149,7 @@ describe('orchestrateSearch structured responses', () => {
         intent_type: 'known_film_query',
         entities: { person: null, film: 'The Green Ray', cinema: null },
         date_hint: null,
+        runtime_max: null,
       },
       filters: { cinemaIds: [], limit: 5 },
     });
@@ -173,6 +174,7 @@ describe('orchestrateSearch structured responses', () => {
         intent_type: 'known_cinema_query',
         entities: { person: null, film: null, cinema: 'Cinematheque' },
         date_hint: null,
+        runtime_max: null,
       },
       filters: { cinemaIds: [], limit: 5 },
     });
@@ -191,6 +193,7 @@ describe('orchestrateSearch structured responses', () => {
         intent_type: 'known_person_query',
         entities: { person: 'Tarantino', film: null, cinema: null },
         date_hint: null,
+        runtime_max: null,
       },
       filters: { cinemaIds: [], limit: 5 },
     });
@@ -236,15 +239,7 @@ describe('orchestrateSearch agentic responses', () => {
     expect(result.items[1].showtimes).toHaveLength(2);
   });
 
-  test('returns screening_results for pure constraint-heavy queries', async () => {
-    mockExtraction({
-      vibe_keywords: 'available short films',
-      intent_type: 'constraint_heavy_query',
-      presentation_hint: 'screening_results',
-      runtime_max: 90,
-      date_hint: 'tonight',
-      complex: false,
-    });
+  test('returns screening_results for pure constraint-heavy SQL queries', async () => {
     prismaFindMany.mockResolvedValue([
       prismaScreening({ id: 1, title: 'Short Film', runtime_min: 82 }),
     ]);
@@ -252,10 +247,11 @@ describe('orchestrateSearch agentic responses', () => {
     const result = await orchestrateSearch({
       query: 'tonight under 90 minutes',
       routing: {
-        mode: 'agentic',
+        mode: 'structured',
         intent_type: 'constraint_heavy_query',
         entities: { person: null, film: null, cinema: null },
         date_hint: 'tonight',
+        runtime_max: 90,
       },
       filters: { cinemaIds: [], limit: 5 },
     });
@@ -266,13 +262,22 @@ describe('orchestrateSearch agentic responses', () => {
       title: 'Short Film',
       runtime_min: 82,
     });
+    expect(openAICreate).not.toHaveBeenCalled();
     expect(embedQuery).not.toHaveBeenCalled();
+    expect(semanticSearch).not.toHaveBeenCalled();
+    expect(lexicalSearch).not.toHaveBeenCalled();
     expect(verifyMatches).not.toHaveBeenCalled();
+    expect(prismaFindMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        runtime_min: { lte: 90 },
+      }),
+    }));
   });
 
   test('keeps genre/mood queries on film_results even with hard constraints', async () => {
     mockExtraction({
-      vibe_keywords: 'light comedy fun',
+      vibe_keywords: 'light comedy fun uplifting cheerful date night',
+      keyword_terms: 'light comedy',
       intent_type: 'discovery_query',
       presentation_hint: 'film_results',
       runtime_max: 120,
@@ -302,7 +307,40 @@ describe('orchestrateSearch agentic responses', () => {
       runtimeMax: 120,
     }));
     expect(lexicalSearch).toHaveBeenCalledWith(expect.objectContaining({
+      query: 'light comedy',
       runtimeMax: 120,
+    }));
+  });
+
+  test('uses enriched vibe keywords for vector recall and conservative keyword terms for lexical recall', async () => {
+    mockExtraction({
+      vibe_keywords: 'dreamy melancholic romance atmospheric emotional art film',
+      keyword_terms: 'melancholic romance',
+      intent_type: 'discovery_query',
+      presentation_hint: 'film_results',
+      complex: false,
+    });
+    semanticSearch.mockResolvedValue([
+      screeningRow({ id: 1, film_id: 10, title: 'The Green Ray' }),
+    ]);
+    verifyMatches.mockResolvedValue([{ film_id: 10, score: 8 }]);
+
+    await orchestrateSearch({
+      query: 'dreamy melancholic romance',
+      routing: {
+        mode: 'agentic',
+        intent_type: 'discovery_query',
+        entities: { person: null, film: null, cinema: null },
+        date_hint: null,
+      },
+      filters: { cinemaIds: [], limit: 5 },
+    });
+
+    expect(embedQuery).toHaveBeenCalledWith(
+      'dreamy melancholic romance atmospheric emotional art film'
+    );
+    expect(lexicalSearch).toHaveBeenCalledWith(expect.objectContaining({
+      query: 'melancholic romance',
     }));
   });
 });
