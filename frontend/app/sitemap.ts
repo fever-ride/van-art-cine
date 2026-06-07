@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 const SITE_URL = 'https://www.cinephilesvan.com';
-const API_BASE = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+const API_BASE = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:4000';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [

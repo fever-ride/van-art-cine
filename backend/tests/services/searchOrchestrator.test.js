@@ -344,6 +344,37 @@ describe('orchestrateSearch agentic responses', () => {
     }));
   });
 
+  test('falls back to constraint SQL when agentic recall is empty for date-only queries', async () => {
+    mockExtraction({
+      vibe_keywords: 'movie film screening',
+      keyword_terms: 'movie',
+      intent_type: 'discovery_query',
+      presentation_hint: 'film_results',
+      date_hint: 'tomorrow',
+      complex: false,
+    });
+    prismaFindMany.mockResolvedValue([
+      prismaScreening({ id: 9, title: 'Living the Land' }),
+    ]);
+
+    const result = await orchestrateSearch({
+      query: 'a movie for tomorrow',
+      routing: {
+        mode: 'agentic',
+        intent_type: 'discovery_query',
+        entities: { person: null, film: null, cinema: null },
+        date_hint: 'tomorrow',
+        runtime_max: null,
+      },
+      filters: { cinemaIds: [], limit: 5 },
+    });
+
+    expect(result.result_type).toBe('screening_results');
+    expect(result.items[0]).toMatchObject({ title: 'Living the Land' });
+    expect(prismaFindMany).toHaveBeenCalled();
+    expect(verifyMatches).not.toHaveBeenCalled();
+  });
+
   test('falls back to original query when agentic extraction API fails', async () => {
     openAICreate.mockRejectedValue(new Error('OpenAI unavailable'));
     semanticSearch.mockResolvedValue([

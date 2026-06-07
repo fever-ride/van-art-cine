@@ -6,6 +6,7 @@ import { Noto_Sans } from 'next/font/google';
 import Filters from '@/components/screenings/Filters';
 import ResultsTable from '@/components/screenings/ResultsTable';
 import Pagination from '@/components/screenings/Pagination';
+import SmartSearchSection from '@/components/smart-search/SmartSearchSection';
 import { useScreeningsUI } from '@/lib/hooks/useScreeningsUI';
 import { useScreeningsData } from '@/lib/hooks/useScreeningsData';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
@@ -157,6 +158,8 @@ function ScreeningsPageInner() {
           />
         </section>
         </div>
+
+        <SmartSearchSection />
       </div>
     </main>
   );

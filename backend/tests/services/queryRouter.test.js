@@ -103,6 +103,42 @@ describe('routeQuery', () => {
     });
   });
 
+  test('forces vague date-only availability queries to structured constraint mode', async () => {
+    mockRouterResponse({
+      mode: 'agentic',
+      intent_type: 'discovery_query',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: 'tomorrow',
+      runtime_max: null,
+    });
+
+    await expect(routeQuery('a movie for tomorrow')).resolves.toEqual({
+      mode: 'structured',
+      intent_type: 'constraint_heavy_query',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: 'tomorrow',
+      runtime_max: null,
+    });
+  });
+
+  test('infers date hint for vague date-only queries when model omits it', async () => {
+    mockRouterResponse({
+      mode: 'agentic',
+      intent_type: 'discovery_query',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: null,
+      runtime_max: null,
+    });
+
+    await expect(routeQuery('any film tonight')).resolves.toEqual({
+      mode: 'structured',
+      intent_type: 'constraint_heavy_query',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: 'tonight',
+      runtime_max: null,
+    });
+  });
+
   test('keeps subjective constraint-heavy model output on agentic discovery path', async () => {
     mockRouterResponse({
       mode: 'agentic',
@@ -118,6 +154,24 @@ describe('routeQuery', () => {
       entities: { person: null, film: null, cinema: null },
       date_hint: 'tonight',
       runtime_max: 120,
+    });
+  });
+
+  test('keeps subjective vague date queries on agentic discovery path', async () => {
+    mockRouterResponse({
+      mode: 'agentic',
+      intent_type: 'discovery_query',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: 'tomorrow',
+      runtime_max: null,
+    });
+
+    await expect(routeQuery('a happy movie for tomorrow')).resolves.toEqual({
+      mode: 'agentic',
+      intent_type: 'discovery_query',
+      entities: { person: null, film: null, cinema: null },
+      date_hint: 'tomorrow',
+      runtime_max: null,
     });
   });
 

@@ -5,6 +5,7 @@ import { embedQuery } from './embeddingService.js';
 import { resolveDateHint } from './dateResolver.js';
 import { resolveCinemaHint } from './cinemaResolver.js';
 import { verifyMatches } from './verificationService.js';
+import { hasSubjectiveSearchSignal } from './queryRouter.js';
 import { localDayToUtcRange, localRangeToUtc } from '../utils/time.js';
 import OpenAI from 'openai';
 
@@ -469,10 +470,33 @@ Use "style_reference_query" + "film_results" when a person/film is used as a sty
     .filter((c) => c.match_score === null || c.match_score >= MIN_SCORE)
     .sort((a, b) => (b.match_score ?? 0) - (a.match_score ?? 0));
 
-  const items = buildFilmResults(scoredItems, {
+  let items = buildFilmResults(scoredItems, {
     limit: filters.limit,
     includeScores: true,
   });
+
+  if (
+    items.length === 0
+    && !hasSubjectiveSearchSignal(query)
+    && (constraints.date_hint || routing?.date_hint)
+  ) {
+    const constraintItems = await fetchConstraintScreenings({
+      cinemaIds: recallCinemaIds,
+      gte,
+      lt,
+      runtimeMax: constraints.runtime_max || routing?.runtime_max,
+      limit: filters.limit,
+    });
+
+    if (constraintItems.length > 0) {
+      return {
+        mode: 'agentic',
+        intent_type: intentType,
+        result_type: 'screening_results',
+        items: constraintItems,
+      };
+    }
+  }
 
   const message = items.length === 0
     ? 'No good matches found for your query among current screenings.'

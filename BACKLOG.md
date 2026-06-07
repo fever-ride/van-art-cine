@@ -145,9 +145,9 @@ Prevent LLM/API failures, off-topic usage, and accidental token/cost abuse from 
 - [ ] Add smart-search-specific cost/session budget or abuse monitoring beyond basic route rate limiting
 - [ ] Define timeout/retry policy for router, extraction, embedding, and verification calls
 - [x] Return a stable out-of-scope response shape/message for frontend rendering
-- [ ] Frontend: reject empty/too-long queries before calling API
-- [ ] Frontend: render degraded, error, empty, and out-of-scope states explicitly
-- [ ] Frontend: keep raw `match_score`, `similarity`, `lexical_rank`, and `retrieval_source` hidden from normal users
+- [x] Frontend: reject empty/too-long queries before calling API
+- [x] Frontend: render degraded, error, empty, and out-of-scope states explicitly
+- [x] Frontend: keep raw `match_score`, `similarity`, `lexical_rank`, and `retrieval_source` hidden from normal users
 
 ### Reference
 
@@ -275,19 +275,21 @@ In the observed run, `merge_staging_to_live` still ran after `load_json` failed 
 
 ## Frontend — Phase 3 (Smart Search UI)
 
-**Status:** Not started
+**Status:** First version implemented; manual live testing pending
 
 Reference: `docs/smart-search-frontend-plan.md`
 
-- [ ] `frontend/app/lib/smartSearch.ts` — API client for `GET /api/smart-search`
-- [ ] `frontend/lib/hooks/useSmartSearch.ts` — hook for smart search result state
-- [ ] Add standalone homepage Smart Search section below existing screenings/pagination, above footer
-- [ ] Keep existing title search/filter sidebar unchanged in the first version
-- [ ] Render `result_type` variants: `film_results`, `screening_results`, `film_showtimes`, `cinema_schedule`, `person_results`, `empty_with_fallback`
-- [ ] Do not show raw `match_score`, `similarity`, `lexical_rank`, or `retrieval_source` to normal users
+- [x] `frontend/app/lib/smartSearch.ts` — API client for `GET /api/smart-search`
+- [x] `frontend/lib/hooks/useSmartSearch.ts` — hook for smart search result state
+- [x] Add standalone homepage Smart Search section below existing screenings/pagination, above footer
+- [x] Keep existing title search/filter sidebar unchanged in the first version
+- [x] Render `result_type` variants: `film_results`, `screening_results`, `film_showtimes`, `cinema_schedule`, `person_results`, `empty_with_fallback`
+- [x] Do not show raw `match_score`, `similarity`, `lexical_rank`, or `retrieval_source` to normal users
 - [ ] Optionally show `match_explanation` as "Why this might fit" after manual copy review
-- [ ] Use explicit submit for initial version; defer debounce until usage/cost is understood
-- [ ] Handle "no good matches" message gracefully in UI
+- [x] Use explicit submit for initial version; defer debounce until usage/cost is understood
+- [x] Handle "no good matches" message gracefully in UI
+- [x] Add component/hook tests for submit, validation, degraded notice, and result rendering
+- [ ] Manual live smoke test against local backend with real OpenAI/network access
 
 ---
 
