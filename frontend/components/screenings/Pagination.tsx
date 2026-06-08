@@ -25,7 +25,10 @@ export default function Pagination({
         type="button"
         variant="ghost"
         size="icon"
-        onClick={onPrev}
+        onClick={(e) => {
+          e.currentTarget.blur();
+          onPrev();
+        }}
         disabled={disablePrev}
         aria-label="Previous page"
       >
@@ -49,7 +52,10 @@ export default function Pagination({
         type="button"
         variant="ghost"
         size="icon"
-        onClick={onNext}
+        onClick={(e) => {
+          e.currentTarget.blur();
+          onNext();
+        }}
         disabled={disableNext}
         aria-label="Next page"
       >

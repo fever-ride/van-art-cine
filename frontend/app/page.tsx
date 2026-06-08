@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
+import type { UIState } from '@/lib/hooks/useScreeningsUI';
 import { Noto_Sans } from 'next/font/google';
 
 import Filters from '@/components/screenings/Filters';
@@ -16,6 +17,20 @@ const noto = Noto_Sans({
   subsets: ['latin'],
   display: 'swap',
 });
+
+function buildFilterKey(ui: UIState) {
+  return JSON.stringify({
+    q: ui.q,
+    cinemaIds: ui.cinemaIds,
+    filmId: ui.filmId,
+    date: ui.date,
+    from: ui.from,
+    to: ui.to,
+    sort: ui.sort,
+    order: ui.order,
+    mode: ui.mode,
+  });
+}
 
 function ScreeningsPageInner() {
   const screeningsUI = useScreeningsUI();
@@ -36,6 +51,22 @@ function ScreeningsPageInner() {
   const offset = (page - 1) * limit;
 
   const screeningsData = useScreeningsData(screeningsUI.ui, offset);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const loadIntentRef = useRef<'filter' | 'pagination'>('filter');
+  const scrollSnapshotRef = useRef<number | null>(null);
+  const filterKey = useMemo(
+    () => buildFilterKey(screeningsUI.ui),
+    [screeningsUI.ui]
+  );
+  const prevFilterKeyRef = useRef(filterKey);
+  const hasInitializedFiltersRef = useRef(false);
+
+  const scrollToTableTop = () => {
+    const el = tableRef.current;
+    if (!el) return;
+
+    el.scrollIntoView({ behavior: 'auto', block: 'start' });
+  };
 
   const goToPage = (nextPage: number) => {
     if (nextPage < 1) nextPage = 1;
@@ -47,15 +78,65 @@ function ScreeningsPageInner() {
       params.set('page', String(nextPage));
     }
 
-    const qs  = params.toString();
+    const qs = params.toString();
     const url = qs ? `${pathname}?${qs}` : pathname;
+    const currentQs = searchParams.toString();
+    const currentUrl = currentQs ? `${pathname}?${currentQs}` : pathname;
 
-    router.push(url);
+    if (url === currentUrl) return;
+
+    router.push(url, { scroll: false });
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    loadIntentRef.current = 'pagination';
+    scrollSnapshotRef.current = null;
+    scrollToTableTop();
+    // Defer navigation so the scroll isn't cancelled by the route re-render.
+    requestAnimationFrame(() => goToPage(nextPage));
   };
 
   const handleApplyFilters = () => {
-    goToPage(1);
+    if (page > 1) goToPage(1);
   };
+
+  useEffect(() => {
+    if (!hasInitializedFiltersRef.current) {
+      hasInitializedFiltersRef.current = true;
+      prevFilterKeyRef.current = filterKey;
+      return;
+    }
+
+    if (filterKey === prevFilterKeyRef.current) return;
+
+    prevFilterKeyRef.current = filterKey;
+
+    if (loadIntentRef.current !== 'pagination') {
+      loadIntentRef.current = 'filter';
+      scrollSnapshotRef.current = window.scrollY;
+    }
+
+    if (page > 1) goToPage(1);
+  }, [filterKey, page]);
+
+  useEffect(() => {
+    if (screeningsData.loading) return;
+
+    if (
+      loadIntentRef.current === 'filter' &&
+      scrollSnapshotRef.current !== null
+    ) {
+      const y = scrollSnapshotRef.current;
+      scrollSnapshotRef.current = null;
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: y, behavior: 'auto' });
+      });
+    }
+
+    if (loadIntentRef.current === 'pagination') {
+      loadIntentRef.current = 'filter';
+    }
+  }, [screeningsData.loading]);
 
   // Fetch all cinemas once, sort alphabetically
   useEffect(() => {
@@ -115,42 +196,43 @@ function ScreeningsPageInner() {
             ui={screeningsUI.ui}
             setUI={screeningsUI.setUI}
             onApply={handleApplyFilters}
-            loading={screeningsData.loading || cinemaLoading}
+            loading={cinemaLoading}
             cinemaOptions={cinemaOptions}
           />
         </aside>
 
         {/* Right content */}
         <section className="flex-1">
-          {screeningsData.loading && (
-            <p className="mt-3 text-sm text-muted">Loading…</p>
-          )}
           {screeningsData.error && (
             <p className="mt-3 text-sm text-muted">Error: {screeningsData.error}</p>
           )}
-          {!screeningsData.loading &&
-            screeningsData.items.length === 0 &&
-            !screeningsData.error && (
-              <p className="mt-3 text-sm text-muted">No screenings found.</p>
-            )}
-
-          {screeningsData.items.length > 0 && (
-            <div className="overflow-x-auto rounded-card border border-border bg-surface">
+          <div
+            ref={tableRef}
+            id="screenings-results"
+            className="scroll-mt-28 overflow-x-auto rounded-card border border-border bg-surface"
+            style={{ scrollMarginTop: '7rem' }}
+          >
+            {screeningsData.items.length > 0 ? (
               <ResultsTable
                 items={screeningsData.items}
                 savedIds={watchlist.savedIds}
                 onSavedChange={watchlist.handleSavedChange}
               />
-            </div>
-          )}
+            ) : (
+              !screeningsData.loading &&
+              !screeningsData.error && (
+                <p className="px-4 py-8 text-sm text-muted">No screenings found.</p>
+              )
+            )}
+          </div>
 
           <Pagination
             className="mt-4"
             onPrev={() => {
-              if (!disablePrev) goToPage(page - 1);
+              if (!disablePrev) handlePageChange(page - 1);
             }}
             onNext={() => {
-              if (!disableNext) goToPage(page + 1);
+              if (!disableNext) handlePageChange(page + 1);
             }}
             disablePrev={disablePrev}
             disableNext={disableNext}
