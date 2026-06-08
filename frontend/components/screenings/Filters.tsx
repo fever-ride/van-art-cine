@@ -105,7 +105,7 @@ export default function Filters({
   const rangeEndMin =
     localUI.from && localUI.from > todayMin ? localUI.from : todayMin;
 
-  const labelCls = 'text-[12px] font-semibold text-primary';
+  const labelCls = 'text-xs font-semibold text-primary';
   const control =
     'w-full rounded-btn border border-border px-3 py-2.5 text-sm ' +
     'focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20';

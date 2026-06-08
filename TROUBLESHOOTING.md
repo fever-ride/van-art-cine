@@ -66,154 +66,220 @@ Recommended follow-up:
 
 ## Homepage scroll jumps (search, Apply, pagination, date picker)
 
-### Symptom timeline
+A multi-act debugging story on the Now Playing page. Three different user actions needed three different scroll strategies — treating them as one problem led to fixes that solved one case and broke another.
 
-1. **Search debounce** — typing in the left filter search jumped the page to the top every ~350ms.
-2. **Pagination** — Prev/Next did not scroll to the screening table (only a small jiggle), or scrolled unreliably.
-3. **Apply / date filter** — after selecting a date and clicking Apply, scroll jumped to the **bottom** or **middle** intermittently.
-4. **Date picker UX** — native `<input type="date">` showed next-month days in gray (looked disabled) and felt awkward to navigate on desktop; custom picker was clipped by the filter `Card` (`overflow-hidden`).
-
-### Desired behavior
+### Desired behavior (the spec we converged on)
 
 | Action | Scroll |
 |--------|--------|
-| Search (debounced) | Stay at current scroll position |
-| Apply, Reset, date pick | Stay at current scroll position |
+| Search (debounced) | Stay in place if viewing the upper part of the table; if viewing removed lower rows after results shrink, land on table top — **not** the page footer |
+| Apply, Reset, date pick | Same as search — no surprise jumps |
 | Prev / Next pagination | Scroll to top of screening table (`#screenings-results`) |
 
-### Root causes (stacked)
+---
 
-1. **`router.push()` default scroll** — App Router uses `scroll: true` by default; filter flows called `goToPage(1)` → page jumped to top.
-2. **Layout height changes** — refetch changed row count; table wrapper was briefly unmounted; browser adjusted scroll.
-3. **Pagination vs route timing** — `scrollIntoView({ smooth })` was cancelled by the re-render from `router.push()`.
-4. **Loading UI above table** — “Loading…” line / overlay shifted layout and flashed the table header.
-5. **Debounced search called `onApply()`** — unnecessary navigations + conflicting scroll logic.
-6. **Apply button focus** — Apply sits at the bottom of the filter card; focus-after-click can scroll it into view.
-7. **Post-filter page shrink** — user at mid-page scrollY; fewer results shorten the document; browser clamps or re-anchors scroll (felt like jump to bottom/middle). A generic “restore scrollY after load” fix was **not reliable** for Apply.
-8. **Filter `Card` `overflow-hidden`** — absolutely positioned custom calendar was clipped (calendar unusable).
-9. **Native date picker** — trailing days from the next month render gray in the current month grid (cosmetic; looks like disabled dates).
+### Act 1 — “Why does search fling me to the top?”
 
-### Investigation path (what we tried)
+**Symptom:** User scrolls down to Now Playing, types in the left search box, and every ~350ms debounce the page snaps back to the hero section.
+
+**Root cause:** Debounced search called `onApply()` → `goToPage(1)` → `router.push(url)`. Next.js App Router defaults to `scroll: true`, so even a same-page URL update resets scroll to the top.
+
+**Fix:** `router.push(url, { scroll: false })`, skip `push` when URL is unchanged, and remove `onApply()` from the debounced search path (search only calls `setUI({ q })`).
+
+**Lesson:** The bug looked like “search is broken” but was really “routing side effect.” Always check whether `router.push` is doing scroll restoration you didn’t ask for.
+
+---
+
+### Act 2 — Pagination jiggle, Apply flashes, and the loading overlay trap
+
+**Symptoms:**
+
+- Prev/Next only twitched instead of scrolling to the table.
+- Apply / date filter sometimes jumped to the **middle** or **bottom** of the page.
+- A loading line above the table made the header and Apply button flash.
+
+**Root causes:**
+
+1. `scrollIntoView({ smooth })` on pagination was cancelled by the re-render from `router.push`.
+2. Loading UI above the table changed layout height mid-fetch.
+3. Apply sits at the bottom of the filter card — focus-after-click can scroll it into view.
+4. Table wrapper briefly unmounted when empty → height collapse.
+
+**What we tried:**
 
 | Attempt | Result |
 |---------|--------|
-| `router.push(url, { scroll: false })` + skip unchanged URL | Fixed search jumping to top |
-| `useEffect` on `page` + `scrollIntoView` on `<section>` | Wrong target / too early |
-| Scroll after `loading === false` | Jiggle; layout still shifting |
-| Immediate `scrollIntoView` on pagination + loading overlay | Pagination OK; Apply/header flashed |
-| Global `scrollSnapshot` on every filter change | Typing “乱跳”; Apply still jumped |
-| `overflow-anchor: none` + blur Apply | Helped; Apply jump persisted |
-| **Apply-only scroll lock** (current) | Stable |
+| `scroll: false` on `router.push` | Fixed search-to-top; pagination still flaky |
+| Scroll after `loading === false` | Too late; layout already shifted |
+| `scrollIntoView({ smooth })` on pagination | Cancelled by route re-render → jiggle |
+| Loading overlay on table | Pagination OK-ish; Apply/header flashed |
+| Global `scrollSnapshot` on every filter change | Typing felt “乱跳”; Apply still jumped |
+| `overflow-anchor: none` + `blur()` on buttons | Helped; didn’t solve Apply/search shrink |
 
-### Final fix
+**Fixes that stuck:**
+
+- Pagination: `scrollToTableTop()` with `behavior: 'auto'`, then `requestAnimationFrame(() => goToPage())`.
+- `tableRef` on `#screenings-results`, `scroll-mt-28` (7rem) for sticky nav clearance.
+- Table wrapper always rendered; old rows stay visible until new data arrives (no loading overlay on the table).
+- Apply/Reset buttons `blur()` on click.
+
+---
+
+### Act 3 — “`the long`”: the search that only broke on the second word
+
+**Symptom:** Typing `the` felt fine. Finishing `the long` (debounce fires, results collapse from ~20 rows to 2) caused a sudden jump — often to the **page footer**.
+
+**Why the first word felt fine:** Debounce hadn’t fired yet, or the filtered set was still tall enough that layout barely changed.
+
+**Why the second word broke:** Refetch returned far fewer rows → the results column and flex row shrank → `document` height dropped while `window.scrollY` still pointed at coordinates that used to be deep inside the old table.
+
+**The misleading fix — scroll position lock:** We extended the Apply “scroll lock” (capture `scrollY`, guard `scroll` events during loading, restore in `useLayoutEffect`) to debounced search. **It felt worse than the previous version** — the guard fought the browser and produced visible jitter. Forcing `scrollY` back on every scroll event is the wrong tool for layout-collapse bugs.
+
+---
+
+### Act 4 — The “upper half vs lower half” clue (the breakthrough)
+
+**User observation:** If the viewport showed the **upper half** of the screenings table while searching, no jitter. If the viewport showed the **lower half**, search sent them to the **bottom of the page**.
+
+**Interpretation:**
+
+```
+Before search (20 rows):          After search (2 rows):
+┌─────────────────────┐           ┌─────────────────────┐
+│  filters (sticky)   │           │  filters (sticky)   │
+│                     │           │                     │
+│  row 1              │           │  row 1              │
+│  row 2   ← viewport │           │  row 2              │
+│  ...                │           │  (end of table)     │
+│  row 15             │           │                     │
+│  row 16  ← scrollY  │           │  ← scrollY still    │
+│  ...                │           │     points here     │
+│  pagination         │           │     (empty / footer)│
+└─────────────────────┘           └─────────────────────┘
+```
+
+- **Upper half:** `scrollY` still lies within the new short table → browser has valid content under the viewport → stable.
+- **Lower half:** `scrollY` points past the new table bottom → browser clamps to `maxScroll` → viewport lands on footer / pagination area → feels like “jumped to page bottom.”
+
+This is a **layout-collapse + stale scroll coordinate** problem, not a routing problem.
+
+---
+
+### Final fix (current)
+
+**Strategy:** Three separate scroll behaviors + layout hold + table-relative settle after refetch. No `scroll` event guards.
 
 **Files:**
 
-- `frontend/app/page.tsx`
-- `frontend/components/screenings/Filters.tsx`
-- `frontend/components/screenings/Pagination.tsx`
-- `frontend/components/screenings/ScreeningDateInput.tsx`
-- `frontend/app/lib/formatDate.ts` (`todayYmdInDisplayTimezone`)
+- `frontend/app/page.tsx` — routing, layout hold, settle logic, pagination scroll
+- `frontend/components/screenings/Filters.tsx` — debounced search without `onApply`
+- `frontend/components/screenings/Pagination.tsx` — button `blur()`
+- `frontend/components/screenings/ScreeningDateInput.tsx` — portaled date picker
+- `frontend/app/lib/formatDate.ts` — `todayYmdInDisplayTimezone`
 
-**Routing / search**
+#### 1. Routing / search
 
-- `goToPage()` uses `router.push(url, { scroll: false })` and returns early when URL unchanged.
-- Debounced search only calls `setUI({ q })` — **not** `onApply()`.
-- Separate `useEffect` on `filterKey` resets to page 1 when filters change and `page > 1` (skips initial mount for `?page=2` deep links).
+- `goToPage()`: `router.push(url, { scroll: false })`, early return if URL unchanged.
+- Debounced search: `setUI({ q })` only — not `onApply()`.
+- `filterKey` `useEffect`: reset to page 1 when filters change and `page > 1` (skips initial mount so `?page=2` deep links work).
 
-**Pagination**
+#### 2. Layout hold while refetching
 
-- `handlePageChange` → `scrollToTableTop()` then `requestAnimationFrame(() => goToPage())`.
-- `tableRef` on `#screenings-results`, `scrollIntoView({ behavior: 'auto', block: 'start' })`, `scroll-margin-top: 7rem`.
-- Pagination buttons `blur()` on click.
+On `filterKey` change (debounced search) or Apply/Reset (`onApply` → `captureRowHeight()`):
 
-**Apply / Reset scroll lock** (important)
+- Record `contentRowRef.offsetHeight` → `rowMinHeight` on the Now Playing flex row.
+- Keeps the row from collapsing **during** the fetch while old rows are still painted.
 
-Only explicit Apply/Reset use this — not debounced search.
+#### 3. Settle scroll after refetch (`settleScrollAfterRefetch`)
 
-1. `onApply()` runs **before** `setUI()` so `window.scrollY` is captured first.
-2. `applyScrollLockYRef` stores that Y.
-3. While `screeningsData.loading`, a `scroll` listener forces Y back if the browser moves.
-4. After load, `useLayoutEffect` restores `min(savedY, maxScroll)` before paint, then clears the lock.
+When loading finishes, in `useLayoutEffect`:
 
-**Layout stability**
+1. Release `rowMinHeight`.
+2. Measure the **new** table height.
+3. If `scrollY > tableTop + newTableHeight` → user was in the old table’s lower rows → `scrollTo(tableTop - 7rem)` (matches `scroll-mt-28`), **not** leave them at the footer.
+4. Else if `scrollY > maxScroll` → clamp to document bottom.
 
-- Table wrapper always rendered; empty state shown inside.
-- No loading overlay on the table (old rows stay until new data arrives).
-- `[overflow-anchor: none]` on results layout/table to reduce browser scroll anchoring.
+#### 4. Pagination (unchanged intent)
 
-**Date picker**
+- `handlePageChange` → `scrollToTableTop()` → `requestAnimationFrame(() => goToPage())`.
+- `scrollIntoView({ behavior: 'auto', block: 'start' })` on `#screenings-results`.
+
+#### 5. Layout stability helpers
+
+- Table wrapper always mounted; empty state inside.
+- No loading overlay replacing table rows.
+- `[overflow-anchor: none]` on results layout and table.
+
+#### 6. Date picker (parallel UX fix)
 
 - Replaced native `<input type="date">` with `ScreeningDateInput` (`react-day-picker`).
-- `min` = today in `America/Vancouver` (`todayYmdInDisplayTimezone`).
-- Popover rendered via **portal to `document.body`** (`position: fixed`) so filter `Card` `overflow-hidden` does not clip it.
-- `showOutsideDays={false}` — no gray “next month filler” days in the grid.
+- `min` = today in `America/Vancouver`.
+- Popover portaled to `document.body` (filter `Card` has `overflow-hidden`).
+- `showOutsideDays={false}`.
 
 ### Key code references (current)
 
 ```ts
-// Filters.tsx — search: no onApply; Apply: lock scroll before commit
+// Filters.tsx — search does not call onApply
 debounceRef.current = setTimeout(() => {
   setUI({ q: value });
 }, 350);
 
-// Apply button
+// Apply / Reset — capture row height before commit
 onClick={(e) => {
-  onApply();        // page.tsx captures window.scrollY
-  commitApply();    // setUI(...)
+  onApply();       // page.tsx → captureRowHeight()
+  commitApply();   // setUI(...)
   e.currentTarget.blur();
 }}
 
-// page.tsx — Apply scroll lock
-const handleApplyFilters = () => {
-  applyScrollLockYRef.current = window.scrollY;
-  if (page > 1) goToPage(1);
+// page.tsx — layout hold
+const captureRowHeight = () => {
+  const el = contentRowRef.current;
+  if (el?.offsetHeight) setRowMinHeight(el.offsetHeight);
 };
 
-// Guard during loading
-useEffect(() => {
-  if (applyScrollLockYRef.current === null || !screeningsData.loading) return;
-  const guard = () => {
-    const y = applyScrollLockYRef.current;
-    if (y !== null && Math.abs(window.scrollY - y) > 2) {
-      window.scrollTo({ top: y, left: 0, behavior: 'instant' });
-    }
-  };
-  guard();
-  window.addEventListener('scroll', guard, { passive: false });
-  return () => window.removeEventListener('scroll', guard);
-}, [screeningsData.loading]);
+// filterKey change or Apply → captureRowHeight()
+useEffect(() => { /* on filterKey change */ captureRowHeight(); }, [filterKey, page]);
 
-// Restore after DOM updates
+// After refetch completes
 useLayoutEffect(() => {
-  const y = applyScrollLockYRef.current;
-  if (y === null || screeningsData.loading) return;
-  const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-  window.scrollTo({ top: Math.min(y, maxScroll), left: 0, behavior: 'instant' });
-  applyScrollLockYRef.current = null;
-}, [screeningsData.loading, screeningsData.items]);
+  if (screeningsData.loading || rowMinHeight === undefined) return;
+  setRowMinHeight(undefined);
+  settleScrollAfterRefetch();
+}, [screeningsData.loading, screeningsData.items, rowMinHeight]);
 
-// Pagination
+const settleScrollAfterRefetch = () => {
+  const tableTop = table.getBoundingClientRect().top + window.scrollY;
+  const newTableHeight = table.offsetHeight;
+  if (window.scrollY > tableTop + newTableHeight) {
+    window.scrollTo({ top: tableTop - TABLE_SCROLL_MARGIN, behavior: 'instant' });
+  } else if (window.scrollY > maxScroll) {
+    window.scrollTo({ top: maxScroll, behavior: 'instant' });
+  }
+};
+
+// Pagination — intentional scroll to table
 const handlePageChange = (nextPage: number) => {
   scrollToTableTop();
   requestAnimationFrame(() => goToPage(nextPage));
 };
 ```
 
-### Prevention / lessons
+### Prevention / lessons (for the next person)
 
-- **Do not use one scroll strategy for search, Apply, and pagination.**
-- **`router.push` on homepage** → always `{ scroll: false }` unless top navigation is intentional.
-- **Apply scroll** needs a **lock during loading**, not only a post-load restore; layout changes mid-fetch and focus scroll can still move the page.
-- **Capture scroll before `setUI`**, not after button `blur()`.
-- **Portaled popovers** for anything inside `Card` / `overflow-hidden`.
-- **Native date inputs** on desktop: confusing month grid + OS-specific UX; custom picker is optional but document portal + `min` rules.
-- **Past dates in DB** (`is_active` not auto-cleared) are a separate backend issue; frontend blocks past dates via `min` on the picker (see product discussion in chat; pipeline fix still TBD).
+1. **One scroll strategy per user intent** — search (stay/settle), Apply (stay/settle), pagination (go to table). Do not share a single `scrollY` lock across all three.
+2. **`router.push` on homepage** → `{ scroll: false }` unless you explicitly want top-of-page navigation.
+3. **Layout collapse ≠ scroll restoration** — when result count drops, fix layout height and/or adjust scroll relative to the **table**, not absolute `scrollY` guards.
+4. **Do not use `scroll` event guards for search** — fighting the browser feels worse than the original bug.
+5. **Reproduce with viewport position** — “upper half vs lower half of the table” was the key reproducer; always test search while scrolled into the bottom rows.
+6. **Portaled popovers** inside `Card` / `overflow-hidden`.
+7. **Past dates in DB** (`is_active` not auto-cleared) is a separate backend issue; frontend blocks via picker `min` (pipeline fix still TBD).
 
 ### Quick verify
 
-1. Scroll to Now Playing, type in search → stays put; results update in place.
-2. Select a date → Apply (and Reset) → stays put; no jump to bottom/middle.
-3. Scroll to bottom, click Next/Prev → lands on screening table top.
-4. Date picker opens fully (not clipped); cannot pick dates before today (Vancouver).
-5. Open `/?page=2`, refresh → still page 2.
+1. Scroll to Now Playing **upper table** → search `the long` → stays put; results update in place.
+2. Scroll to Now Playing **lower table** (rows 15+) → search `the long` → lands on **table top**, not footer.
+3. Select a date → Apply (and Reset) → no jump to bottom/middle.
+4. Scroll to bottom of results → Next/Prev → lands on screening table top.
+5. Date picker opens fully (not clipped); cannot pick dates before today (Vancouver).
+6. Open `/?page=2`, refresh → still page 2.

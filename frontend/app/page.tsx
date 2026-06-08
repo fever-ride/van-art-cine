@@ -18,6 +18,9 @@ const noto = Noto_Sans({
   display: 'swap',
 });
 
+/** Matches `scroll-mt-28` on #screenings-results */
+const TABLE_SCROLL_MARGIN = 112;
+
 function buildFilterKey(ui: UIState) {
   return JSON.stringify({
     q: ui.q,
@@ -52,13 +55,48 @@ function ScreeningsPageInner() {
 
   const screeningsData = useScreeningsData(screeningsUI.ui, offset);
   const tableRef = useRef<HTMLDivElement>(null);
-  const applyScrollLockYRef = useRef<number | null>(null);
+  const contentRowRef = useRef<HTMLDivElement>(null);
+  const [rowMinHeight, setRowMinHeight] = useState<number | undefined>();
   const filterKey = useMemo(
     () => buildFilterKey(screeningsUI.ui),
     [screeningsUI.ui]
   );
   const prevFilterKeyRef = useRef(filterKey);
   const hasInitializedFiltersRef = useRef(false);
+
+  const captureRowHeight = () => {
+    const el = contentRowRef.current;
+    if (el && el.offsetHeight > 0) {
+      setRowMinHeight(el.offsetHeight);
+    }
+  };
+
+  const settleScrollAfterRefetch = () => {
+    const table = tableRef.current;
+    if (!table) return;
+
+    const tableTop = table.getBoundingClientRect().top + window.scrollY;
+    const newTableHeight = table.offsetHeight;
+    const maxScroll = Math.max(
+      0,
+      document.documentElement.scrollHeight - window.innerHeight
+    );
+    const scrollY = window.scrollY;
+
+    // Scrolled into the old table's lower rows — those rows are gone after refetch.
+    if (scrollY > tableTop + newTableHeight) {
+      window.scrollTo({
+        top: Math.min(Math.max(0, tableTop - TABLE_SCROLL_MARGIN), maxScroll),
+        left: 0,
+        behavior: 'instant',
+      });
+      return;
+    }
+
+    if (scrollY > maxScroll) {
+      window.scrollTo({ top: maxScroll, left: 0, behavior: 'instant' });
+    }
+  };
 
   const scrollToTableTop = () => {
     const el = tableRef.current;
@@ -89,45 +127,13 @@ function ScreeningsPageInner() {
 
   const handlePageChange = (nextPage: number) => {
     scrollToTableTop();
-    // Defer navigation so the scroll isn't cancelled by the route re-render.
     requestAnimationFrame(() => goToPage(nextPage));
   };
 
   const handleApplyFilters = () => {
-    applyScrollLockYRef.current = window.scrollY;
+    captureRowHeight();
     if (page > 1) goToPage(1);
   };
-
-  useEffect(() => {
-    if (applyScrollLockYRef.current === null || !screeningsData.loading) return;
-
-    const guard = () => {
-      const y = applyScrollLockYRef.current;
-      if (y !== null && Math.abs(window.scrollY - y) > 2) {
-        window.scrollTo({ top: y, left: 0, behavior: 'instant' });
-      }
-    };
-
-    guard();
-    window.addEventListener('scroll', guard, { passive: false });
-    return () => window.removeEventListener('scroll', guard);
-  }, [screeningsData.loading]);
-
-  useLayoutEffect(() => {
-    const y = applyScrollLockYRef.current;
-    if (y === null || screeningsData.loading) return;
-
-    const maxScroll = Math.max(
-      0,
-      document.documentElement.scrollHeight - window.innerHeight
-    );
-    window.scrollTo({
-      top: Math.min(y, maxScroll),
-      left: 0,
-      behavior: 'instant',
-    });
-    applyScrollLockYRef.current = null;
-  }, [screeningsData.loading, screeningsData.items]);
 
   useEffect(() => {
     if (!hasInitializedFiltersRef.current) {
@@ -139,9 +145,17 @@ function ScreeningsPageInner() {
     if (filterKey === prevFilterKeyRef.current) return;
 
     prevFilterKeyRef.current = filterKey;
+    captureRowHeight();
 
     if (page > 1) goToPage(1);
   }, [filterKey, page]);
+
+  useLayoutEffect(() => {
+    if (screeningsData.loading || rowMinHeight === undefined) return;
+
+    setRowMinHeight(undefined);
+    settleScrollAfterRefetch();
+  }, [screeningsData.loading, screeningsData.items, rowMinHeight]);
 
   // Fetch all cinemas once, sort alphabetically
   useEffect(() => {
@@ -154,7 +168,6 @@ function ScreeningsPageInner() {
         if (cancelled) return;
 
         const sorted = [...items]
-          // Hide the parent "VIFF Centre" location which has no own screenings
           .filter((c) => c.name !== 'VIFF Centre')
           .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -194,8 +207,11 @@ function ScreeningsPageInner() {
       <div className="mx-auto max-w-[1400px] px-4">
         <h2 className="mb-6 text-2xl font-bold text-primary">Now Playing</h2>
 
-        <div className="flex flex-col gap-4 md:flex-row [overflow-anchor:none]">
-        {/* Left sidebar */}
+        <div
+          ref={contentRowRef}
+          className="flex flex-col gap-4 md:flex-row [overflow-anchor:none]"
+          style={rowMinHeight ? { minHeight: rowMinHeight } : undefined}
+        >
         <aside className="self-start md:w-[275px] md:flex-shrink-0 md:sticky md:top-30">
           <Filters
             ui={screeningsUI.ui}
@@ -206,7 +222,6 @@ function ScreeningsPageInner() {
           />
         </aside>
 
-        {/* Right content */}
         <section className="flex-1 [overflow-anchor:none]">
           {screeningsData.error && (
             <p className="mt-3 text-sm text-muted">Error: {screeningsData.error}</p>

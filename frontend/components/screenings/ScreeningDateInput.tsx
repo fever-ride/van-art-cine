@@ -131,7 +131,7 @@ export default function ScreeningDateInput({
           minWidth: position.width,
           zIndex: 1000,
         }}
-        className="rounded-card border border-border bg-surface p-2 shadow-[0_12px_28px_rgba(0,0,0,0.12)]"
+        className="rounded-card border border-border bg-surface p-2 text-sm shadow-[0_12px_28px_rgba(0,0,0,0.12)]"
       >
         <DayPicker
           mode="single"
@@ -164,7 +164,7 @@ export default function ScreeningDateInput({
         aria-controls={listboxId}
         onClick={() => setOpen((prev) => !prev)}
         className={[
-          'flex w-full items-center justify-between rounded-input border bg-surface px-3 py-2.5 text-left text-[15px] leading-6 transition',
+          'flex w-full items-center justify-between rounded-input border bg-surface px-3 py-2.5 text-left text-sm transition',
           'border-border text-primary hover:border-accent focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20',
           !selected ? 'text-muted' : '',
         ]
