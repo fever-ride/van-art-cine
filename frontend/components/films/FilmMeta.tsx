@@ -11,10 +11,6 @@ type Props = {
   };
 };
 
-function missing(text: string) {
-  return <span className="italic text-muted">{text}</span>;
-}
-
 export default function FilmMeta({ film }: Props) {
   // Cast
   const topCastRaw = film.cast?.slice(0, 5) ?? [];
@@ -34,7 +30,7 @@ export default function FilmMeta({ film }: Props) {
       ? rawLang
           .split(',')
           .map((s) => s.trim())
-          .filter(Boolean)
+          .filter((s) => s && !isMissingText(s))
       : [];
 
   // Description

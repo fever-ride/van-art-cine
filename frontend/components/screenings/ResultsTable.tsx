@@ -8,6 +8,12 @@ import {
   formatScreeningTime,
   formatScreeningDateTime,
 } from '@/app/lib/formatDate';
+import {
+  cleanDisplayText,
+  formatPeopleLine,
+  isValidRtRating,
+  parseImdbRating,
+} from '@/app/lib/displayText';
 import { formatGenre } from '@/app/lib/formatGenre';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 
@@ -52,6 +58,9 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
 
           const year = s.year ? ` (${s.year})` : '';
           const genres = formatGenre(s.genre ?? maybeWithGenres(s).genres);
+          const directors = formatPeopleLine(s.directors);
+          const description = cleanDisplayText(s.description);
+          const imdbRating = parseImdbRating(s.imdb_rating);
 
           return (
             <Fragment key={s.id}>
@@ -110,8 +119,8 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                     )}
                   </div>
 
-                  {s.directors && (
-                    <div className="mt-0.5 text-[12px] text-muted">{s.directors}</div>
+                  {directors && (
+                    <div className="mt-0.5 text-[12px] text-muted">{directors}</div>
                   )}
 
                   {genres.length > 0 && (
@@ -179,8 +188,8 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                               </div>
                             )}
 
-                            {s.description && (
-                              <p className="mt-3 text-sm text-primary leading-relaxed">{s.description}</p>
+                            {description && (
+                              <p className="mt-3 text-sm text-primary leading-relaxed">{description}</p>
                             )}
                           </div>
 
@@ -188,23 +197,18 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                           <div className="grid gap-3 md:justify-end">
                             <div className="flex flex-wrap items-center gap-2">
                               {/* IMDb rating (handles string/number/empty) */}
-                              {(() => {
-                                const ratingStr = s.imdb_rating?.toString().trim() ?? '';
-                                const hasRating = ratingStr !== '';
-                                const ratingNum = Number(ratingStr);
-                                return hasRating && !isNaN(ratingNum) ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-surface px-3 py-1 text-xs font-semibold text-primary ring-1 ring-border">
-                                    IMDb · {ratingNum.toFixed(1)}
-                                    {s.imdb_votes ? (
-                                      <span className="pl-0.5 text-muted">
-                                        ({s.imdb_votes})
-                                      </span>
-                                    ) : null}
-                                  </span>
-                                ) : null;
-                              })()}
+                              {imdbRating != null && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-surface px-3 py-1 text-xs font-semibold text-primary ring-1 ring-border">
+                                  IMDb · {imdbRating.toFixed(1)}
+                                  {s.imdb_votes ? (
+                                    <span className="pl-0.5 text-muted">
+                                      ({s.imdb_votes})
+                                    </span>
+                                  ) : null}
+                                </span>
+                              )}
 
-                              {typeof s.rt_rating_pct === 'number' && (
+                              {isValidRtRating(s.rt_rating_pct) && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-surface px-3 py-1 text-xs font-semibold text-primary ring-1 ring-border">
                                   Rotten Tomatoes · {s.rt_rating_pct}%
                                 </span>

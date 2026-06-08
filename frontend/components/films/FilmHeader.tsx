@@ -1,7 +1,12 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import type { Film } from '@/app/lib/films';
+import {
+  cleanDisplayText,
+  formatPeopleLine,
+  isValidRtRating,
+  parseImdbRating,
+} from '@/app/lib/displayText';
 import { formatGenre } from '@/app/lib/formatGenre';
 
 type Props = {
@@ -40,39 +45,20 @@ export default function FilmHeader({ film }: Props) {
       ? poster_url
       : 'https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?q=80&w=600&auto=format&fit=crop';
 
-  // Countries (accept a single string)
-  const countriesText =
-    typeof country === 'string' && country.trim() ? country : '';
-
+  const countriesText = cleanDisplayText(country);
   const genres = formatGenre(genre);
+  const dirLine = formatPeopleLine(directors);
+  const directorCount = dirLine ? dirLine.split(', ').length : 0;
+  const imdbRating = parseImdbRating(imdb_rating);
 
-  // Directors line
-  const dirLine =
-    Array.isArray(directors) && directors.length
-      ? directors.join(', ')
-      : '';
-
-  // Build header meta bits without stray bullets
   const metaBits: string[] = [];
   if (year) metaBits.push(String(year));
   if (countriesText) metaBits.push(countriesText);
   if (dirLine) {
     metaBits.push(
-      `Director${Array.isArray(directors) && directors.length > 1 ? 's' : ''}: ${dirLine}`,
+      `Director${directorCount > 1 ? 's' : ''}: ${dirLine}`,
     );
   }
-
-  // Normalize IMDb rating: string or number → number
-  const ratingStr = imdb_rating?.toString().trim() ?? '';
-  const ratingNum = Number(ratingStr);
-  const hasRating = ratingStr !== '' && !isNaN(ratingNum);
-
-  // Data chip
-  const chip = (node: ReactNode) => (
-    <span className="inline-flex items-center rounded-full bg-surface px-3 py-1 text-xs font-semibold text-primary ring-1 ring-border">
-      {node}
-    </span>
-  );
 
   return (
     <section className="rounded-card border border-border bg-surface">
@@ -124,10 +110,10 @@ export default function FilmHeader({ film }: Props) {
 
           {/* Ratings */}
           <div className="mt-4 flex flex-wrap items-center gap-4">
-            {hasRating && (
+            {imdbRating != null && (
               <div className="flex items-baseline gap-2">
                 <span className="text-sm font-medium text-muted">IMDb</span>
-                <span className="text-2xl font-bold text-primary">{ratingNum.toFixed(1)}</span>
+                <span className="text-2xl font-bold text-primary">{imdbRating.toFixed(1)}</span>
                 {typeof imdb_votes === 'number' && (
                   <span className="text-sm text-muted">
                     ({imdb_votes.toLocaleString()})
@@ -136,7 +122,7 @@ export default function FilmHeader({ film }: Props) {
               </div>
             )}
 
-            {typeof rt_rating_pct === 'number' && (
+            {isValidRtRating(rt_rating_pct) && (
               <div className="flex items-baseline gap-2">
                 <span className="text-sm font-medium text-muted">Rotten Tomatoes</span>
                 <span className="text-2xl font-bold text-primary">{rt_rating_pct}%</span>

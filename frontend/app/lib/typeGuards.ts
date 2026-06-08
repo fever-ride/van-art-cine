@@ -14,12 +14,24 @@ export function isErrorLike(x: unknown): x is { message: string } {
   );
 }
 
-/** True if value is empty, whitespace-only, or "n/a" / "na" (case-insensitive). */
+const MISSING_TEXT = new Set([
+  'n/a',
+  'na',
+  'unknown',
+  'none',
+  'null',
+  'undefined',
+  'not available',
+  '-',
+  '—',
+  '--',
+]);
+
+/** True if value is empty, whitespace-only, or a known placeholder (e.g. OMDb "N/A"). */
 export function isMissingText(value?: string | null): boolean {
   const t = value?.trim();
   if (!t) return true;
-  const lower = t.toLowerCase();
-  return lower === 'n/a' || lower === 'na';
+  return MISSING_TEXT.has(t.toLowerCase());
 }
 
 /** Object with a numeric `status` property (e.g. some error shapes). */
