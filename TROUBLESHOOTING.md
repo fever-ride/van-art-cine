@@ -64,109 +64,156 @@ Recommended follow-up:
 
 ---
 
-## Homepage scroll jumps when searching or paginating
+## Homepage scroll jumps (search, Apply, pagination, date picker)
 
-### Symptom
+### Symptom timeline
 
-On the homepage (`frontend/app/page.tsx`), scrolling down to the **Now Playing** filters and typing in the search box caused the page to jump back to the top every few keystrokes (350ms debounce).
-
-After an initial fix, new problems appeared:
-
-- Pagination did not scroll to the screening table top (only a small “jiggle”).
-- A loading overlay made the Apply button and table header flash.
-- A later attempt to fix pagination made typing cause wild, repeated scroll jumps.
+1. **Search debounce** — typing in the left filter search jumped the page to the top every ~350ms.
+2. **Pagination** — Prev/Next did not scroll to the screening table (only a small jiggle), or scrolled unreliably.
+3. **Apply / date filter** — after selecting a date and clicking Apply, scroll jumped to the **bottom** or **middle** intermittently.
+4. **Date picker UX** — native `<input type="date">` showed next-month days in gray (looked disabled) and felt awkward to navigate on desktop; custom picker was clipped by the filter `Card` (`overflow-hidden`).
 
 ### Desired behavior
 
 | Action | Scroll |
 |--------|--------|
-| Search (debounced), Apply, Reset | Stay at current scroll position |
+| Search (debounced) | Stay at current scroll position |
+| Apply, Reset, date pick | Stay at current scroll position |
 | Prev / Next pagination | Scroll to top of screening table (`#screenings-results`) |
 
-### Root causes
+### Root causes (stacked)
 
-Several issues stacked on top of each other:
-
-1. **Next.js default scroll on `router.push()`**  
-   Filter search debounce called `onApply()` → `goToPage(1)` → `router.push(url)`.  
-   App Router defaults to `scroll: true`, so even same-page query updates reset scroll to top.
-
-2. **Filter reload changes layout height**  
-   When `useScreeningsData` refetched, result count changed and the table container was conditionally unmounted (`items.length > 0`). The browser recalculated scroll position when content collapsed or grew.
-
-3. **Pagination scroll fought with route updates**  
-   `scrollIntoView({ behavior: 'smooth' })` started, then `router.push()` re-rendered and cancelled the animation (felt like a jiggle, not a real scroll).
-
-4. **Loading UI shifted layout**  
-   A full-table `Loading…` line above the table, then a semi-transparent overlay, pushed or dimmed the header on every refetch.
-
-5. **Search debounce over-triggered page reset**  
-   Debounced search called `onApply()` on every query change. Combined with scroll restoration experiments, this caused conflicting scroll logic on each keystroke.
+1. **`router.push()` default scroll** — App Router uses `scroll: true` by default; filter flows called `goToPage(1)` → page jumped to top.
+2. **Layout height changes** — refetch changed row count; table wrapper was briefly unmounted; browser adjusted scroll.
+3. **Pagination vs route timing** — `scrollIntoView({ smooth })` was cancelled by the re-render from `router.push()`.
+4. **Loading UI above table** — “Loading…” line / overlay shifted layout and flashed the table header.
+5. **Debounced search called `onApply()`** — unnecessary navigations + conflicting scroll logic.
+6. **Apply button focus** — Apply sits at the bottom of the filter card; focus-after-click can scroll it into view.
+7. **Post-filter page shrink** — user at mid-page scrollY; fewer results shorten the document; browser clamps or re-anchors scroll (felt like jump to bottom/middle). A generic “restore scrollY after load” fix was **not reliable** for Apply.
+8. **Filter `Card` `overflow-hidden`** — absolutely positioned custom calendar was clipped (calendar unusable).
+9. **Native date picker** — trailing days from the next month render gray in the current month grid (cosmetic; looks like disabled dates).
 
 ### Investigation path (what we tried)
 
-1. `router.push(url, { scroll: false })` + skip push when URL unchanged → fixed search jumping to top.
-2. `useEffect` on `page` + `scrollIntoView` on results `<section>` → pagination scroll unreliable (wrong target, too early).
-3. Ref on table + scroll after `loading === false` → still jiggled; loading text shifted layout mid-scroll.
-4. Immediate `scrollIntoView` on pagination click + loading overlay to prevent layout shift → pagination worked, but Apply/header flashed.
-5. Removed overlay; debounced search still called `onApply()`; table unmounted when empty → typing “乱跳” returned.
+| Attempt | Result |
+|---------|--------|
+| `router.push(url, { scroll: false })` + skip unchanged URL | Fixed search jumping to top |
+| `useEffect` on `page` + `scrollIntoView` on `<section>` | Wrong target / too early |
+| Scroll after `loading === false` | Jiggle; layout still shifting |
+| Immediate `scrollIntoView` on pagination + loading overlay | Pagination OK; Apply/header flashed |
+| Global `scrollSnapshot` on every filter change | Typing “乱跳”; Apply still jumped |
+| `overflow-anchor: none` + blur Apply | Helped; Apply jump persisted |
+| **Apply-only scroll lock** (current) | Stable |
 
-### Fix
+### Final fix
 
-**Files:** `frontend/app/page.tsx`, `frontend/components/screenings/Filters.tsx`, `frontend/components/screenings/Pagination.tsx`
+**Files:**
 
-1. **Keep `scroll: false` and skip no-op navigations** in `goToPage()`.
+- `frontend/app/page.tsx`
+- `frontend/components/screenings/Filters.tsx`
+- `frontend/components/screenings/Pagination.tsx`
+- `frontend/components/screenings/ScreeningDateInput.tsx`
+- `frontend/app/lib/formatDate.ts` (`todayYmdInDisplayTimezone`)
 
-2. **Split filter vs pagination intent** with refs:
-   - `loadIntentRef`: `'filter' | 'pagination'`
-   - `scrollSnapshotRef`: saved `window.scrollY` before filter refetch
-   - On filter change: snapshot scroll, reset to page 1 only if `page > 1`
-   - After filter load: restore snapshot with `window.scrollTo({ behavior: 'auto' })`
-   - On pagination: set intent to `'pagination'`, clear snapshot, scroll to table, then `requestAnimationFrame(() => goToPage())`
+**Routing / search**
 
-3. **Pagination scroll** — `tableRef` on `#screenings-results`, `scrollIntoView({ behavior: 'auto', block: 'start' })`, `scroll-margin-top: 7rem` for sticky NavBar. Defer `router.push` one frame so scroll is not cancelled.
+- `goToPage()` uses `router.push(url, { scroll: false })` and returns early when URL unchanged.
+- Debounced search only calls `setUI({ q })` — **not** `onApply()`.
+- Separate `useEffect` on `filterKey` resets to page 1 when filters change and `page > 1` (skips initial mount for `?page=2` deep links).
 
-4. **Stable table shell** — always render the table wrapper; show “No screenings found” inside it instead of unmounting the whole block.
+**Pagination**
 
-5. **Search debounce** — only `setUI({ q })`; do **not** call `onApply()`. Apply / Reset still call `onApply()` to reset page when needed.
+- `handlePageChange` → `scrollToTableTop()` then `requestAnimationFrame(() => goToPage())`.
+- `tableRef` on `#screenings-results`, `scrollIntoView({ behavior: 'auto', block: 'start' })`, `scroll-margin-top: 7rem`.
+- Pagination buttons `blur()` on click.
 
-6. **Pagination buttons** — `blur()` on click so focus scroll does not fight programmatic scroll.
+**Apply / Reset scroll lock** (important)
 
-7. **No loading overlay on the table** — avoids header/button flash; old rows stay visible until new data arrives.
+Only explicit Apply/Reset use this — not debounced search.
 
-### Key code references
+1. `onApply()` runs **before** `setUI()` so `window.scrollY` is captured first.
+2. `applyScrollLockYRef` stores that Y.
+3. While `screeningsData.loading`, a `scroll` listener forces Y back if the browser moves.
+4. After load, `useLayoutEffect` restores `min(savedY, maxScroll)` before paint, then clears the lock.
+
+**Layout stability**
+
+- Table wrapper always rendered; empty state shown inside.
+- No loading overlay on the table (old rows stay until new data arrives).
+- `[overflow-anchor: none]` on results layout/table to reduce browser scroll anchoring.
+
+**Date picker**
+
+- Replaced native `<input type="date">` with `ScreeningDateInput` (`react-day-picker`).
+- `min` = today in `America/Vancouver` (`todayYmdInDisplayTimezone`).
+- Popover rendered via **portal to `document.body`** (`position: fixed`) so filter `Card` `overflow-hidden` does not clip it.
+- `showOutsideDays={false}` — no gray “next month filler” days in the grid.
+
+### Key code references (current)
 
 ```ts
-// Filters.tsx — debounced search
+// Filters.tsx — search: no onApply; Apply: lock scroll before commit
 debounceRef.current = setTimeout(() => {
   setUI({ q: value });
 }, 350);
 
-// page.tsx — pagination only
+// Apply button
+onClick={(e) => {
+  onApply();        // page.tsx captures window.scrollY
+  commitApply();    // setUI(...)
+  e.currentTarget.blur();
+}}
+
+// page.tsx — Apply scroll lock
+const handleApplyFilters = () => {
+  applyScrollLockYRef.current = window.scrollY;
+  if (page > 1) goToPage(1);
+};
+
+// Guard during loading
+useEffect(() => {
+  if (applyScrollLockYRef.current === null || !screeningsData.loading) return;
+  const guard = () => {
+    const y = applyScrollLockYRef.current;
+    if (y !== null && Math.abs(window.scrollY - y) > 2) {
+      window.scrollTo({ top: y, left: 0, behavior: 'instant' });
+    }
+  };
+  guard();
+  window.addEventListener('scroll', guard, { passive: false });
+  return () => window.removeEventListener('scroll', guard);
+}, [screeningsData.loading]);
+
+// Restore after DOM updates
+useLayoutEffect(() => {
+  const y = applyScrollLockYRef.current;
+  if (y === null || screeningsData.loading) return;
+  const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+  window.scrollTo({ top: Math.min(y, maxScroll), left: 0, behavior: 'instant' });
+  applyScrollLockYRef.current = null;
+}, [screeningsData.loading, screeningsData.items]);
+
+// Pagination
 const handlePageChange = (nextPage: number) => {
-  loadIntentRef.current = 'pagination';
-  scrollSnapshotRef.current = null;
   scrollToTableTop();
   requestAnimationFrame(() => goToPage(nextPage));
 };
-
-// page.tsx — filter reload preserves scroll
-scrollSnapshotRef.current = window.scrollY;
-// ... after screeningsData.loading becomes false:
-window.scrollTo({ top: y, behavior: 'auto' });
 ```
 
 ### Prevention / lessons
 
-- Treat **search** and **pagination** as different UX: do not share one scroll strategy.
-- Any `router.push()` on the homepage must use `{ scroll: false }` unless you explicitly want top-of-page navigation.
-- Avoid inserting/removing loading UI **above** the table; it shifts scroll targets. Prefer keeping the previous table visible or an in-place overlay that does not resize the header block.
-- Prefer `behavior: 'auto'` (instant) for pagination scroll when a route update follows immediately; `smooth` is often cancelled by React re-renders.
-- Debounced live search should update filter state only; page reset belongs in explicit Apply or a dedicated “filter changed” effect that skips the initial mount (do not break `?page=2` deep links on first load).
+- **Do not use one scroll strategy for search, Apply, and pagination.**
+- **`router.push` on homepage** → always `{ scroll: false }` unless top navigation is intentional.
+- **Apply scroll** needs a **lock during loading**, not only a post-load restore; layout changes mid-fetch and focus scroll can still move the page.
+- **Capture scroll before `setUI`**, not after button `blur()`.
+- **Portaled popovers** for anything inside `Card` / `overflow-hidden`.
+- **Native date inputs** on desktop: confusing month grid + OS-specific UX; custom picker is optional but document portal + `min` rules.
+- **Past dates in DB** (`is_active` not auto-cleared) are a separate backend issue; frontend blocks past dates via `min` on the picker (see product discussion in chat; pipeline fix still TBD).
 
 ### Quick verify
 
-1. Scroll to Now Playing, type in search → page stays put; results update in place.
-2. Scroll to bottom, click Next/Prev → jumps to screening table top, not page hero.
-3. Click Apply with filters → no header/button flash; scroll unchanged on page 1.
-4. Open `/?page=2`, refresh → still page 2 (filter effect must not reset page on mount).
+1. Scroll to Now Playing, type in search → stays put; results update in place.
+2. Select a date → Apply (and Reset) → stays put; no jump to bottom/middle.
+3. Scroll to bottom, click Next/Prev → lands on screening table top.
+4. Date picker opens fully (not clipped); cannot pick dates before today (Vancouver).
+5. Open `/?page=2`, refresh → still page 2.

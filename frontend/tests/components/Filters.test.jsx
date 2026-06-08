@@ -1,6 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import Filters from '@/components/screenings/Filters';
 
+jest.mock('@/app/lib/formatDate', () => ({
+  todayYmdInDisplayTimezone: () => '2026-06-06',
+}));
+
 // Build a minimal UIState-like object
 function makeUI(overrides = {}) {
   return {
@@ -39,7 +43,7 @@ describe('Filters component', () => {
 
     // Search input
     expect(
-      screen.getByPlaceholderText('Title, director…')
+      screen.getByPlaceholderText('Enter a film title…')
     ).toBeInTheDocument();
 
     // Cinemas label
@@ -62,7 +66,9 @@ describe('Filters component', () => {
     ).toBeInTheDocument();
   });
 
-  test('updates search query and calls setUI + onApply when typing', () => {
+  test('updates search query via debounced setUI when typing', () => {
+    jest.useFakeTimers();
+
     const ui = makeUI({ q: '' });
     const setUI = jest.fn();
     const onApply = jest.fn();
@@ -76,16 +82,19 @@ describe('Filters component', () => {
       />
     );
 
-    const input = screen.getByPlaceholderText('Title, director…');
+    const input = screen.getByPlaceholderText('Enter a film title…');
 
     fireEvent.change(input, { target: { value: 'Ozu' } });
 
+    expect(setUI).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(350);
+
     expect(setUI).toHaveBeenCalledTimes(1);
-    expect(setUI).toHaveBeenCalledWith({
-      ...ui,
-      q: 'Ozu',
-    });
-    expect(onApply).toHaveBeenCalledTimes(1);
+    expect(setUI).toHaveBeenCalledWith({ q: 'Ozu' });
+    expect(onApply).not.toHaveBeenCalled();
+
+    jest.useRealTimers();
   });
 
   test('selecting and clearing cinemas updates the summary text', () => {
@@ -215,6 +224,25 @@ describe('Filters component', () => {
     ).toBeInTheDocument();
   });
 
+  test('renders custom date pickers instead of native date inputs', () => {
+    const ui = makeUI({ mode: 'range', from: '2026-06-10', to: '2026-06-12' });
+    const setUI = jest.fn();
+    const onApply = jest.fn();
+
+    const { container } = render(
+      <Filters
+        ui={ui}
+        setUI={setUI}
+        onApply={onApply}
+        cinemaOptions={[]}
+      />
+    );
+
+    expect(container.querySelectorAll('input[type="date"]')).toHaveLength(0);
+    expect(screen.getByText('Jun 10, 2026')).toBeInTheDocument();
+    expect(screen.getByText('Jun 12, 2026')).toBeInTheDocument();
+  });
+
   test('switching between Single date and Date range toggles date inputs', () => {
     const ui = makeUI({ mode: 'single' });
     const setUI = jest.fn();
@@ -233,18 +261,15 @@ describe('Filters component', () => {
     const rangeRadio = screen.getByLabelText('Date range');
 
     expect(singleRadio).toBeChecked();
-    // In "single" mode there should be 1 date input
     expect(
-      container.querySelectorAll('input[type="date"]').length
+      container.querySelectorAll('button[aria-haspopup="dialog"]').length
     ).toBe(1);
 
-    // Switch to "range" mode
     fireEvent.click(rangeRadio);
 
     expect(rangeRadio).toBeChecked();
-    // In "range" mode there should be 2 date inputs
     expect(
-      container.querySelectorAll('input[type="date"]').length
+      container.querySelectorAll('button[aria-haspopup="dialog"]').length
     ).toBe(2);
   });
 

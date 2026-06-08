@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, Suspense } from 'react';
 import type { UIState } from '@/lib/hooks/useScreeningsUI';
 import { Noto_Sans } from 'next/font/google';
 
@@ -52,8 +52,7 @@ function ScreeningsPageInner() {
 
   const screeningsData = useScreeningsData(screeningsUI.ui, offset);
   const tableRef = useRef<HTMLDivElement>(null);
-  const loadIntentRef = useRef<'filter' | 'pagination'>('filter');
-  const scrollSnapshotRef = useRef<number | null>(null);
+  const applyScrollLockYRef = useRef<number | null>(null);
   const filterKey = useMemo(
     () => buildFilterKey(screeningsUI.ui),
     [screeningsUI.ui]
@@ -89,16 +88,46 @@ function ScreeningsPageInner() {
   };
 
   const handlePageChange = (nextPage: number) => {
-    loadIntentRef.current = 'pagination';
-    scrollSnapshotRef.current = null;
     scrollToTableTop();
     // Defer navigation so the scroll isn't cancelled by the route re-render.
     requestAnimationFrame(() => goToPage(nextPage));
   };
 
   const handleApplyFilters = () => {
+    applyScrollLockYRef.current = window.scrollY;
     if (page > 1) goToPage(1);
   };
+
+  useEffect(() => {
+    if (applyScrollLockYRef.current === null || !screeningsData.loading) return;
+
+    const guard = () => {
+      const y = applyScrollLockYRef.current;
+      if (y !== null && Math.abs(window.scrollY - y) > 2) {
+        window.scrollTo({ top: y, left: 0, behavior: 'instant' });
+      }
+    };
+
+    guard();
+    window.addEventListener('scroll', guard, { passive: false });
+    return () => window.removeEventListener('scroll', guard);
+  }, [screeningsData.loading]);
+
+  useLayoutEffect(() => {
+    const y = applyScrollLockYRef.current;
+    if (y === null || screeningsData.loading) return;
+
+    const maxScroll = Math.max(
+      0,
+      document.documentElement.scrollHeight - window.innerHeight
+    );
+    window.scrollTo({
+      top: Math.min(y, maxScroll),
+      left: 0,
+      behavior: 'instant',
+    });
+    applyScrollLockYRef.current = null;
+  }, [screeningsData.loading, screeningsData.items]);
 
   useEffect(() => {
     if (!hasInitializedFiltersRef.current) {
@@ -111,32 +140,8 @@ function ScreeningsPageInner() {
 
     prevFilterKeyRef.current = filterKey;
 
-    if (loadIntentRef.current !== 'pagination') {
-      loadIntentRef.current = 'filter';
-      scrollSnapshotRef.current = window.scrollY;
-    }
-
     if (page > 1) goToPage(1);
   }, [filterKey, page]);
-
-  useEffect(() => {
-    if (screeningsData.loading) return;
-
-    if (
-      loadIntentRef.current === 'filter' &&
-      scrollSnapshotRef.current !== null
-    ) {
-      const y = scrollSnapshotRef.current;
-      scrollSnapshotRef.current = null;
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: y, behavior: 'auto' });
-      });
-    }
-
-    if (loadIntentRef.current === 'pagination') {
-      loadIntentRef.current = 'filter';
-    }
-  }, [screeningsData.loading]);
 
   // Fetch all cinemas once, sort alphabetically
   useEffect(() => {
@@ -189,7 +194,7 @@ function ScreeningsPageInner() {
       <div className="mx-auto max-w-[1400px] px-4">
         <h2 className="mb-6 text-2xl font-bold text-primary">Now Playing</h2>
 
-        <div className="flex flex-col gap-4 md:flex-row">
+        <div className="flex flex-col gap-4 md:flex-row [overflow-anchor:none]">
         {/* Left sidebar */}
         <aside className="self-start md:w-[275px] md:flex-shrink-0 md:sticky md:top-30">
           <Filters
@@ -202,7 +207,7 @@ function ScreeningsPageInner() {
         </aside>
 
         {/* Right content */}
-        <section className="flex-1">
+        <section className="flex-1 [overflow-anchor:none]">
           {screeningsData.error && (
             <p className="mt-3 text-sm text-muted">Error: {screeningsData.error}</p>
           )}
@@ -210,7 +215,7 @@ function ScreeningsPageInner() {
             ref={tableRef}
             id="screenings-results"
             className="scroll-mt-28 overflow-x-auto rounded-card border border-border bg-surface"
-            style={{ scrollMarginTop: '7rem' }}
+            style={{ scrollMarginTop: '7rem', overflowAnchor: 'none' }}
           >
             {screeningsData.items.length > 0 ? (
               <ResultsTable

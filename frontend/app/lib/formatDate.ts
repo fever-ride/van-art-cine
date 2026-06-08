@@ -26,6 +26,16 @@ export function formatScreeningTime(d: Date): string {
   }).format(d);
 }
 
+/** Today's calendar date in DISPLAY_TIMEZONE as YYYY-MM-DD (for `<input type="date">` min). */
+export function todayYmdInDisplayTimezone(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: DISPLAY_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
+}
+
 /** e.g. "Mon, Jan 6, 7:30 PM" for detail / full datetime. */
 export function formatScreeningDateTime(d: Date): string {
   return new Intl.DateTimeFormat(LOCALE, {

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { UIState, SetUI } from '@/lib/hooks/useScreeningsUI';
+import { todayYmdInDisplayTimezone } from '@/app/lib/formatDate';
+import ScreeningDateInput from '@/components/screenings/ScreeningDateInput';
 import { Card, Input, Button } from '@/components/ui';
 
 type CinemaOption = { id: number; name: string };
@@ -68,12 +70,11 @@ export default function Filters({
     setLocalQ(ui.q);
   }, [ui.q]);
 
-  const handleApply = () => {
+  const commitApply = () => {
     setUI({ ...localUI, q: localQ });
-    onApply();
   };
 
-  const handleReset = () => {
+  const commitReset = () => {
     setLocalQ('');
     setLocalUI({
       cinemaIds: [],
@@ -98,8 +99,11 @@ export default function Filters({
       mode: 'single',
       limit: ui.limit,
     });
-    onApply();
   };
+
+  const todayMin = todayYmdInDisplayTimezone();
+  const rangeEndMin =
+    localUI.from && localUI.from > todayMin ? localUI.from : todayMin;
 
   const labelCls = 'text-[12px] font-semibold text-primary';
   const control =
@@ -248,25 +252,27 @@ export default function Filters({
         </div>
 
         {localUI.mode === 'single' && (
-          <Input
-            type="date"
+          <ScreeningDateInput
+            min={todayMin}
             value={localUI.date}
-            onChange={(e) => setLocalUI({ ...localUI, date: e.target.value })}
+            onChange={(date) => setLocalUI({ ...localUI, date })}
           />
         )}
 
         {localUI.mode === 'range' && (
           <div className="mt-2 flex w-full flex-wrap items-center gap-2">
-            <Input
-              type="date"
+            <ScreeningDateInput
+              min={todayMin}
               value={localUI.from}
-              onChange={(e) => setLocalUI({ ...localUI, from: e.target.value })}
+              placeholder="From"
+              onChange={(from) => setLocalUI({ ...localUI, from })}
             />
             <span className="text-sm text-muted">to</span>
-            <Input
-              type="date"
+            <ScreeningDateInput
+              min={rangeEndMin}
               value={localUI.to}
-              onChange={(e) => setLocalUI({ ...localUI, to: e.target.value })}
+              placeholder="To"
+              onChange={(to) => setLocalUI({ ...localUI, to })}
             />
           </div>
         )}
@@ -276,7 +282,11 @@ export default function Filters({
         <Button
           type="button"
           variant="outline"
-          onClick={handleReset}
+          onClick={(e) => {
+            onApply();
+            commitReset();
+            e.currentTarget.blur();
+          }}
           disabled={loading}
         >
           Reset
@@ -284,7 +294,11 @@ export default function Filters({
         <Button
           type="button"
           variant="primary"
-          onClick={handleApply}
+          onClick={(e) => {
+            onApply();
+            commitApply();
+            e.currentTarget.blur();
+          }}
           disabled={loading}
         >
           {loading ? 'Applying…' : 'Apply'}
