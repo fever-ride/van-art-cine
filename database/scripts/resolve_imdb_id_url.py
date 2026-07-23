@@ -15,11 +15,16 @@ import re
 from typing import Optional, Dict, Any, List
 from pathlib import Path
 
+import psycopg2
 import requests
 from dotenv import load_dotenv
 from psycopg2.extras import RealDictCursor
 
-from db_helper import conn_open, norm_title, remove_parentheses
+from db_helper import conn_open, norm_title, remove_parentheses, reconnect
+from http_retry import get_with_retry
+from log_setup import get_logger
+
+log = get_logger("resolve_imdb_id_url")
 
 # ---------- Config ----------
 # Load environment variables from .env in database directory
@@ -28,18 +33,19 @@ DB_DIR = SCRIPT_DIR.parent
 ENV_PATH = DB_DIR / ".env"
 
 if not ENV_PATH.exists():
-    print(f"Error: Configuration file not found: {ENV_PATH}", file=sys.stderr)
-    print("Please ensure .env file exists with TMDB_API_KEY (and DATABASE_URL).", file=sys.stderr)
+    log.error(f"Configuration file not found: {ENV_PATH}")
+    log.error("Please ensure .env file exists with TMDB_API_KEY (and DATABASE_URL).")
     sys.exit(1)
 
 load_dotenv(ENV_PATH)
 
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 if not TMDB_API_KEY:
-    print("Error: TMDB_API_KEY not found in .env file", file=sys.stderr)
+    log.error("TMDB_API_KEY not found in .env file")
     sys.exit(1)
 
 TMDB_BASE = "https://api.themoviedb.org/3"
+HTTP = requests.Session()
 
 # Determine project root directory (parent of database/)
 PROJECT_ROOT = DB_DIR.parent
@@ -52,8 +58,7 @@ try:
     with open(CACHE_PATH, "r", encoding="utf-8") as f:
         CACHE = json.load(f)
 except Exception as e:
-    print(
-        f"Note: Could not load cache from {CACHE_PATH}: {e}", file=sys.stderr)
+    log.warning(f"Could not load cache from {CACHE_PATH}: {e}")
     CACHE = {}
 
 
@@ -82,35 +87,24 @@ def _reset_tmdb_http_stats() -> None:
         _TMDB_HTTP_STATS[k] = 0
 
 
-def _bump_tmdb_http_stats(status_code: int) -> None:
-    if status_code == 429:
-        _TMDB_HTTP_STATS["http_429"] += 1
-    elif 400 <= status_code < 500:
-        _TMDB_HTTP_STATS["http_4xx"] += 1
-    elif status_code >= 500:
-        _TMDB_HTTP_STATS["http_5xx"] += 1
-
-
 def tmdb_get(path: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
-    Call a TMDB API endpoint with the shared API key and basic error handling.
+    Call a TMDB API endpoint with the shared API key.
+    Retries on rate limiting (429), server errors (5xx), and transient
+    network errors before giving up.
     Returns the parsed JSON response on HTTP 200, or None on any error/non-200 status.
     """
     url = f"{TMDB_BASE}/{path}"
     params = dict(params or {})
     params["api_key"] = TMDB_API_KEY
-    try:
-        resp = requests.get(url, params=params, timeout=15)
-        if resp.status_code == 200:
-            return resp.json()
-        _bump_tmdb_http_stats(resp.status_code)
-        print(
-            f"TMDB API error {resp.status_code}: {resp.text}", file=sys.stderr)
+    resp = get_with_retry(
+        HTTP, url, params, stats=_TMDB_HTTP_STATS, label="TMDB")
+    if resp is None:
         return None
-    except Exception as e:
-        _TMDB_HTTP_STATS["request_exc"] += 1
-        print(f"TMDB API request failed: {e}", file=sys.stderr)
-        return None
+    if resp.status_code == 200:
+        return resp.json()
+    log.warning(f"TMDB API error {resp.status_code}: {resp.text}")
+    return None
 
 
 def search_tmdb_movies(query: str, year: Optional[int]) -> List[Dict[str, Any]]:
@@ -280,52 +274,86 @@ def main():
             )
             films = cursor.fetchall()
 
-        updated, not_found = 0, 0
+        updated, not_found, reconnects = 0, 0, 0
 
         for film in films:
-            # If already has both IDs and a poster, just ensure imdb_url exists
-            if film["imdb_id"] and film["tmdb_id"] and film["poster_path"]:
-                with conn.cursor() as cursor:
-                    url = make_imdb_url(film["imdb_id"])
-                    if url:
-                        cursor.execute(
-                            "UPDATE film SET imdb_url = COALESCE(imdb_url, %s) WHERE id = %s",
-                            (url, film["id"]),
-                        )
-                continue
+            # The slow, unpredictable part (TMDB lookup) happens BEFORE we touch
+            # the DB, so no transaction is ever held open across it. If the
+            # connection was dropped server-side while we were waiting on TMDB
+            # (e.g. an idle-connection timeout on a pooled/serverless Postgres),
+            # we reconnect once and retry this single row's write instead of
+            # losing the whole run.
+            ids = None
+            if not (film["imdb_id"] and film["tmdb_id"] and film["poster_path"]):
+                ids = find_tmdb_and_imdb(film["title"], film["year"])
 
-            ids = find_tmdb_and_imdb(film["title"], film["year"])
-            if ids and (ids["imdb_id"] or ids["tmdb_id"]):
-                update_film_ids(
-                    conn,
-                    film["id"],
-                    ids.get("imdb_id"),
-                    ids.get("tmdb_id"),
-                    ids.get("poster_path"),
-                )
-                print(
-                    f"Updated: {film['title']} ({film['year']}) "
-                    f"→ IMDb: {ids.get('imdb_id')}, TMDB: {ids.get('tmdb_id')}, "
-                    f"poster_path: {ids.get('poster_path')}"
-                )
-                updated += 1
-            else:
-                print(f"Not found: {film['title']} ({film['year']})")
-                not_found += 1
+            for attempt in range(2):
+                try:
+                    if ids is None:
+                        # Already has both IDs and a poster; just ensure imdb_url exists.
+                        with conn.cursor() as cursor:
+                            url = make_imdb_url(film["imdb_id"])
+                            if url:
+                                cursor.execute(
+                                    "UPDATE film SET imdb_url = COALESCE(imdb_url, %s) WHERE id = %s",
+                                    (url, film["id"]),
+                                )
+                        conn.commit()
+                    elif ids["imdb_id"] or ids["tmdb_id"]:
+                        update_film_ids(
+                            conn,
+                            film["id"],
+                            ids.get("imdb_id"),
+                            ids.get("tmdb_id"),
+                            ids.get("poster_path"),
+                        )
+                        conn.commit()
+                        log.info(
+                            f"Updated: {film['title']} ({film['year']}) "
+                            f"→ IMDb: {ids.get('imdb_id')}, TMDB: {ids.get('tmdb_id')}, "
+                            f"poster_path: {ids.get('poster_path')}"
+                        )
+                        updated += 1
+                    else:
+                        log.info(f"Not found: {film['title']} ({film['year']})")
+                        not_found += 1
+                    break  # row handled (written or intentionally skipped)
+                except psycopg2.OperationalError as e:
+                    log.warning(
+                        f"DB connection lost while writing {film['title']!r} ({e}); "
+                        f"reconnecting..."
+                    )
+                    conn = reconnect(conn)
+                    reconnects += 1
+                    # loop again for one retry attempt; on second failure we move on
+                    if attempt == 1:
+                        log.error(
+                            f"Giving up on {film['title']!r} after reconnect retry")
 
         # Final pass to fill any remaining imdb_url gaps
-        filled = backfill_imdb_urls(conn)
+        try:
+            filled = backfill_imdb_urls(conn)
+            conn.commit()
+        except psycopg2.OperationalError as e:
+            log.warning(
+                f"DB connection lost during imdb_url backfill pass ({e}); "
+                f"reconnecting and retrying once..."
+            )
+            conn = reconnect(conn)
+            reconnects += 1
+            filled = backfill_imdb_urls(conn)
+            conn.commit()
 
-        print(
+        log.info(
             f"Done. Updated IDs: {updated}, Not found: {not_found}, IMDb URLs filled: {filled}")
-        print("--- TMDB API (HTTP) summary ---")
-        print(
-            f"  429 rate limit: {_TMDB_HTTP_STATS['http_429']}  |  "
+        if reconnects:
+            log.info(f"DB reconnected {reconnects} time(s) mid-run")
+        log.info(
+            f"TMDB API summary — 429 rate limit: {_TMDB_HTTP_STATS['http_429']}  |  "
             f"4xx (other): {_TMDB_HTTP_STATS['http_4xx']}  |  "
             f"5xx: {_TMDB_HTTP_STATS['http_5xx']}  |  "
             f"request errors: {_TMDB_HTTP_STATS['request_exc']}"
         )
-        conn.commit()
     finally:
         conn.close()
 

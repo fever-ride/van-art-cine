@@ -17,6 +17,11 @@ yarn-error.log*
 __pycache__/
 *.py[cod]
 *$py.class
+.venv/
+venv/
+
+# database pipeline run logs (database/scripts/log_setup.py)
+database/logs/
 
 # OS / editor cruft
 .DS_Store

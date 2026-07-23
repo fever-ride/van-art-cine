@@ -69,6 +69,21 @@ COMMON USE CASES:
 
   # 8) Custom subset, e.g. just re-load JSON and re-merge screenings
   python run_all.py --steps load_json,merge_staging_to_live
+
+NOT PART OF THIS PIPELINE (by design — run separately, e.g. weekly cron):
+
+  omdb_api (step 4 above) only fetches OMDb data for films that have NEVER
+  been enriched (film.omdb_synced_at IS NULL) — cheap, safe to run every
+  time. Ratings drift over time, though, so refreshing them for
+  already-enriched films is a SEPARATE script, deliberately not a step
+  here, so it doesn't silently re-spend OMDb quota on every pipeline run:
+
+    python scripts/refresh_ratings.py               # films unrefreshed for 30+ days
+    python scripts/refresh_ratings.py --dry-run     # preview only, no API calls / writes
+
+  See refresh_ratings.py's module docstring and TROUBLESHOOTING.md
+  ("Data pipeline: resolve_imdb_id_url dies mid-run...") for why this is
+  split out this way.
 """
 
 from __future__ import annotations
@@ -82,6 +97,10 @@ import argparse
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
+
+from log_setup import get_logger  # noqa: E402  (needs sys.path patched above)
+
+log = get_logger("run_all")
 
 # ----------------------------
 # Step configuration
@@ -218,7 +237,7 @@ def main(argv: List[str] | None = None) -> None:
     try:
         steps = parse_steps(args.steps)
     except ValueError as e:
-        print(f"Error: {e}")
+        log.error(f"Invalid --steps value: {e}")
         parser.print_help()
         sys.exit(2)
 
@@ -229,20 +248,15 @@ def main(argv: List[str] | None = None) -> None:
     # 3) Enforce merge order if both present
     steps = ensure_merge_order(steps)
 
-    print("=" * 60)
-    print("Data Enrichment Pipeline")
-    print("=" * 60)
-    print("Running steps:")
-    for s in steps:
-        print(f"  - {s}")
+    log.info("Data Enrichment Pipeline starting")
+    log.info(f"Running steps: {', '.join(steps)}")
     if args.dry_run and any(s in MERGE_STEPS for s in steps):
-        print("\nNOTE: merge steps will run in DRY RUN mode (no changes).")
-    print()
+        log.info("Merge steps will run in DRY RUN mode (no changes).")
 
     results = []
 
     for step in steps:
-        print(f"\n{'=' * 60}\nStarting step: {step}\n{'=' * 60}")
+        log.info(f"Starting step: {step}")
         start = time.time()
 
         try:
@@ -254,29 +268,29 @@ def main(argv: List[str] | None = None) -> None:
                 import_and_run(step)
 
             elapsed = time.time() - start
-            print(f"✅ Completed {step} in {elapsed:.1f}s")
+            log.info(f"Completed {step} in {elapsed:.1f}s")
             results.append((step, "ok", None))
 
         except Exception as e:
             elapsed = time.time() - start
-            print(f"❌ Step {step} failed after {elapsed:.1f}s: {e}")
+            log.exception(f"Step {step} failed after {elapsed:.1f}s: {e}")
             results.append((step, "error", str(e)))
             if args.stop_on_error:
-                print("\nStopping due to --stop-on-error")
+                log.warning("Stopping due to --stop-on-error")
                 break
 
-    print(f"\n{'=' * 60}\nSummary\n{'=' * 60}")
+    log.info("Pipeline summary:")
     for step, status, info in results:
         if status == "ok":
-            print(f"  ✅ {step}: OK")
+            log.info(f"  {step}: OK")
         else:
-            print(f"  ❌ {step}: ERROR - {info}")
+            log.error(f"  {step}: ERROR - {info}")
 
     if any(r[1] == "error" for r in results):
-        print("\n⚠️  Pipeline completed with errors")
+        log.warning("Pipeline completed with errors")
         sys.exit(1)
     else:
-        print("\n🎉 Pipeline completed successfully!")
+        log.info("Pipeline completed successfully")
 
 
 if __name__ == "__main__":

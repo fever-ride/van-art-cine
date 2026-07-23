@@ -37,6 +37,9 @@ from db_helper import (
 )
 
 from ai_cleaning import ai_clean_title_and_tags
+from log_setup import get_logger
+
+log = get_logger("load_json")
 
 # =========================
 # Config
@@ -469,7 +472,7 @@ def load_source(
                 str(t).strip() for t in base_screening_tags if str(t).strip()
             ]
         except Exception as e:
-            print(
+            log.warning(
                 f"[AI FALLBACK] source={source_name} title='{raw_title}' error={e}")
             clean_title = raw_title
             base_screening_tags = []
@@ -496,7 +499,7 @@ def load_source(
             date_str = (st.get("date") or "").strip()
             time_str = (st.get("time") or "").strip()
             if is_missing_token(date_str) or is_missing_token(time_str):
-                print(
+                log.warning(
                     f"[SKIP] {source_name}: '{raw_title}' missing time/date → "
                     f"date='{date_str}' time='{time_str}'"
                 )
@@ -601,30 +604,26 @@ def main():
     else:
         # No args -> use auto-discovered latest files under DATA_DIR
         if not os.path.isdir(DATA_DIR):
-            print(f"Error: Data directory not found: {DATA_DIR}")
-            print(
+            log.error(f"Data directory not found: {DATA_DIR}")
+            log.error(
                 "Run this script from the project root or specify input files on the command line.")
             sys.exit(1)
 
         files = find_latest_files(DATA_DIR)
         if not files:
-            print(f"Error: No screening JSON files found in: {DATA_DIR}")
-            print(
+            log.error(f"No screening JSON files found in: {DATA_DIR}")
+            log.error(
                 "Expected files named like 'cinematheque_screenings_YYYYMMDD_HHMMSS.json', etc.")
             sys.exit(1)
 
     # 2. Sanity-check file existence
     missing = [f for f in files if not os.path.isfile(f)]
     if missing:
-        print("Error: Some input files were not found:")
-        for f in missing:
-            print(f"  {f}")
+        log.error(f"Some input files were not found: {', '.join(missing)}")
         sys.exit(1)
 
     # 3. Log what we are about to load
-    print(f"Loading {len(files)} files:")
-    for f in files:
-        print(f"  {f}")
+    log.info(f"Loading {len(files)} file(s): {', '.join(files)}")
 
     # 4. Open DB connection and load each file into staging
     conn = conn_open()
@@ -640,8 +639,8 @@ def main():
                     elif "rio" in name:
                         load_rio(cur, fp)
                     else:
-                        print(f"[SKIP] Unrecognized file: {fp}")
-        print("✅ Staging load complete. Run merge SQL to promote to live screening table.")
+                        log.warning(f"[SKIP] Unrecognized file: {fp}")
+        log.info("Staging load complete. Run merge SQL to promote to live screening table.")
     finally:
         conn.close()
 

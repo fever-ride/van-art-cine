@@ -29,6 +29,9 @@ Usage:
 import argparse
 from datetime import datetime
 from db_helper import conn_open
+from log_setup import get_logger
+
+log = get_logger("merge_staging_to_live")
 
 # ---------------------------------------------------------------------------
 # SQL statements
@@ -237,6 +240,9 @@ def run_merge(dry_run: bool) -> None:
                     cur.execute(SQL_PREVIEW_DEACTIVATE, (cutoff,))
                     preview_rows = cur.fetchall()
 
+                    # Plain print(), not logging: this is the actual answer to
+                    # the --dry-run preview request (a listing to read), not
+                    # an operational log record. See log_setup.py's docstring.
                     print("\n[DRY RUN] Screenings that would be deactivated:")
                     if not preview_rows:
                         print("  (none)")
@@ -283,13 +289,13 @@ def run_merge(dry_run: bool) -> None:
                 if dry_run:
                     # preview only → rollback everything inside this transaction
                     conn.rollback()
-                    print(
-                        f"\n[DRY RUN] rows_in={rows_in}, inserted={rows_inserted}, "
+                    log.info(
+                        f"[DRY RUN] rows_in={rows_in}, inserted={rows_inserted}, "
                         f"updated={rows_updated}, deactivated={rows_deactivated}"
                     )
-                    print("[DRY RUN] Transaction rolled back. No changes applied.")
+                    log.info("[DRY RUN] Transaction rolled back. No changes applied.")
                 else:
-                    print(
+                    log.info(
                         f"rows_in={rows_in}, inserted={rows_inserted}, "
                         f"updated={rows_updated}, deactivated={rows_deactivated}"
                     )
