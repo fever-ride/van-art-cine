@@ -7,6 +7,11 @@ Enrich film records with OMDb metadata (PostgreSQL version).
   rt_rating_pct, imdb_rating, imdb_votes, description)
 - Inserts people (director/writer/cast) via upsert_person / upsert_film_person
 
+Usage:
+    python omdb_api.py                  # never-enriched films only (default)
+    python omdb_api.py --limit 20       # cap this run to 20 films (canary)
+    python omdb_api.py --all            # re-fetch every film regardless of omdb_synced_at
+
 Env:
   - OMDB_API_KEY in database/.env
   - DATABASE_URL in database/.env (used by db_helper.conn_open)
@@ -245,6 +250,14 @@ def main():
              "time — this does NOT refresh them; use a dedicated refresh "
              "job for that.",
     )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Cap how many films to enrich this run (oldest id first). "
+             "Useful for a small canary run against a new environment "
+             "before letting a large batch spend real OMDb quota.",
+    )
     # run_all.py's import_and_run() resets sys.argv to just [module_name]
     # before calling main(), so this is a no-op ([] -> defaults) unless
     # this script is invoked directly, e.g. `python omdb_api.py --all`.
@@ -252,7 +265,9 @@ def main():
 
     conn = conn_open()
     try:
-        films = fetch_films_needing_omdb(conn, include_already_synced=args.all)
+        films = fetch_films_needing_omdb(
+            conn, include_already_synced=args.all, limit=args.limit
+        )
         found, not_found, reconnects = 0, 0, [0]
         omdb_response_false = 0  # HTTP 200 but OMDb says no match
         omdb_stats = {

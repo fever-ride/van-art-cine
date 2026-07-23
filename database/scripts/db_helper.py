@@ -195,7 +195,9 @@ def fetch_films_for_rating_refresh(conn, stale_after_days: int, limit: Optional[
         return cursor.fetchall()
 
 
-def fetch_films_needing_omdb(conn, include_already_synced: bool = False):
+def fetch_films_needing_omdb(
+    conn, include_already_synced: bool = False, limit: Optional[int] = None
+):
     """
     Fetch films for OMDb enrichment.
 
@@ -206,19 +208,25 @@ def fetch_films_needing_omdb(conn, include_already_synced: bool = False):
 
     Pass include_already_synced=True to fetch every film regardless of
     omdb_synced_at (e.g. for a one-off full refresh).
+
+    Pass limit=N to cap how many films are returned (e.g. for a small
+    canary run before letting a large batch through) — oldest id first,
+    same ordering as the unbounded query, so a canary run touches a
+    stable, reproducible subset.
     """
     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
         if include_already_synced:
-            cursor.execute(
-                "SELECT id, title, year, imdb_id, tmdb_id FROM film ORDER BY id"
-            )
+            query = "SELECT id, title, year, imdb_id, tmdb_id FROM film ORDER BY id"
         else:
-            cursor.execute(
-                """
+            query = """
                 SELECT id, title, year, imdb_id, tmdb_id
                 FROM film
                 WHERE omdb_synced_at IS NULL
                 ORDER BY id
                 """
-            )
+        params: list = []
+        if limit is not None:
+            query += " LIMIT %s"
+            params.append(limit)
+        cursor.execute(query, params)
         return cursor.fetchall()

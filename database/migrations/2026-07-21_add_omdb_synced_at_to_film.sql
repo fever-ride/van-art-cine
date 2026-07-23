@@ -11,7 +11,7 @@
 --
 -- Applied to:
 --   [x] local  (vancine @ localhost) — 2026-07-21
---   [ ] production (vancine_postgres @ Render)
+--   [x] production (vancine_postgres @ Render) — 2026-07-23
 
 ALTER TABLE film
   ADD COLUMN IF NOT EXISTS omdb_synced_at TIMESTAMP(0) NULL;
