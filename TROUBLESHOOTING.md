@@ -283,3 +283,113 @@ const handlePageChange = (nextPage: number) => {
 4. Scroll to bottom of results → Next/Prev → lands on screening table top.
 5. Date picker opens fully (not clipped); cannot pick dates before today (Vancouver).
 6. Open `/?page=2`, refresh → still page 2.
+
+---
+
+## Data pipeline: `resolve_imdb_id_url` dies mid-run with "server closed the connection unexpectedly"
+
+A backend/data-eng story: one Postgres transaction quietly grew to span an entire batch job's worth of unreliable external API calls, and the DB itself paid the price.
+
+### Symptom
+
+Running the enrichment pipeline (`database/scripts/run_all.py`, which chains `load_json → resolve_imdb_id_url → merge_duplicate_films → omdb_api → enrich_person_ids → merge_duplicate_persons → merge_staging_to_live`) produced a run log with three different failures in three different steps:
+
+```text
+Step: resolve_imdb_id_url
+psycopg2.OperationalError: server closed the connection unexpectedly
+  This probably means the server terminated abnormally
+  before or while processing the request.
+❌ Step resolve_imdb_id_url failed after 340.2s
+
+Step: omdb_api
+[OMDb] HTTP 401: {"Response":"False","Error":"Request limit reached!"}
+[MISS] ... (repeats for every remaining film)
+
+Step: enrich_person_ids
+Searching: Fran&apos;s Assistant (id=482)
+  ❌ Not found
+```
+
+Three symptoms, but they smelled related: something about how these scripts talk to slow/unreliable external services (TMDB, OMDb) while holding onto a database connection was fragile.
+
+### Investigation
+
+Read `resolve_imdb_id_url.py`'s `main()` as it stood before the fix:
+
+```python
+def main():
+    conn = conn_open()
+    try:
+        films = ...  # SELECT hundreds of rows
+        for film in films:
+            ids = find_tmdb_and_imdb(film["title"], film["year"])  # slow TMDB call
+            if ids and (ids["imdb_id"] or ids["tmdb_id"]):
+                update_film_ids(conn, film["id"], ...)              # DB write, no commit
+        conn.commit()   # <-- the ONLY commit, after the entire loop
+    finally:
+        conn.close()
+```
+
+Three things stood out immediately, all variations on the same root design flaw:
+
+1. **The transaction's lifetime was coupled to the slowest, least predictable part of the program.** `conn` was opened once, and every `find_tmdb_and_imdb()` call in the loop — a network round-trip to TMDB, with its own retry/backoff sleeps — happened *while a transaction was open*. For ~900 films at a few hundred ms–several seconds each (more with rate-limit backoff), that's a transaction held open for minutes, doing nothing DB-related for the vast majority of that time.
+2. **One `commit()` for the whole run.** If anything threw partway through film #500 of 900, none of the previous 499 successful lookups were persisted — the DB rolls back (or the connection just dies) and the run has to start over from zero.
+3. **No retry/backoff around the TMDB calls themselves.** A single 429 (rate limited) or a transient 5xx/timeout just logged an error and returned `None` — no attempt to wait and retry before giving up on that film.
+
+That reframed the "server closed the connection unexpectedly" error: it's very likely Render's managed Postgres (or a proxy in front of it) closing a connection that had been sitting idle-in-transaction for an unusually long time while the script was off talking to TMDB — the DB was being asked to babysit a transaction for a duration it was never designed to tolerate.
+
+### Fix
+
+**Decouple the transaction from the network call, and commit incrementally.** The TMDB lookup for a film now happens entirely *before* any DB cursor is opened for that film; the DB write (a couple of `UPDATE`s) is wrapped in its own short-lived commit immediately after:
+
+```python
+for film in films:
+    ids = find_tmdb_and_imdb(film["title"], film["year"])  # network call, no txn open
+    for attempt in range(2):
+        try:
+            update_film_ids(conn, film["id"], ids["imdb_id"], ids["tmdb_id"], ids["poster_path"])
+            conn.commit()                      # commit per film, not per run
+            break
+        except psycopg2.OperationalError as e: # connection was dropped anyway — reconnect once
+            conn = reconnect(conn)
+            reconnects += 1
+```
+
+This buys three things at once: the transaction is now always short and DB-only (removing the root cause of the idle-in-transaction disconnect), a crash mid-run only loses the *current* row instead of the whole batch, and — belt-and-suspenders — if the connection still gets killed for some other reason, we reconnect and retry that one row instead of crashing the script.
+
+**Added retry/backoff for the external calls themselves** (`database/scripts/http_retry.py`, shared by the TMDB and OMDb call sites): exponential backoff on `429`/`5xx`/network exceptions, honoring `Retry-After` when present, before giving up on a single request.
+
+**Taught the OMDb step to recognize "there is no point retrying" vs. "worth retrying."** OMDb's daily-quota-exhausted response (`HTTP 401` + `"Request limit reached!"`) is not a transient error — retrying it, or even continuing to the next film, just burns more guaranteed-401 requests. The fix raises a dedicated `OmdbQuotaExceeded` exception that stops the run immediately with a clear message, instead of looping through every remaining film logging identical misses.
+
+### Bonus findings (surfaced while hardening, not the original ask)
+
+Fixing the commit strategy meant re-reading and testing this code path closely, which surfaced two more pre-existing, unrelated bugs:
+
+- **HTML entities leaking into stored/searched text.** OMDb returns fields like `Genre`, `Plot`, and person names with HTML entities un-decoded (`Fran&apos;s Assistant` instead of `Fran's Assistant`). That log line above (`enrich_person_ids` failing to find "Fran&apos;s Assistant" on TMDB) wasn't a TMDB matching problem — TMDB was being asked to search for a string containing literal HTML markup. Fixed by running `html.unescape()` on every OMDb text field before it's stored or used in a downstream search.
+- **`"N/A"` being stored as if it were a real person.** OMDb returns the literal string `"N/A"` (not an empty field) when a film has no director/writer/cast on record. The pipeline had been splitting that string on commas and `upsert_person()`-ing the result — so a "person" named `N/A` had quietly accumulated **146** director/writer/cast links across the catalog. Found this by writing a quick synthetic-input test for the refactored write path (no real API call needed) — it immediately produced an `N/A` row in the results. Fixed the filter, then cleaned up the historical pollution.
+
+**Also fixed the "hitting the quota wall makes zero forward progress" problem.** The OMDb step re-fetched *every* film on *every* run, with no memory of which films had already been enriched. So hitting the daily quota limit meant the next run would start over from film #1 and hit the same wall at roughly the same point — never making net progress. Added an `omdb_synced_at` timestamp column (`database/migrations/2026-07-21_add_omdb_synced_at_to_film.sql`) and made the default query only select films where it `IS NULL`, stamping it on a successful write *and* on a definitive "OMDb has no record of this title" response (both are real answers that don't need re-querying) — but deliberately leaving it untouched on a transient failure, so that film stays eligible for retry on the next run. A `--all` flag preserves the old "re-fetch everything" behavior for deliberate full refreshes.
+
+### Prevention / lessons
+
+1. **A database transaction's lifetime should never be coupled to an external network call's lifetime.** If a loop body does "slow, unreliable I/O" + "DB write", do the I/O first, then open/commit/close the DB work as its own short unit — for every iteration, not just once for the whole loop.
+2. **Any batch job calling third-party APIs should commit incrementally**, and be written assuming it *will* die partway through eventually (rate limits, network blips, the process getting killed) — so restarting doesn't mean redoing everything from zero.
+3. **Not all failures deserve a retry.** Distinguish "worth retrying" (429, 5xx, timeouts) from "worth aborting the whole run immediately" (a definitive quota-exhausted response — retrying just wastes more calls) from "a legitimate negative result" (HTTP 200 but no data) that should be recorded so it isn't retried forever either.
+4. **A small synthetic-input test for a refactored code path is worth writing even when you can't hit the real API** (ours was rate-limited at the time) — it caught a completely unrelated, months-old data-quality bug in the first run.
+5. **Incremental/idempotent design pays for itself the first time a long job fails partway through.** The existing TMDB step already cached lookups to a local JSON file for this reason; extending the same "remember what's already done" idea to the OMDb step (via `omdb_synced_at`) closed the same gap there.
+
+### Key code references
+
+- `database/scripts/http_retry.py` — shared retry/backoff for TMDB + OMDb requests
+- `database/scripts/db_helper.py` — `reconnect()`, `fetch_films_needing_omdb()`
+- `database/scripts/resolve_imdb_id_url.py` — `main()` per-row commit + reconnect
+- `database/scripts/omdb_api.py` — `OmdbQuotaExceeded`, `_write_with_reconnect()`, `_clean_text()` (HTML unescape), N/A filter, `--all` flag
+- `database/migrations/2026-07-21_add_omdb_synced_at_to_film.sql`
+
+### Quick verify
+
+1. `python omdb_api.py` on an already-fully-enriched catalog → "Fetching OMDb data for 0 film(s)" — no wasted requests.
+2. `python omdb_api.py --all` → re-fetches every film regardless of `omdb_synced_at`.
+3. Kill/rate-limit the network mid-run → previously-processed rows stay committed; re-running only touches the remaining films.
+4. `SELECT name FROM person WHERE name = 'N/A'` → no rows.
+5. A film with `&apos;`/`&eacute;`-style entities in its OMDb `Plot`/person names → stored and displayed decoded, not as raw markup.

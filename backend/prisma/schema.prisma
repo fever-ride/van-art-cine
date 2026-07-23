@@ -63,6 +63,12 @@ model film {
   poster_path      String?         @db.VarChar(255)
   tags             String[]        @db.Text
   created_at       DateTime?       @default(now()) @db.Timestamp(0)
+  /// Last time database/scripts/omdb_api.py successfully synced this film
+  /// (either wrote OMDb data, or got a definitive "no OMDb record" answer).
+  /// NULL = never enriched. Used to make omdb_api.py incremental (only
+  /// backfills rows where this is NULL) and to pick refresh candidates in
+  /// database/scripts/refresh_ratings.py (rows stale beyond --days).
+  omdb_synced_at   DateTime?       @db.Timestamp(0)
   film_person      film_person[]
   screening        screening[]
   stg_screening    stg_screening[]

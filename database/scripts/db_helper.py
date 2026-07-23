@@ -9,21 +9,24 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 
+from log_setup import get_logger
+
+log = get_logger("db_helper")
+
 # ---------- Load environment ----------
 SCRIPT_DIR = Path(__file__).resolve().parent
 DB_DIR = SCRIPT_DIR.parent
 ENV_PATH = DB_DIR / ".env"
 
 if not ENV_PATH.exists():
-    print(
-        f"Error: Database configuration file not found: {ENV_PATH}", file=sys.stderr)
+    log.error(f"Database configuration file not found: {ENV_PATH}")
     sys.exit(1)
 
 load_dotenv(ENV_PATH)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    print("Error: Missing DATABASE_URL in .env", file=sys.stderr)
+    log.error("Missing DATABASE_URL in .env")
     sys.exit(1)
 
 
@@ -33,8 +36,23 @@ def conn_open():
     try:
         return psycopg2.connect(DATABASE_URL)
     except Exception as e:
-        print(f"Error: Failed to connect to Postgres: {e}", file=sys.stderr)
+        log.error(f"Failed to connect to Postgres: {e}")
         raise
+
+
+def reconnect(conn):
+    """
+    Close a (possibly already-dead) connection and open a fresh one.
+
+    Useful when a connection was held open across slow external API calls
+    and the server (or a pooler in front of it) closed it server-side —
+    e.g. psycopg2.OperationalError: "server closed the connection unexpectedly".
+    """
+    try:
+        conn.close()
+    except Exception:
+        pass
+    return conn_open()
 
 
 # ---------- Text normalization helpers ----------
@@ -149,4 +167,58 @@ def fetch_all_films(conn):
     """Fetch all films as a list of dictionaries."""
     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
         cursor.execute("SELECT id, title, year, imdb_id, tmdb_id FROM film")
+        return cursor.fetchall()
+
+
+def fetch_films_for_rating_refresh(conn, stale_after_days: int, limit: Optional[int] = None):
+    """
+    Fetch already-enriched films whose ratings are due for a refresh
+    (omdb_synced_at older than `stale_after_days`), oldest first.
+
+    Only films that have been enriched at least once (omdb_synced_at IS NOT
+    NULL) are eligible — this is a refresh job, not a backfill job. Use
+    fetch_films_needing_omdb() for backfilling never-enriched films.
+    """
+    query = """
+        SELECT id, title, year, imdb_id, tmdb_id, omdb_synced_at
+        FROM film
+        WHERE omdb_synced_at IS NOT NULL
+          AND omdb_synced_at < NOW() - (%s * INTERVAL '1 day')
+        ORDER BY omdb_synced_at ASC
+    """
+    params: list = [stale_after_days]
+    if limit is not None:
+        query += " LIMIT %s"
+        params.append(limit)
+    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+        cursor.execute(query, params)
+        return cursor.fetchall()
+
+
+def fetch_films_needing_omdb(conn, include_already_synced: bool = False):
+    """
+    Fetch films for OMDb enrichment.
+
+    By default, only returns films that have never been successfully
+    enriched (omdb_synced_at IS NULL), so re-running the pipeline after
+    hitting a rate limit makes forward progress instead of re-fetching
+    (and re-spending quota on) films that are already done.
+
+    Pass include_already_synced=True to fetch every film regardless of
+    omdb_synced_at (e.g. for a one-off full refresh).
+    """
+    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+        if include_already_synced:
+            cursor.execute(
+                "SELECT id, title, year, imdb_id, tmdb_id FROM film ORDER BY id"
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT id, title, year, imdb_id, tmdb_id
+                FROM film
+                WHERE omdb_synced_at IS NULL
+                ORDER BY id
+                """
+            )
         return cursor.fetchall()

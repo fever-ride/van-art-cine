@@ -50,6 +50,9 @@ Usage:
 import sys
 from typing import List, Tuple, Dict, Any
 from db_helper import conn_open
+from log_setup import get_logger
+
+log = get_logger("merge_duplicate_persons")
 
 
 def find_duplicates_by_field(conn, field: str) -> List[Tuple[Any, List[int]]]:
@@ -156,10 +159,10 @@ def merge_persons(conn, keep_id: int, merge_ids: List[int], dry_run: bool = Fals
     keep_details = get_person_details(conn, keep_id)
 
     prefix = "[DRY RUN] " if dry_run else ""
-    print(f"\n{prefix}Merging into: {keep_details.get('name')} (ID: {keep_id})")
-    print(f"  IMDB: {keep_details.get('imdb_id') or 'None'}")
-    print(f"  TMDB: {keep_details.get('tmdb_id') or 'None'}")
-    print(f"  Normalized: {keep_details.get('normalized_name')}")
+    log.info(f"{prefix}Merging into: {keep_details.get('name')} (ID: {keep_id})")
+    log.info(f"  IMDB: {keep_details.get('imdb_id') or 'None'}")
+    log.info(f"  TMDB: {keep_details.get('tmdb_id') or 'None'}")
+    log.info(f"  Normalized: {keep_details.get('normalized_name')}")
 
     total_refs = 0
 
@@ -168,7 +171,7 @@ def merge_persons(conn, keep_id: int, merge_ids: List[int], dry_run: bool = Fals
         ref_count = count_film_references(conn, mid)
         total_refs += ref_count
 
-        print(
+        log.info(
             f"  {prefix}Merging: {merge_details.get('name')} (ID: {mid}) - {ref_count} film references")
 
         if dry_run:
@@ -193,7 +196,7 @@ def merge_persons(conn, keep_id: int, merge_ids: List[int], dry_run: bool = Fals
             # Delete the duplicate person row itself
             cur.execute("DELETE FROM person WHERE id = %s", (mid,))
 
-    print(f"  {prefix}Total references to merge: {total_refs}")
+    log.info(f"  {prefix}Total references to merge: {total_refs}")
 
     # Enhance kept record with best external IDs across the group
     if not dry_run and merge_ids:
@@ -225,27 +228,22 @@ def merge_persons(conn, keep_id: int, merge_ids: List[int], dry_run: bool = Fals
                 updates.append(f"TMDB: {best_tmdb}")
 
             if updates:
-                print(f"  Enhanced kept record with: {', '.join(updates)}")
+                log.info(f"  Enhanced kept record with: {', '.join(updates)}")
 
 
 def main():
     dry_run = "--dry-run" in sys.argv
     if dry_run:
-        print("=" * 60)
-        print("DRY RUN MODE - No changes will be made to the database")
-        print("=" * 60)
-        print()
+        log.info("DRY RUN MODE - No changes will be made to the database")
 
     conn = conn_open()
     try:
         total_merged = 0
 
         # 1) by imdb_id
-        print("=" * 60)
-        print("Step 1: Finding duplicates by imdb_id...")
-        print("=" * 60)
+        log.info("Step 1: Finding duplicates by imdb_id...")
         imdb_dupes = find_duplicates_by_field(conn, "imdb_id")
-        print(f"Found {len(imdb_dupes)} groups")
+        log.info(f"Found {len(imdb_dupes)} groups")
         for imdb, ids in imdb_dupes:
             keep = choose_best_record(conn, ids)
             merge_ids = [x for x in ids if x != keep]
@@ -253,11 +251,9 @@ def main():
             total_merged += len(merge_ids)
 
         # 2) by tmdb_id
-        print("\n" + "=" * 60)
-        print("Step 2: Finding duplicates by tmdb_id...")
-        print("=" * 60)
+        log.info("Step 2: Finding duplicates by tmdb_id...")
         tmdb_dupes = find_duplicates_by_field(conn, "tmdb_id")
-        print(f"Found {len(tmdb_dupes)} groups")
+        log.info(f"Found {len(tmdb_dupes)} groups")
         for tmdb, ids in tmdb_dupes:
             keep = choose_best_record(conn, ids)
             merge_ids = [x for x in ids if x != keep]
@@ -265,11 +261,9 @@ def main():
             total_merged += len(merge_ids)
 
         # 3) by normalized_name
-        print("\n" + "=" * 60)
-        print("Step 3: Finding duplicates by normalized_name...")
-        print("=" * 60)
+        log.info("Step 3: Finding duplicates by normalized_name...")
         name_dupes = find_duplicates_by_field(conn, "normalized_name")
-        print(f"Found {len(name_dupes)} groups")
+        log.info(f"Found {len(name_dupes)} groups")
         for normname, ids in name_dupes:
             keep = choose_best_record(conn, ids)
             merge_ids = [x for x in ids if x != keep]
@@ -277,22 +271,17 @@ def main():
             total_merged += len(merge_ids)
 
         if dry_run:
-            print("\n" + "=" * 60)
-            print("✅ DRY RUN COMPLETE")
-            print(f"Would merge {total_merged} duplicate person records")
-            print("Run without --dry-run to apply changes")
-            print("=" * 60)
+            log.info(
+                f"DRY RUN COMPLETE — would merge {total_merged} duplicate person "
+                f"records. Run without --dry-run to apply changes."
+            )
         else:
             conn.commit()
-            print("\n" + "=" * 60)
-            print(f"✅ SUCCESS: Merged {total_merged} duplicate person records")
-            print("=" * 60)
+            log.info(f"SUCCESS: Merged {total_merged} duplicate person records")
 
     except Exception as e:
         conn.rollback()
-        print(f"\n❌ ERROR: {e}", file=sys.stderr)
-        import traceback
-        traceback.print_exc()
+        log.exception(f"Merge failed: {e}")
         sys.exit(1)
     finally:
         conn.close()

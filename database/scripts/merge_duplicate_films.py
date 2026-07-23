@@ -52,6 +52,9 @@ Notes:
 import sys
 from typing import List, Tuple, Dict, Any
 from db_helper import conn_open
+from log_setup import get_logger
+
+log = get_logger("merge_duplicate_films")
 
 
 # ---------------------------------------------------------------------------
@@ -318,35 +321,35 @@ def merge_film_group(conn, keep_id: int, merge_ids: List[int], dry_run: bool = F
     keep_details = get_film_details(conn, keep_id)
     if not keep_details:
         prefix = "[DRY RUN] " if dry_run else ""
-        print(f"{prefix}WARNING: keep_id={keep_id} not found; skipping group.")
+        log.warning(f"{prefix}keep_id={keep_id} not found; skipping group.")
         return
 
     prefix = "[DRY RUN] " if dry_run else ""
-    print(
-        f"\n{prefix}Merging films into: '{keep_details.get('title')}' (ID: {keep_id})")
-    print(f"  IMDB ID: {keep_details.get('imdb_id') or 'None'}")
-    print(f"  TMDB ID: {keep_details.get('tmdb_id') or 'None'}")
-    print(f"  IMDB URL: {keep_details.get('imdb_url') or 'None'}")
+    log.info(
+        f"{prefix}Merging films into: '{keep_details.get('title')}' (ID: {keep_id})")
+    log.info(f"  IMDB ID: {keep_details.get('imdb_id') or 'None'}")
+    log.info(f"  TMDB ID: {keep_details.get('tmdb_id') or 'None'}")
+    log.info(f"  IMDB URL: {keep_details.get('imdb_url') or 'None'}")
 
     total_refs = 0
 
     for mid in merge_ids:
         merge_details = get_film_details(conn, mid)
         if not merge_details:
-            print(f"  {prefix}Film ID {mid} already missing; skipping.")
+            log.warning(f"  {prefix}Film ID {mid} already missing; skipping.")
             continue
 
         ref_counts = count_film_references(conn, mid)
         total_refs += ref_counts["total"]
 
-        print(
+        log.info(
             f"  {prefix}Merging film ID {mid}: '{merge_details.get('title')}' "
             f"(screenings={ref_counts['screening_count']}, "
             f"staging={ref_counts['stg_screening_count']}, "
             f"film_person={ref_counts['film_person_count']})"
         )
 
-    print(f"  {prefix}Total references to move from losing films: {total_refs}")
+    log.info(f"  {prefix}Total references to move from losing films: {total_refs}")
 
     if dry_run:
         return
@@ -402,7 +405,7 @@ def merge_film_group(conn, keep_id: int, merge_ids: List[int], dry_run: bool = F
             # 4) Delete the losing film row itself
             cur.execute("DELETE FROM film WHERE id = %s", (mid,))
 
-    print(f"  {prefix}Group merged into film ID {keep_id}")
+    log.info(f"  {prefix}Group merged into film ID {keep_id}")
 
 
 # ---------------------------------------------------------------------------
@@ -412,10 +415,7 @@ def merge_film_group(conn, keep_id: int, merge_ids: List[int], dry_run: bool = F
 def main() -> None:
     dry_run = "--dry-run" in sys.argv
     if dry_run:
-        print("=" * 60)
-        print("DRY RUN MODE - No changes will be made to the database")
-        print("=" * 60)
-        print()
+        log.info("DRY RUN MODE - No changes will be made to the database")
 
     conn = conn_open()
     try:
@@ -425,11 +425,9 @@ def main() -> None:
         seen_ids = set()
 
         # Step 1: merge by imdb_id
-        print("=" * 60)
-        print("Step 1: Finding duplicate films by imdb_id...")
-        print("=" * 60)
+        log.info("Step 1: Finding duplicate films by imdb_id...")
         imdb_dupes = find_film_duplicates_by_field(conn, "imdb_id")
-        print(f"Found {len(imdb_dupes)} duplicate groups by imdb_id")
+        log.info(f"Found {len(imdb_dupes)} duplicate groups by imdb_id")
 
         for imdb_val, ids in imdb_dupes:
             remaining_ids = [fid for fid in ids if fid not in seen_ids]
@@ -445,11 +443,9 @@ def main() -> None:
                 seen_ids.add(fid)
 
         # Step 2: merge by tmdb_id
-        print("\n" + "=" * 60)
-        print("Step 2: Finding duplicate films by tmdb_id...")
-        print("=" * 60)
+        log.info("Step 2: Finding duplicate films by tmdb_id...")
         tmdb_dupes = find_film_duplicates_by_field(conn, "tmdb_id")
-        print(f"Found {len(tmdb_dupes)} duplicate groups by tmdb_id")
+        log.info(f"Found {len(tmdb_dupes)} duplicate groups by tmdb_id")
 
         for tmdb_val, ids in tmdb_dupes:
             remaining_ids = [fid for fid in ids if fid not in seen_ids]
@@ -465,22 +461,17 @@ def main() -> None:
                 seen_ids.add(fid)
 
         if dry_run:
-            print("\n" + "=" * 60)
-            print("DRY RUN COMPLETE")
-            print(f"Would merge {total_merged} duplicate film records")
-            print("Run without --dry-run to apply changes")
-            print("=" * 60)
+            log.info(
+                f"DRY RUN COMPLETE — would merge {total_merged} duplicate film "
+                f"records. Run without --dry-run to apply changes."
+            )
         else:
             conn.commit()
-            print("\n" + "=" * 60)
-            print(f"SUCCESS: Merged {total_merged} duplicate film records")
-            print("=" * 60)
+            log.info(f"SUCCESS: Merged {total_merged} duplicate film records")
 
     except Exception as e:
         conn.rollback()
-        print(f"\nERROR: {e}", file=sys.stderr)
-        import traceback
-        traceback.print_exc()
+        log.exception(f"Merge failed: {e}")
         sys.exit(1)
     finally:
         conn.close()

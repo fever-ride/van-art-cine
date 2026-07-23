@@ -36,6 +36,9 @@ import argparse
 from datetime import datetime, timedelta
 
 from db_helper import conn_open
+from log_setup import get_logger
+
+log = get_logger("edit_screenings_manual")
 
 
 # ---------------------------------------------------------------------------
@@ -159,7 +162,7 @@ def cmd_create(args):
                     ),
                 )
                 new_id = cur.fetchone()[0]
-                print(f"Created screening id={new_id}")
+                log.info(f"Created screening id={new_id}")
     finally:
         conn.close()
 
@@ -191,7 +194,7 @@ def cmd_update(args):
                 )
                 row = cur.fetchone()
                 if not row:
-                    print(f"No screening found with id={args.id}")
+                    log.warning(f"No screening found with id={args.id}")
                     return
 
                 current_film_id, current_cinema_id = row
@@ -249,7 +252,7 @@ def cmd_update(args):
                     params.append(args.is_active)
 
                 if not sets:
-                    print("Nothing to update (no fields provided).")
+                    log.warning("Nothing to update (no fields provided).")
                     return
 
                 sets.append("updated_at = NOW()")
@@ -265,9 +268,9 @@ def cmd_update(args):
                 cur.execute(sql, params)
                 updated = cur.fetchone()
                 if not updated:
-                    print(f"No screening found with id={args.id}")
+                    log.warning(f"No screening found with id={args.id}")
                 else:
-                    print(f"Updated screening id={args.id}")
+                    log.info(f"Updated screening id={args.id}")
     finally:
         conn.close()
 
@@ -293,9 +296,9 @@ def cmd_deactivate(args):
                 )
                 row = cur.fetchone()
                 if not row:
-                    print(f"No screening found with id={args.id}")
+                    log.warning(f"No screening found with id={args.id}")
                 else:
-                    print(f"Deactivated screening id={args.id}")
+                    log.info(f"Deactivated screening id={args.id}")
     finally:
         conn.close()
 
@@ -316,9 +319,9 @@ def cmd_delete(args):
                     "DELETE FROM screening WHERE id = %s RETURNING id", (args.id,))
                 row = cur.fetchone()
                 if not row:
-                    print(f"No screening found with id={args.id}")
+                    log.warning(f"No screening found with id={args.id}")
                 else:
-                    print(f"Deleted screening id={args.id}")
+                    log.info(f"Deleted screening id={args.id}")
     finally:
         conn.close()
 
