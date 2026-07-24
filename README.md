@@ -31,6 +31,8 @@ project-root/
 │
 ├── frontend/            # Next.js client application
 │
+├── presentation/        # Slide deck for project walkthroughs/demos
+│
 ├── scrapers/            # Python + Playwright scraping scripts
 │
 └── tools/               # Developer utilities and test helpers
@@ -51,6 +53,8 @@ backend/
 │   │
 │   ├── controllers/
 │   │   ├── authController.js
+│   │   ├── filmsController.js
+│   │   ├── screeningsController.js
 │   │   ├── userController.js
 │   │   └── watchlistController.js
 │   │
@@ -71,6 +75,8 @@ backend/
 │   │
 │   ├── validators/
 │   │   ├── authValidators.js
+│   │   ├── filmsValidators.js
+│   │   ├── screeningsValidators.js
 │   │   ├── userValidators.js
 │   │   └── watchlistValidators.js
 │   │
@@ -78,9 +84,8 @@ backend/
 │   │   └── ...
 │   │
 │   ├── lib/
-│   │   └── ...
+│   │   └── prismaClient.js  # Shared Prisma Client singleton
 │   │
-│   ├── db.js
 │   └── server.js
 │
 └── prisma/
@@ -106,19 +111,31 @@ frontend/
 │   └── page.tsx             # Homepage (screenings listing + filters)
 │
 ├── components/              # Reusable UI components
+│   ├── auth/                # Auth-related modals/dropdowns
+│   │   ├── CreateAccountModal.tsx
+│   │   └── SignInDropdown.tsx
+│   │
 │   ├── films/               # Components for film detail pages
 │   │   ├── FilmHeader.tsx   # Poster + title block
 │   │   ├── FilmMeta.tsx     # Metadata (cast, description, ...)
 │   │   └── FilmShowtimes.tsx# Upcoming screenings list for a film
 │   │
 │   ├── screenings/          # Components for homepage screening listings
-│   │   ├── Filters.tsx      # Search bar, cinemas, date filters
-│   │   ├── Pagination.tsx   # Pagination controls
-│   │   └── ResultsTable.tsx # Screening listing
+│   │   ├── Filters.tsx            # Search bar, cinemas, date filters
+│   │   ├── Pagination.tsx         # Pagination controls
+│   │   ├── ResultsTable.tsx       # Screening listing
+│   │   └── ScreeningDateInput.tsx # Custom date picker input
+│   │
+│   ├── ui/                  # Low-level shared UI primitives
+│   │   ├── Button.tsx
+│   │   ├── Card.tsx
+│   │   ├── Input.tsx
+│   │   └── buttonStyles.ts
 │   │
 │   ├── watchlist/           # Watchlist-related UI
 │   │   └── WatchlistButton.tsx
 │   │
+│   ├── Footer.tsx           # Global footer
 │   └── NavBar.tsx           # Global navigation bar
 │
 ├── lib/                     # Non-React utilities and helpers
@@ -185,15 +202,16 @@ frontend/
 
 ### User (Auth required)
 
-- `GET   /user/me` — get user profile
-- `PATCH /user/me` — update profile
-- `PATCH /user/me/password` — change password
+- `GET    /user/me` — get user profile
+- `PATCH  /user/me` — update profile
+- `PATCH  /user/me/password` — change password
+- `DELETE /user/me` — delete account
 
 ### Watchlist (Auth required)
 
 - `GET    /watchlist`
 - `POST   /watchlist`
-- `DELETE /watchlist/:id`
+- `DELETE /watchlist/:screeningId`
 - `GET    /watchlist/status`
 - `POST   /watchlist/toggle`
 - `POST   /watchlist/import`
