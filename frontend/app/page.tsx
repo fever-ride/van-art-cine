@@ -157,7 +157,10 @@ function ScreeningsPageInner() {
     settleScrollAfterRefetch();
   }, [screeningsData.loading, screeningsData.items, rowMinHeight]);
 
-  // Fetch all cinemas once, sort alphabetically
+  // Fetch all cinemas once. Ordering (pinned high-traffic venues first, then
+  // alphabetical) and hiding cinemas with no upcoming screenings are both
+  // handled server-side in listCinemas() — trust that order as-is instead of
+  // re-sorting/filtering here, or we'd just undo it.
   useEffect(() => {
     let cancelled = false;
 
@@ -167,11 +170,7 @@ function ScreeningsPageInner() {
         const items = await apiListCinemas();
         if (cancelled) return;
 
-        const sorted = [...items]
-          .filter((c) => c.name !== 'VIFF Centre')
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        setCinemaOptions(sorted);
+        setCinemaOptions(items);
       } catch (e) {
         console.warn('Failed to load cinemas', e);
       } finally {
@@ -212,7 +211,10 @@ function ScreeningsPageInner() {
           className="flex flex-col gap-4 md:flex-row [overflow-anchor:none]"
           style={rowMinHeight ? { minHeight: rowMinHeight } : undefined}
         >
-        <aside className="self-start md:w-[275px] md:flex-shrink-0 md:sticky md:top-30">
+        <aside
+          className="self-start md:w-[275px] md:flex-shrink-0 md:sticky md:top-30
+                     md:max-h-[calc(100vh_-_7.5rem_-_1rem)] md:overflow-y-auto"
+        >
           <Filters
             ui={screeningsUI.ui}
             setUI={screeningsUI.setUI}
