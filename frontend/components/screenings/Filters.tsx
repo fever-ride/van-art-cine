@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { UIState, SetUI } from '@/lib/hooks/useScreeningsUI';
 import { todayYmdInDisplayTimezone } from '@/app/lib/formatDate';
 import ScreeningDateInput from '@/components/screenings/ScreeningDateInput';
@@ -51,6 +51,27 @@ export default function Filters({
 
   const [localQ, setLocalQ] = useState(ui.q);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Detect whether the cinema checklist actually overflows its box, so we
+  // can hint "scroll for more" instead of a hardcoded item-count guess —
+  // stays correct no matter how many cinemas exist or how tall each row is.
+  const cinemaListRef = useRef<HTMLDivElement>(null);
+  const [cinemaListScrollable, setCinemaListScrollable] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = cinemaListRef.current;
+    if (!el) return;
+
+    const checkOverflow = () => {
+      setCinemaListScrollable(el.scrollHeight > el.clientHeight + 1);
+    };
+
+    checkOverflow();
+
+    const resizeObserver = new ResizeObserver(checkOverflow);
+    resizeObserver.observe(el);
+    return () => resizeObserver.disconnect();
+  }, [cinemaOptions]);
 
   const handleSearchChange = (value: string) => {
     setLocalQ(value);
@@ -142,8 +163,9 @@ export default function Filters({
         </div>
 
           <div
+            ref={cinemaListRef}
             className="
-              max-h-[min(50vh,420px)]   /* flexible until 50vh or 420px, whichever is smaller */
+              max-h-[min(24vh,165px)]   /* compact so Apply/Reset stay visible without extra scrolling */
               overflow-y-auto overscroll-contain
               rounded-btn border-[1.5px] border-border bg-surface
               p-3 pr-2                   /* give room so scrollbar doesn't cover text */
@@ -184,7 +206,9 @@ export default function Filters({
 
         <span className="text-xs text-muted">
           {localUI.cinemaIds.length === 0
-            ? 'Showing all cinemas'
+            ? cinemaListScrollable
+              ? 'Scroll for more'
+              : 'Showing all cinemas'
             : `${localUI.cinemaIds.length} cinema${
                 localUI.cinemaIds.length > 1 ? 's' : ''
               } selected`}
