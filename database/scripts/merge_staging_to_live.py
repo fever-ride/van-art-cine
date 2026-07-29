@@ -33,6 +33,21 @@ from log_setup import get_logger
 
 log = get_logger("merge_staging_to_live")
 
+
+class EmptySourceSanityCheckFailed(RuntimeError):
+    """Raised when one of the known, fixed sources has 0 staged rows this
+    run. These venues (Cinematheque, VIFF, Rio) program continuously, so 0
+    staged rows always means the scraper silently produced nothing (site/
+    selector change, transient failure that didn't raise) -- never a real
+    "this venue has no upcoming schedule" state. Aborts the whole merge so
+    a broken scrape can't wipe that source's live schedule."""
+
+
+# Fixed, known set of scraped sources (matches scrapers/*.py and
+# load_json.py's load_cinematheque/load_viff/load_rio). Not configurable --
+# add a new scraper here if one is ever added.
+KNOWN_SOURCES = ("cinematheque", "viff", "rio")
+
 # ---------------------------------------------------------------------------
 # SQL statements
 # ---------------------------------------------------------------------------
@@ -183,6 +198,14 @@ WHERE t.start_at_utc >= %s
 ORDER BY t.start_at_utc, c.name, f.title;
 """
 
+# Per-source row counts in staging, used by the pre-merge sanity check
+# (empty-scrape guard).
+SQL_STAGED_SOURCE_COUNTS = """
+SELECT source, COUNT(*)
+FROM stg_screening
+GROUP BY source
+"""
+
 # Deactivate upcoming non-manual screenings missing in staging.
 SQL_DEACTIVATE = """
 WITH deact AS (
@@ -226,6 +249,25 @@ def run_merge(dry_run: bool) -> None:
                 # 1) rows in staging
                 cur.execute("SELECT COUNT(*) FROM stg_screening")
                 rows_in = cur.fetchone()[0]
+
+                # 1b) Sanity check: these venues program continuously, so 0
+                # staged rows for any known source means the scrape was
+                # silently empty this run. Abort before touching anything
+                # rather than deactivating that source's whole live schedule
+                # on bad data.
+                cur.execute(SQL_STAGED_SOURCE_COUNTS)
+                staged_by_source = dict(cur.fetchall())
+
+                empty_sources = sorted(
+                    source
+                    for source in KNOWN_SOURCES
+                    if staged_by_source.get(source, 0) == 0
+                )
+                if empty_sources:
+                    raise EmptySourceSanityCheckFailed(
+                        f"source(s) {empty_sources} have 0 staged rows this "
+                        "run -- refusing to merge, no changes applied"
+                    )
 
                 # 2) insert new upcoming screenings
                 cur.execute(SQL_INSERT, (run_id, cutoff))

@@ -3,10 +3,18 @@
 Merge duplicate person records in the database (PostgreSQL version).
 
 Strategy:
-1) Find duplicate groups by imdb_id, then tmdb_id, then normalized_name
+1) Find duplicate groups by imdb_id, then tmdb_id
 2) Pick a single record to keep (more external IDs > more refs > earlier created_at > smaller id)
 3) Repoint film_person rows to the kept record, dedup on conflict
 4) Delete merged-away person rows
+
+Intentionally NOT included: merging by normalized_name. Unlike imdb_id/
+tmdb_id, a shared name is not proof of identity -- two different real
+people (e.g. two different editors/composers) can share a normalized name,
+and the merge below is a hard, unattended DELETE with no undo. A prior
+version had a normalized_name pass here; it was removed because it could
+(and, on unattended runs, eventually would) silently merge two distinct
+people, including ones that already had different confirmed imdb_ids.
 
 Usage:
     python scripts/merge_duplicate_persons.py [--dry-run]
@@ -18,7 +26,6 @@ Usage:
 #    The same logical person can appear as a duplicate group in:
 #      - Step 1: imdb_id
 #      - Step 2: tmdb_id
-#      - Step 3: normalized_name
 #    We currently do not track which IDs have already been merged, so some
 #    records may be revisited in later steps. This is mostly harmless because
 #    inserts use ON CONFLICT DO NOTHING, but it can generate redundant work
@@ -44,8 +51,8 @@ Usage:
 #    and re-processing the same logical groups across multiple steps may be
 #    slow. If needed, we could:
 #      - batch queries to reduce round-trips, and/or
-#      - collapse the three passes (imdb_id, tmdb_id, normalized_name) into
-#        a single dedup pass with a unified grouping / scoring strategy.
+#      - collapse the two passes (imdb_id, tmdb_id) into a single dedup
+#        pass with a unified grouping / scoring strategy.
 
 import sys
 from typing import List, Tuple, Dict, Any
@@ -58,10 +65,14 @@ log = get_logger("merge_duplicate_persons")
 def find_duplicates_by_field(conn, field: str) -> List[Tuple[Any, List[int]]]:
     """
     Return a list of (field_value, [person_ids]) where field_value is duplicated.
-    field must be one of: 'imdb_id' (text), 'tmdb_id' (int), 'normalized_name' (text)
+    field must be one of: 'imdb_id' (text), 'tmdb_id' (int)
+
+    normalized_name is deliberately not supported here: a shared name isn't
+    proof two person rows are the same real person, and merging is a hard,
+    unattended DELETE with no undo. See the module docstring.
     """
 
-    if field not in {"imdb_id", "tmdb_id", "normalized_name"}:
+    if field not in {"imdb_id", "tmdb_id"}:
         raise ValueError(f"Unsupported field: {field}")
 
     # Build Postgres-safe non-empty predicate per type
@@ -255,16 +266,6 @@ def main():
         tmdb_dupes = find_duplicates_by_field(conn, "tmdb_id")
         log.info(f"Found {len(tmdb_dupes)} groups")
         for tmdb, ids in tmdb_dupes:
-            keep = choose_best_record(conn, ids)
-            merge_ids = [x for x in ids if x != keep]
-            merge_persons(conn, keep, merge_ids, dry_run)
-            total_merged += len(merge_ids)
-
-        # 3) by normalized_name
-        log.info("Step 3: Finding duplicates by normalized_name...")
-        name_dupes = find_duplicates_by_field(conn, "normalized_name")
-        log.info(f"Found {len(name_dupes)} groups")
-        for normname, ids in name_dupes:
             keep = choose_best_record(conn, ids)
             merge_ids = [x for x in ids if x != keep]
             merge_persons(conn, keep, merge_ids, dry_run)

@@ -128,12 +128,22 @@ def upsert_person(conn, name, imdb_id=None, tmdb_id=None):
             if row:
                 return row[0]
 
-        # 2. Lookup by normalized name
+        # 2. Lookup by normalized name -- weakest signal: a shared name is
+        # not proof of identity, so log it in case it's actually two
+        # different people (nothing prevents that from happening, this
+        # just makes it visible instead of silent).
         cursor.execute(
-            "SELECT id FROM person WHERE normalized_name = %s", (norm_name,))
+            "SELECT id, name FROM person WHERE normalized_name = %s", (norm_name,))
         row = cursor.fetchone()
         if row:
-            return row[0]
+            existing_id, existing_name = row
+            log.warning(
+                f"person name-only match: incoming name={name!r} "
+                f"(imdb_id={imdb_id!r}, tmdb_id={tmdb_id!r}) matched existing "
+                f"person id={existing_id} name={existing_name!r} by "
+                "normalized_name alone -- verify these are the same person"
+            )
+            return existing_id
 
         # 3. Insert or update existing record
         cursor.execute(

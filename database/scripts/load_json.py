@@ -318,10 +318,20 @@ def ensure_person(cur, name, imdb=None, tmdb=None):
         if row:
             return row[0]
 
+    # Weakest signal: a shared name is not proof of identity, so log it in
+    # case it's actually two different people (nothing prevents that from
+    # happening, this just makes it visible instead of silent).
     row = fetch_one(
-        cur, "SELECT id FROM person WHERE normalized_name = %s", (normalized,))
+        cur, "SELECT id, name FROM person WHERE normalized_name = %s", (normalized,))
     if row:
-        return row[0]
+        existing_id, existing_name = row
+        log.warning(
+            f"person name-only match: incoming name={name!r} "
+            f"(imdb={imdb!r}, tmdb={tmdb!r}) matched existing person "
+            f"id={existing_id} name={existing_name!r} by normalized_name "
+            "alone -- verify these are the same person"
+        )
+        return existing_id
 
     upsert(cur, SQL["person_ins"], (name, imdb, tmdb, normalized))
 

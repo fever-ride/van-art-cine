@@ -1,4 +1,5 @@
 import json
+import sys
 import time
 import random
 import os
@@ -284,4 +285,8 @@ def scrape_viff_complete():
 
 
 if __name__ == "__main__":
-    scrape_viff_complete()
+    # Empty/failed result must exit non-zero so the caller (run_all_scrapers.py,
+    # then the GitHub Actions job) can actually detect it -- previously this
+    # always exited 0, so a silent 0-event scrape looked identical to success.
+    result = scrape_viff_complete()
+    sys.exit(0 if result else 1)
