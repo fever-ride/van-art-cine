@@ -76,12 +76,19 @@ jobs:
         working-directory: database/scripts
         run: python run_all.py --stop-on-error
 
-      - name: Upload pipeline logs
+      # data/latest/ is gitignored (scraper output doesn't need to persist
+      # across runs for the pipeline itself), but keeping a copy as an
+      # artifact means a failure like a bad/missing field in one scraped
+      # event can actually be inspected afterwards instead of the raw JSON
+      # vanishing with the runner.
+      - name: Upload pipeline logs and scraped data
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pipeline-logs-${{ github.run_id }}
-          path: database/logs/
+          path: |
+            database/logs/
+            data/latest/
           if-no-files-found: ignore
           retention-days: 14
 

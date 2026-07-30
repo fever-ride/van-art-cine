@@ -554,7 +554,11 @@ def load_source(
                     "America/Vancouver",
                     source_name,
                     source_uid,
-                    r.get("detail_url"),
+                    # source_url is NOT NULL in stg_screening; not every
+                    # scraped showtime has a detail_url (e.g. Rio listings
+                    # without a per-event page), so fall back to "" -- same
+                    # None-guard already used for content_hash above.
+                    r.get("detail_url") or "",
                     None,           # notes
                     st.get("date"),
                     st.get("time"),
