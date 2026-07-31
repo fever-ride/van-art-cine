@@ -30,6 +30,25 @@ export async function isInWatchlist({ userUid, screeningId }) {
   return !!row;
 }
 
+/**
+ * Batch variant of isInWatchlist: given a list of screening ids, returns the
+ * subset already on the user's watchlist as a Set, in one query -- for
+ * marking watchlist status on a list of screenings without one query per row.
+ */
+export async function findWatchlistedScreeningIdsSet(userUid, screeningIds) {
+  if (!screeningIds?.length) return new Set();
+
+  const rows = await prisma.watchlist_screening.findMany({
+    where: {
+      user_uid: userUid,
+      screening_id: { in: screeningIds.map(Number) },
+    },
+    select: { screening_id: true },
+  });
+
+  return new Set(rows.map((r) => r.screening_id));
+}
+
 export async function listWatchlist({
   userUid,
   limit = 100,
