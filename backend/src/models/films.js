@@ -103,7 +103,7 @@ export async function getUpcomingForFilm(id, opts = {}) {
       runtime_min: true,
       source_url: true,
       film: { select: { title: true } },
-      cinema: { select: { id: true, name: true } },
+      cinema: { select: { id: true, name: true, website: true } },
     },
   });
 
@@ -115,6 +115,7 @@ export async function getUpcomingForFilm(id, opts = {}) {
     runtime_min: r.runtime_min,
     cinema_id: r.cinema?.id ?? null,
     cinema_name: r.cinema?.name ?? null,
+    cinema_website: r.cinema?.website ?? null,
     source_url: r.source_url,
   }));
 }

@@ -41,6 +41,7 @@ export interface UpcomingScreening {
   runtime_min?: number | null;
   cinema_id: number;
   cinema_name: string;
+  cinema_website?: string | null;
   source_url?: string | null;
 }
 

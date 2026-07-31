@@ -183,7 +183,7 @@ describe('films model', () => {
           runtime_min: 120,
           source_url: 'https://cinema.example/tickets',
           film: { title: 'Test Film' },
-          cinema: { id: 7, name: 'Test Cinema' },
+          cinema: { id: 7, name: 'Test Cinema', website: 'https://testcinema.example' },
         },
       ]);
 
@@ -205,7 +205,7 @@ describe('films model', () => {
         runtime_min: true,
         source_url: true,
         film: { select: { title: true } },
-        cinema: { select: { id: true, name: true } },
+        cinema: { select: { id: true, name: true, website: true } },
       });
 
       expect(result).toEqual([
@@ -217,6 +217,7 @@ describe('films model', () => {
           runtime_min: 120,
           cinema_id: 7,
           cinema_name: 'Test Cinema',
+          cinema_website: 'https://testcinema.example',
           source_url: 'https://cinema.example/tickets',
         },
       ]);
@@ -246,6 +247,7 @@ describe('films model', () => {
           runtime_min: null,
           cinema_id: null,
           cinema_name: null,
+          cinema_website: null,
           source_url: 'https://example.com',
         },
       ]);

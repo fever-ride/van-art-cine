@@ -69,8 +69,12 @@ export async function generateMetadata({
  * Injects JSON-LD structured data for Google rich results.
  *
  * Movie schema: enables star-rating rich results in Google Search.
- * Event schemas: one per upcoming screening; enables Google Events rich results
- *   showing dates and venues directly in search.
+ * ScreeningEvent schemas: one per upcoming screening. Uses ScreeningEvent
+ *   (schema.org's dedicated subtype for a showing of a work), not the generic
+ *   Event, and nests a `workPresented` Movie so each showtime is explicitly
+ *   linked back to the film it's screening -- matches how venues (e.g. Rio
+ *   Theatre) mark up their own showtime pages, and gives crawlers a
+ *   structural link instead of an implicit "same title string" match.
  *
  * Google accepts JSON-LD anywhere in the document (head or body), so rendering
  * these inside <main> is valid.
@@ -96,7 +100,11 @@ function StructuredData({
     ...(film.directors?.length && {
       director: film.directors.map((name) => ({ '@type': 'Person', name })),
     }),
+    ...(film.cast?.length && {
+      actor: film.cast.map((name) => ({ '@type': 'Person', name })),
+    }),
     ...(film.genre && { genre: film.genre }),
+    ...(film.imdb_url && { sameAs: film.imdb_url }),
     ...(ratingNum && !isNaN(ratingNum) && {
       aggregateRating: {
         '@type': 'AggregateRating',
@@ -108,9 +116,24 @@ function StructuredData({
     }),
   };
 
-  const eventSchemas = upcoming.map((s) => ({
+  // Lean identity block reused inside every ScreeningEvent below. Deliberately
+  // NOT the full movieSchema (no aggregateRating/genre) -- this just needs to
+  // say which film is being screened, not restate everything about it.
+  const workPresented = {
+    '@type': 'Movie',
+    name: film.title,
+    url: filmUrl,
+    ...(film.description && { description: film.description }),
+    ...(film.poster_url && { image: film.poster_url }),
+    ...(film.directors?.length && {
+      director: film.directors.map((name) => ({ '@type': 'Person', name })),
+    }),
+    ...(film.imdb_url && { sameAs: film.imdb_url }),
+  };
+
+  const screeningEventSchemas = upcoming.map((s) => ({
     '@context': 'https://schema.org',
-    '@type': 'Event',
+    '@type': 'ScreeningEvent',
     name: film.title,
     startDate: s.start_at_utc,
     ...(s.end_at_utc && { endDate: s.end_at_utc }),
@@ -129,8 +152,27 @@ function StructuredData({
     organizer: {
       '@type': 'Organization',
       name: s.cinema_name,
+      ...(s.cinema_website && { url: s.cinema_website }),
     },
     ...(s.source_url && { url: s.source_url }),
+    ...(film.poster_url && { image: film.poster_url }),
+    ...(film.description && { description: film.description }),
+    // Cast, not directors: `performer` means who appears in the work being
+    // screened, which for a film screening is the actors, not the director.
+    ...(film.cast?.length && {
+      performer: film.cast.map((name) => ({ '@type': 'Person', name })),
+    }),
+    // We don't scrape real-time price/availability per showtime (venues like
+    // Rio link to a separate ticketing site we don't capture yet -- see
+    // BACKLOG.md), so `offers` only carries a URL to where a visitor can find
+    // that out, not fabricated price/availability values.
+    ...(s.source_url && {
+      offers: {
+        '@type': 'Offer',
+        url: s.source_url,
+      },
+    }),
+    workPresented,
   }));
 
   return (
@@ -139,7 +181,7 @@ function StructuredData({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(movieSchema) }}
       />
-      {eventSchemas.map((schema, i) => (
+      {screeningEventSchemas.map((schema, i) => (
         <script
           key={i}
           type="application/ld+json"
