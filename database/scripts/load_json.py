@@ -283,7 +283,17 @@ def ensure_film(cur, title, year, description=None, imdb=None, tmdb=None):
         (normalized, year),
     )
     if row:
-        return row[0]
+        film_id = row[0]
+        # Backfill only -- never overwrite an id that's already set (e.g. by
+        # resolve_imdb_id_url.py or a prior run), and never touch it when
+        # this call doesn't have one to offer.
+        if imdb or tmdb:
+            cur.execute(
+                "UPDATE film SET imdb_id = COALESCE(imdb_id, %s), "
+                "tmdb_id = COALESCE(tmdb_id, %s) WHERE id = %s",
+                (imdb, tmdb, film_id),
+            )
+        return film_id
 
     upsert(cur, SQL["film_ins"], (title, year,
            description, imdb, tmdb, normalized))
@@ -490,8 +500,20 @@ def load_source(
         year = parse_year(r.get("year"))
         runtime = parse_runtime_minutes(r.get("duration"))
 
+        # Some sources (e.g. Rio) scrape an IMDb link directly off the venue's
+        # own page. Seeding film.imdb_id with it here lets
+        # resolve_imdb_id_url.py do a single exact TMDB /find lookup instead
+        # of a fuzzy title search for these films.
+        imdb_id = None
+        imdb_url = r.get("imdb_url")
+        if imdb_url:
+            imdb_match = re.search(r"(tt\d+)", imdb_url)
+            if imdb_match:
+                imdb_id = imdb_match.group(1)
+
         # Use cleaned title when upserting film
-        film_id = ensure_film(cur, clean_title, year, r.get("description"))
+        film_id = ensure_film(
+            cur, clean_title, year, r.get("description"), imdb=imdb_id)
         link_directors(cur, film_id, r.get("director"))
 
         for st in r.get("showtimes", []):

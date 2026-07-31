@@ -63,3 +63,17 @@ Free tier is enough for this project's scale.
 - Optional: separate scheduled job for `refresh_ratings.py` (weekly) —
   deliberately not part of the main pipeline so every run doesn't re-spend
   OMDb quota on already-enriched films.
+- `resolve_imdb_id_url.py`'s fuzzy TMDB title search can miss real,
+  well-known films when the scraped title has a director/prefix baked in,
+  e.g. `John Woo's A Better Tomorrow` doesn't match TMDB's plain `A Better
+  Tomorrow`. Noticed while testing the new known-imdb-id fast path (see
+  below); this affects the older fallback search path, not that new code.
+  Possible fix: strip a leading `<Name>'s ` / `<Name>: ` pattern before
+  searching, similar to the existing `remove_parentheses` retry.
+- `rio_scraper.py` now scrapes an `imdb_url` straight off the venue's movie
+  pages (director/runtime/year sidebar + IMDb link, not the old unreliable
+  `h3.byline` text). `load_json.py` seeds `film.imdb_id` from it, and
+  `resolve_imdb_id_url.py` uses that to do an exact TMDB `/find` lookup
+  instead of a fuzzy title search for those films. Cinematheque/VIFF don't
+  have this yet — worth checking whether their detail pages expose
+  something similar.

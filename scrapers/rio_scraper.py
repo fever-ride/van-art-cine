@@ -104,6 +104,7 @@ def scrape_rio_listings():
                                 "year": None,
                                 "duration": None,
                                 "detail_url": None,
+                                "imdb_url": None,
                                 "showtimes": [showtime]
                             }
 
@@ -187,76 +188,74 @@ def scrape_rio_details_by_clicking(events_data):
                 if detail_url and detail_url != url:
                     event["detail_url"] = detail_url
 
-                # Extract details from byline
+                # Extract details from the page's "sidebar info" block
+                # (director/release-date/runtime/etc, each its own div with a
+                # stable semantic class like ".movie-event-sidebar-info-item
+                # .director") plus the IMDb link in the "More" tab, instead of
+                # parsing the "year | genre | country | director | language |
+                # runtime" byline text. Verified against several detail pages
+                # (including ones with no byline element and no embedded
+                # JSON-LD at all) that this sidebar + IMDb link is present
+                # regardless -- it's the most universal source on this site,
+                # more so than either byline or JSON-LD. Not kept alongside
+                # the old byline+regex parsing: byline was already unreliable
+                # (missing on plenty of real movie pages), so a second
+                # free-text parser wouldn't add real robustness, just more to
+                # maintain.
                 try:
-                    detail_str_el = page.query_selector("h3.byline")
-                    if detail_str_el:
-                        detail_str = detail_str_el.inner_text().strip()
-                        print(f"    Found byline: {detail_str}")
+                    def sidebar_field(field_class: str) -> str | None:
+                        el = page.query_selector(
+                            f".movie-event-sidebar-info-item.{field_class}")
+                        if not el:
+                            return None
+                        full_text = el.inner_text().strip()
+                        label_el = el.query_selector("h3")
+                        label_text = label_el.inner_text().strip() if label_el else ""
+                        value = full_text
+                        if label_text:
+                            value = value.replace(label_text, "")
+                        value = value.strip()
+                        # When a field is empty, the page renders a hidden
+                        # placeholder (e.g. ".director{display:none;}")
+                        # instead of omitting the div -- discard that instead
+                        # of treating raw CSS as a real value.
+                        if not value or "{" in value or "display:none" in value:
+                            return None
+                        return value
 
-                        parts = [part.strip()
-                                 for part in detail_str.split('|')]
+                    year_text = sidebar_field("release-date")
+                    if year_text and year_text.isdigit() and len(year_text) == 4:
+                        event["year"] = year_text
 
-                        # Extract year (first part)
-                        if len(parts) > 0:
-                            year_candidate = parts[0]
-                            if year_candidate.isdigit() and len(year_candidate) == 4:
-                                event["year"] = year_candidate
+                    runtime_text = sidebar_field("runtime")
+                    runtime_match = re.search(
+                        r"(\d+)", runtime_text or "")
+                    if runtime_match:
+                        event["duration"] = f"{runtime_match.group(1)} mins"
 
-                        # Extract duration (last part)
-                        if len(parts) > 1:
-                            duration_text = parts[-1]
-                            duration_match = re.search(
-                                r'(\d+)\s*(?:minutes?|mins?)', duration_text, re.IGNORECASE)
-                            if duration_match:
-                                duration_number = duration_match.group(1)
-                                if duration_number.isdigit():
-                                    event["duration"] = f"{duration_number} mins"
+                    director_text = sidebar_field("director")
+                    if director_text:
+                        event["director"] = director_text
 
-                        # Extract director
-                        pattern1 = r'(\d{4})\s*\|\s*[^|]+\s*\|\s*[^|]+\s*\|\s*([^|]+?)\s*\|\s*[^|]*\|\s*(\d+)\s*minutes?'
-                        match1 = re.search(pattern1, detail_str, re.IGNORECASE)
+                    imdb_el = page.query_selector(
+                        'a[href*="imdb.com/title/"]')
+                    if imdb_el:
+                        imdb_href = imdb_el.get_attribute("href")
+                        if imdb_href:
+                            event["imdb_url"] = imdb_href
 
-                        if match1:
-                            director_text = match1.group(2).strip()
-                            if director_text:
-                                event["director"] = director_text
-                                print(
-                                    f"    ✓ Pattern 1 - Found director: {director_text}")
-                        else:
-                            pattern2 = r'(\d{4})\s*\|\s*[^|]+\s*\|\s*([^|]+?)\s*\|\s*[^|]*\|\s*(\d+)\s*minutes?'
-                            match2 = re.search(
-                                pattern2, detail_str, re.IGNORECASE)
-
-                            if match2:
-                                director_text = match2.group(2).strip()
-                                if director_text:
-                                    event["director"] = director_text
-                                    print(
-                                        f"    ✓ Pattern 2 - Found director: {director_text}")
-
-                        # Summary
-                        found_fields = []
-                        if event.get("year"):
-                            found_fields.append(f"year={event['year']}")
-                        if event.get("duration"):
-                            found_fields.append(
-                                f"duration={event['duration']}")
-                        if event.get("director"):
-                            found_fields.append(
-                                f"director={event['director']}")
-
-                        if found_fields:
-                            print(
-                                f"    ✓ Extracted: {', '.join(found_fields)}")
-                        else:
-                            print(f"    ⚠ No details extracted from byline")
-
+                    found_fields = [
+                        f"{k}={event[k]}"
+                        for k in ("year", "duration", "director", "imdb_url")
+                        if event.get(k)
+                    ]
+                    if found_fields:
+                        print(f"    ✓ Extracted: {', '.join(found_fields)}")
                     else:
-                        print(f"    ⚠ No byline element found on detail page")
+                        print(f"    ⚠ No sidebar/IMDb details found on detail page")
 
                 except Exception as e:
-                    print(f"    ⚠ Byline extraction failed: {e}")
+                    print(f"    ⚠ Detail extraction failed: {e}")
 
                 # Navigate back
                 page.go_back()
@@ -306,6 +305,8 @@ def scrape_rio_complete():
             [e for e in complete_events if e.get("duration")])
         events_with_url = len(
             [e for e in complete_events if e.get("detail_url")])
+        events_with_imdb = len(
+            [e for e in complete_events if e.get("imdb_url")])
         total_showtimes = sum(len(e.get('showtimes', []))
                               for e in complete_events)
 
@@ -316,6 +317,7 @@ def scrape_rio_complete():
         print(f"Events with year: {events_with_year}")
         print(f"Events with duration: {events_with_duration}")
         print(f"Events with detail URL: {events_with_url}")
+        print(f"Events with IMDb URL: {events_with_imdb}")
         print(f"Total showtimes: {total_showtimes}")
         print(f"Saved to: {output_path}")
 

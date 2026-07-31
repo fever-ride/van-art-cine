@@ -150,18 +150,46 @@ def pick_result(results: List[Dict[str, Any]], year: Optional[int]) -> Optional[
     return results[0]
 
 
-def find_tmdb_and_imdb(title: str, year: Optional[int]) -> Optional[Dict[str, Optional[str]]]:
+def find_tmdb_and_imdb(
+    title: str,
+    year: Optional[int],
+    known_imdb_id: Optional[str] = None,
+) -> Optional[Dict[str, Optional[str]]]:
     """
     Resolve a film's TMDB ID, IMDb ID, and poster_path using the TMDB API with caching.
     Workflow:
     - Normalize (title, year) into a cache key; return the cached result if present.
-    - Search TMDB by title (and year), retrying with parentheses removed on no results.
-    - Pick the best candidate and fetch full details to obtain imdb_id.
+    - If known_imdb_id is given (e.g. scraped straight off the venue's own
+      page), look it up via TMDB's /find endpoint: one exact lookup, no
+      title-matching ambiguity. Only falls through to the fuzzy title search
+      below if that doesn't resolve (e.g. the id isn't a movie on TMDB).
+    - Otherwise: search TMDB by title (and year), retrying with parentheses
+      removed on no results, then pick the best candidate and fetch full
+      details to obtain imdb_id.
     - Return and cache a dict: { 'tmdb_id', 'imdb_id', 'poster_path' }.
     """
     key = f"{norm_title(title)}|{year or ''}"
     if key in CACHE:
         return CACHE[key]
+
+    if known_imdb_id:
+        find_data = tmdb_get(
+            f"find/{known_imdb_id}", {"external_source": "imdb_id"})
+        backoff_sleep()
+        movie_results = (find_data or {}).get("movie_results") or []
+        if movie_results:
+            match = movie_results[0]
+            tmdb_id = match.get("id")
+            out = {
+                "tmdb_id": str(tmdb_id) if tmdb_id is not None else None,
+                "imdb_id": known_imdb_id,
+                "poster_path": match.get("poster_path"),
+            }
+            CACHE[key] = out
+            save_cache()
+            return out
+        # known_imdb_id didn't resolve to a TMDB movie -- fall through to the
+        # fuzzy title search rather than giving up.
 
     # 1) primary search
     results = search_tmdb_movies(title, year)
@@ -285,7 +313,8 @@ def main():
             # losing the whole run.
             ids = None
             if not (film["imdb_id"] and film["tmdb_id"] and film["poster_path"]):
-                ids = find_tmdb_and_imdb(film["title"], film["year"])
+                ids = find_tmdb_and_imdb(
+                    film["title"], film["year"], known_imdb_id=film["imdb_id"])
 
             for attempt in range(2):
                 try:
