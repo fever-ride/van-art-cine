@@ -1,10 +1,13 @@
 /**
  * Screenings API wrapper, types, and query builder.
  *
- * `getScreenings` is used client-side (CSR) by `useScreeningsData` to fetch
- * paginated, filtered screening listings. All datetime parameters are sent with
- * a Vancouver timezone so the backend returns times aligned to local schedules.
+ * `getScreeningsServerSide` fetches paginated, filtered screening listings
+ * for `frontend/app/page.tsx`. All datetime parameters are sent with a
+ * Vancouver timezone so the backend returns times aligned to local
+ * schedules.
  */
+import { cache } from 'react';
+
 // Plan: Add 'time' to SortKey to filter by time in a day
 export type SortKey = 'time' | 'title' | 'imdb' | 'rt' | 'votes' | 'year';
 export type Order = 'asc' | 'desc';
@@ -59,7 +62,7 @@ export interface ScreeningsQuery {
   tz?: string;
 }
 
-export async function getScreenings(params: ScreeningsQuery = {}): Promise<ScreeningsResponse> {
+export function buildSearchParams(params: ScreeningsQuery = {}): URLSearchParams {
   const sp = new URLSearchParams();
 
   // Iterate keys with proper typing
@@ -85,7 +88,34 @@ export async function getScreenings(params: ScreeningsQuery = {}): Promise<Scree
     }
   });
 
-  const res = await fetch(`/api/screenings?${sp.toString()}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json() as Promise<ScreeningsResponse>;
+  return sp;
 }
+
+/**
+ * Server side only. Fetches screenings directly from the backend with an
+ * absolute URL. A relative URL (e.g. `/api/screenings`) only resolves
+ * through next.config.ts's rewrite rule for a real incoming HTTP request;
+ * it does not resolve for a fetch() call made from a Server Component
+ * during rendering, which has no "current page" origin to fill in. See
+ * docs/specs/homepage-ssr.md and docs/specs/url-driven-filters.md.
+ *
+ * Takes an already built query string, not a ScreeningsQuery object, so that
+ * wrapping this in React's cache() dedupes correctly: cache() keys on
+ * argument equality, and two calls with the same string are equal, while two
+ * separately constructed ScreeningsQuery objects with identical fields would
+ * not be. Build the string first with buildSearchParams(...).toString().
+ *
+ * The cache() wrapper means a page's generateMetadata and its body can both
+ * request the same query without triggering a duplicate network request,
+ * the same reasoning frontend/app/lib/films.ts's getFilmDetail uses.
+ */
+export const getScreeningsServerSide = cache(
+  async (queryString: string): Promise<ScreeningsResponse> => {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:4000';
+    const res = await fetch(`${baseUrl}/api/screenings?${queryString}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json() as Promise<ScreeningsResponse>;
+  }
+);

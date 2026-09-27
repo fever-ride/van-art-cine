@@ -6,6 +6,11 @@ import { apiMe, apiLogout } from '@/app/lib/auth';
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
   usePathname: jest.fn(() => '/'),
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    refresh: jest.fn(),
+  })),
 }));
 
 // Mock Next.js Link
@@ -46,9 +51,9 @@ describe('NavBar Component', () => {
       expect(apiMe).toHaveBeenCalled();
     });
 
-    expect(screen.getByText('Log in')).toBeInTheDocument();
-    expect(screen.getByText('Register')).toBeInTheDocument();
-    expect(screen.queryByText('Logout')).not.toBeInTheDocument();
+    expect(screen.getByText('Sign in')).toBeInTheDocument();
+    expect(screen.getByText('Create account')).toBeInTheDocument();
+    expect(screen.queryByText('Sign out')).not.toBeInTheDocument();
     expect(screen.queryByText('My Profile')).not.toBeInTheDocument();
   });
 
@@ -58,12 +63,12 @@ describe('NavBar Component', () => {
     render(<NavBar />);
 
     await waitFor(() => {
-      expect(screen.getByText('Logout')).toBeInTheDocument();
+      expect(screen.getByText('Sign out')).toBeInTheDocument();
     });
 
     expect(screen.getByText('My Profile')).toBeInTheDocument();
-    expect(screen.queryByText('Log in')).not.toBeInTheDocument();
-    expect(screen.queryByText('Register')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sign in')).not.toBeInTheDocument();
+    expect(screen.queryByText('Create account')).not.toBeInTheDocument();
   });
 
   test('shows common navigation links for all users', async () => {
@@ -85,7 +90,7 @@ describe('NavBar Component', () => {
 
     render(<NavBar />);
 
-    const logoutButton = await screen.findByText('Logout');
+    const logoutButton = await screen.findByText('Sign out');
 
     // fireEvent instead of userEvent
     fireEvent.click(logoutButton);
@@ -93,8 +98,8 @@ describe('NavBar Component', () => {
     expect(apiLogout).toHaveBeenCalledTimes(1);
 
     await waitFor(() => {
-      expect(screen.getByText('Log in')).toBeInTheDocument();
-      expect(screen.getByText('Register')).toBeInTheDocument();
+      expect(screen.getByText('Sign in')).toBeInTheDocument();
+      expect(screen.getByText('Create account')).toBeInTheDocument();
     });
   });
 
@@ -111,6 +116,6 @@ describe('NavBar Component', () => {
     });
 
     const aboutLink = screen.getByText('About').closest('a');
-    expect(aboutLink).toHaveClass('bg-highlight');
+    expect(aboutLink).toHaveClass('bg-primary');
   });
 });

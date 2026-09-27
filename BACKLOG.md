@@ -191,6 +191,57 @@ underlying film.
 
 **Priority:** High. This has already caused one incorrect merge.
 
+## Frontend Architecture
+
+Scope: `frontend/` (Next.js app), core rendering and state design. This is
+separate from the Frontend / SEO section below. Items here are structural
+design problems, not individual SEO tasks, even though they were noticed
+while working on SEO.
+
+### Still deferred
+
+---
+
+#### FE-1. Move screening filter state into the URL
+
+**Problem:** `useScreeningsUI` holds all filter state (search text, cinema
+selection, date range, sort, order) in local React state. Only the `page`
+number is reflected in the URL, through `useSearchParams` in
+`frontend/app/page.tsx`. Filter changes never touch the URL at all.
+
+**Impact:** This is the root cause behind several smaller problems, not
+just one. A filtered view cannot be bookmarked, shared, or crawled, since
+the URL never changes to reflect it. The browser's back and forward
+buttons do not step through filter changes. It also forces an awkward
+workaround for server rendering: since the current filter state cannot be
+read from the URL server side, a server rendered page can only reliably
+handle the single default, unfiltered view, not an arbitrary filter
+combination. The homepage server rendering work in SEO-3 papers over this
+by passing a server fetched `initialItems` value into the client side data
+hook and skipping a redundant first fetch when filters are still at their
+default. That workaround only exists because filter state is not URL
+driven, and it is the kind of fix that is likely to be reworked once this
+item is addressed, not a permanent design.
+
+**Approach:** Move all filter fields currently in `useScreeningsUI` into
+URL query parameters, the same way `page` already works. Update
+`frontend/components/screenings/Filters.tsx` so each control updates the
+URL, through `router.push` for discrete choices such as cinema selection
+and sort order, and through a debounced `router.replace` for the free text
+search field, to avoid flooding browser history on every keystroke. Once
+filter state lives in the URL, a Server Component can read `searchParams`
+directly and render any filter combination server side, not just the
+default view. This removes the need for the `initialItems` and
+skip-refetch workaround in SEO-3 entirely, rather than living alongside
+it.
+
+**Priority:** High. This should be decided before finishing the narrower
+homepage server rendering fix in SEO-3, since the two approaches are not
+meant to coexist long term. Pick one of: do this first and let SEO-3 build
+directly on top of URL driven filters, or ship SEO-3's narrower fix now
+with this item explicitly recorded as the reason it will likely need
+rework later.
+
 ## Frontend / SEO
 
 Scope: `frontend/` (Next.js app) and general site discoverability. See
@@ -271,15 +322,16 @@ and it is already trying to do the job that a "this week in Vancouver
 arthouse cinema" hub page would do. Its main content is effectively
 invisible to a crawler that has not executed client side JavaScript.
 
-**Approach:** Convert the screening list to server rendering, likely with
-the initial list rendered on the server and filter interactions still
-handled client side. Add `ItemList` or `CollectionPage` structured data for
-the current screening list once this is server rendered. Full reasoning
-and alternatives considered are in `docs/seo-hub-pages.md`.
+**Approach:** Depends on FE-1 shipping first. Once `frontend/app/page.tsx`
+is a Server Component reading filter state from `searchParams`, add
+`ItemList` or `CollectionPage` structured data and `generateMetadata` for
+the current screening list. Full spec is in
+`docs/specs/homepage-ssr.md`, and the reasoning for prioritizing this over
+other hub page ideas is in `docs/seo-hub-pages.md`.
 
 **Priority:** High. This replaces the original "time period hub page" idea.
 The homepage already is that page, and needs to be built correctly rather
-than duplicated as a separate route.
+than duplicated as a separate route. Blocked on FE-1.
 
 ---
 
@@ -429,3 +481,34 @@ interest.
 watchlist activity for a ranking to be meaningful.
 
 **Priority:** Blocked. Depends on user growth, not on engineering work.
+
+---
+
+#### SEO-12. Make homepage pagination controls use real links
+
+**Problem:** The homepage's "previous" and "next" pagination controls in
+`frontend/components/screenings/Pagination.tsx` are plain
+`<Button onClick={...}>` elements, not `next/link` `Link` components with a
+real `href`. The page number itself is already read from the URL's `page`
+query parameter in `frontend/app/page.tsx`, so direct navigation to a
+specific page URL already works. What is missing is a crawlable link
+pointing to it.
+
+**Impact:** Search engines mainly discover new URLs by following `<a href>`
+links or reading `sitemap.ts`. Neither exists for paginated homepage URLs
+today, so pages beyond the first are effectively invisible to a crawler.
+Real anchor tags would also let users open a page in a new tab or use the
+browser's back and forward buttons in the normal way, and would still work
+as a full page navigation if client side JavaScript fails to load. Current
+impact is small: only about 13 to 20 films are showing at any given time,
+which usually fits on the first page alone, so this rarely matters yet.
+
+**Approach:** Convert the "previous" and "next" controls to `next/link`
+`Link` components with a real `href` pointing at the target page's query
+string, keeping the existing `onClick` side effects such as scroll
+position handling. `Link` still performs a fast client side transition
+when JavaScript is available, so this does not change the current user
+experience.
+
+**Priority:** Low. Revisit if simultaneous inventory grows enough that
+users regularly reach page 2 or beyond.

@@ -1,105 +1,87 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import type { SortKey, Order } from '@/app/lib/screenings';
+import { useCallback, useTransition } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import {
+  parseUIStateFromSearchParams,
+  serializeUIStateToSearchParams,
+  type Mode,
+  type UIState,
+} from './screeningsUrlState';
 
 /**
  * Screenings UI State Management
  *
- * Custom hook for managing filter, sort, and display state for the screenings page.
+ * Reads and writes filter, sort, and display state for the screenings page
+ * through the URL, so that a given filtered view has its own address: it can
+ * be bookmarked, shared, and stepped through with the browser's back and
+ * forward buttons. See docs/specs/url-driven-filters.md for the full
+ * reasoning; `page` (pagination) already worked this way before this hook
+ * did and is unaffected here.
  *
- * Responsibilities:
- * - Owns all UI-related fields:
- *   - `mode`: 'single' vs 'range' date mode
- *   - `date` / `from` / `to`: single date or date range
- *   - `q`: search query
- *   - `cinemaIds`: selected cinema IDs
- *   - `filmId`: specific film filter
- *   - `sort`: sort key (time, title, imdb, rt, votes, year)
- *   - `order`: sort direction
- *   - `limit`: page size
- * - Exposes a single `setUI` helper that accepts either:
- *   - a partial patch object
- *   - a functional updater `(prev: UIState) => UIState`
+ * `ui` is derived fresh from the current URL on every render, via
+ * `parseUIStateFromSearchParams`, rather than owned as local component
+ * state. `setUI` merges the given patch onto the current `ui` and
+ * navigates to the resulting URL with `router.push`, rather than calling a
+ * state setter.
  *
- * This hook is intentionally UI-only: it does not perform any data fetching
- * and is composed with `useScreeningsData` to actually load screenings.
+ * Callers such as `Filters.tsx` are unaffected: they still read `ui` and
+ * call `setUI` exactly as before, unaware that a call now results in a
+ * real navigation instead of a local state update.
  */
 
-// ============================================================================
-// Types
-// ============================================================================
+export type { Mode, UIState };
 
-/** Display mode for date selection */
-export type Mode = 'single' | 'range';
-
-/** UI state for screenings filters and display options */
-export type UIState = {
-  mode: Mode;              // Date selection mode
-  date: string;            // Single date (YYYY-MM-DD)
-  from: string;            // Range start date
-  to: string;              // Range end date
-  q: string;               // Search query
-  cinemaIds: string[];     // Selected cinema IDs
-  filmId: string;          // Specific film filter
-  sort: SortKey;           // Sort field
-  order: Order;            // Sort direction
-  limit: number;           // Results per page
-};
-
-/** 
+/**
  * State updater function
  * Accepts either a partial state object or an updater function
  */
 export type SetUI = (patch: Partial<UIState> | ((s: UIState) => UIState)) => void;
 
-// ============================================================================
-// Default State
-// ============================================================================
-
-const defaultUI: UIState = {
-  mode: 'single',
-  date: '',
-  from: '',
-  to: '',
-  q: '',
-  cinemaIds: [],
-  filmId: '',
-  sort: 'time',
-  order: 'asc',
-  limit: 20,
-};
-
-// ============================================================================
-// Hook
-// ============================================================================
-
 /**
  * Hook for managing screenings page UI state
- * 
- * @param defaultValues - Optional initial state overrides
- * @returns Object with current state and setter function
- * 
+ *
+ * @param defaultValues - Optional fallback values for fields the URL does
+ * not specify, in place of the global default. A value the URL actually
+ * specifies always wins over this.
+ * @returns Object with current state, setter function, and `isPending`,
+ * true while a `setUI`-triggered navigation is still in flight, for
+ * callers that want to show a loading state during it.
+ *
  * @example
  * ```tsx
  * const { ui, setUI } = useScreeningsUI({ mode: 'range' });
- * 
+ *
  * // Update with object
  * setUI({ q: 'Parasite' });
- * 
+ *
  * // Update with function
  * setUI(s => ({ ...s, limit: s.limit + 20 }));
  * ```
  */
 export function useScreeningsUI(defaultValues?: Partial<UIState>) {
-  const [ui, setUiState] = useState<UIState>({ ...defaultUI, ...defaultValues });
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
-  // Memoized setter supports both object and function updates
-  const setUI = useCallback(
-    (patch: Partial<UIState> | ((s: UIState) => UIState)) =>
-      setUiState((s) => (typeof patch === 'function' ? patch(s) : { ...s, ...patch })),
-    []
+  const ui = parseUIStateFromSearchParams(searchParams, defaultValues);
+
+  const setUI = useCallback<SetUI>(
+    (patch) => {
+      const next = typeof patch === 'function' ? patch(ui) : { ...ui, ...patch };
+      const params = serializeUIStateToSearchParams(next);
+      const qs = params.toString();
+      // Deliberately does not preserve an existing `page` param: changing
+      // any filter starts back at page 1, since whatever page of the old
+      // result set the user was on may not correspond to anything in the
+      // new one.
+      startTransition(() => {
+        router.push(qs ? `${pathname}?${qs}` : pathname);
+      });
+    },
+    [ui, pathname, router]
   );
 
-  return { ui, setUI };
+  return { ui, setUI, isPending };
 }
