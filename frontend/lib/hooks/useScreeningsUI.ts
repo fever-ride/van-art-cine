@@ -32,11 +32,24 @@ import {
 
 export type { Mode, UIState };
 
+export type SetUIOptions = {
+  /**
+   * Use `router.replace` instead of `router.push` for this update, so it
+   * does not add a browser history entry. For automatic follow-ups to
+   * typing (debounced search), not for a discrete user action like
+   * clicking Apply or Reset, which should stay push-and-back-button-able.
+   */
+  replace?: boolean;
+};
+
 /**
  * State updater function
  * Accepts either a partial state object or an updater function
  */
-export type SetUI = (patch: Partial<UIState> | ((s: UIState) => UIState)) => void;
+export type SetUI = (
+  patch: Partial<UIState> | ((s: UIState) => UIState),
+  options?: SetUIOptions
+) => void;
 
 /**
  * Hook for managing screenings page UI state
@@ -68,16 +81,26 @@ export function useScreeningsUI(defaultValues?: Partial<UIState>) {
   const ui = parseUIStateFromSearchParams(searchParams, defaultValues);
 
   const setUI = useCallback<SetUI>(
-    (patch) => {
+    (patch, options) => {
       const next = typeof patch === 'function' ? patch(ui) : { ...ui, ...patch };
       const params = serializeUIStateToSearchParams(next);
       const qs = params.toString();
+      const url = qs ? `${pathname}?${qs}` : pathname;
       // Deliberately does not preserve an existing `page` param: changing
       // any filter starts back at page 1, since whatever page of the old
       // result set the user was on may not correspond to anything in the
       // new one.
+      // scroll: false — this is a filter/search update, not a fresh page
+      // visit. Without it, Next.js's default post-navigation scroll resets
+      // to the very top of the page (back past the hero banner) on every
+      // commit, the same jump goToPage in ScreeningsPageClient.tsx already
+      // opts out of for pagination.
       startTransition(() => {
-        router.push(qs ? `${pathname}?${qs}` : pathname);
+        if (options?.replace) {
+          router.replace(url, { scroll: false });
+        } else {
+          router.push(url, { scroll: false });
+        }
       });
     },
     [ui, pathname, router]

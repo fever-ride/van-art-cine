@@ -123,20 +123,30 @@ export default function ScreeningsPageClient({ initialItems, initialError }: Pro
     requestAnimationFrame(() => goToPage(nextPage));
   };
 
-  const handleApplyFilters = () => {
+  // Passed to Filters as onBeforeCommit: called right before any filter or
+  // search commit (Apply, Reset, or a debounced search firing), while the
+  // DOM still reflects the old, pre-commit result count. Pagination is
+  // deliberately excluded — goToPage/handlePageChange use scrollToTableTop
+  // instead and never set rowMinHeight in the first place.
+  const handleBeforeFilterCommit = () => {
     captureRowHeight();
   };
 
   // Runs once new items arrive for a page that had its row height captured
-  // by handleApplyFilters, i.e. an Apply-triggered filter change, not a
-  // plain pagination click (goToPage/handlePageChange use scrollToTableTop
-  // instead and never set rowMinHeight in the first place).
+  // by handleBeforeFilterCommit. Must wait for screeningsUI.isPending to
+  // clear: setRowMinHeight (normal priority) commits before the setUI
+  // navigation it precedes resolves (low priority, inside startTransition),
+  // and rowMinHeight is itself a dependency here — without the isPending
+  // guard, that first commit re-triggers this effect immediately and
+  // resets rowMinHeight/settles scroll against the still-old items, before
+  // the new (possibly much shorter) result set has actually arrived.
   useLayoutEffect(() => {
     if (rowMinHeight === undefined) return;
+    if (screeningsUI.isPending) return;
 
     setRowMinHeight(undefined);
     settleScrollAfterRefetch();
-  }, [items, page, rowMinHeight]);
+  }, [items, page, rowMinHeight, screeningsUI.isPending]);
 
   // Fetch all cinemas once. Ordering (pinned high-traffic venues first, then
   // alphabetical) and hiding cinemas with no upcoming screenings are both
@@ -180,8 +190,9 @@ export default function ScreeningsPageClient({ initialItems, initialError }: Pro
         <Filters
           ui={screeningsUI.ui}
           setUI={screeningsUI.setUI}
-          onApply={handleApplyFilters}
+          onBeforeCommit={handleBeforeFilterCommit}
           loading={cinemaLoading}
+          pending={screeningsUI.isPending}
           cinemaOptions={cinemaOptions}
         />
       </aside>

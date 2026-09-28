@@ -11,16 +11,21 @@ type CinemaOption = { id: number; name: string };
 type Props = {
   ui: UIState;
   setUI: SetUI;
-  onApply: () => void;
+  onBeforeCommit: () => void;
   loading?: boolean;
+  /** True while a setUI-triggered navigation (search, Apply, Reset) is in
+   * flight, so the search box and Apply button can show it's working
+   * instead of appearing to just ignore input. */
+  pending?: boolean;
   cinemaOptions?: CinemaOption[];
 };
 
 export default function Filters({
   ui,
   setUI,
-  onApply,
+  onBeforeCommit,
   loading,
+  pending,
   cinemaOptions = [],
 }: Props) {
   const [localUI, setLocalUI] = useState<Omit<UIState, 'q'>>({
@@ -77,7 +82,16 @@ export default function Filters({
     setLocalQ(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      setUI({ q: value });
+      // onBeforeCommit captures the current row height before the result
+      // count can shrink out from under a scrolled-down reader — see
+      // TROUBLESHOOTING.md "Homepage scroll jumps" Act 3/4: without it, a
+      // search that collapses the table strands scrollY past the new
+      // (shorter) page and the browser clamps it to the footer.
+      onBeforeCommit();
+      // replace: true — this fires automatically as the user pauses typing,
+      // not from a discrete action, so it shouldn't add a history entry
+      // the user then has to back through one keystroke-group at a time.
+      setUI({ q: value }, { replace: true });
     }, 350);
   };
 
@@ -135,14 +149,23 @@ export default function Filters({
     <Card className="space-y-4 p-4">
       <label className="flex flex-col gap-1">
         <span className={labelCls}>Search</span>
-        <Input
-          type="text"
-          inputMode="search"
-          placeholder="Enter a film title…"
-          value={localQ}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="rounded-btn py-2.5"
-        />
+        <div className="relative">
+          <Input
+            type="text"
+            inputMode="search"
+            placeholder="Enter a film title…"
+            value={localQ}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="rounded-btn py-2.5 pr-8"
+          />
+          {pending && (
+            <span
+              aria-hidden="true"
+              className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2
+                         animate-spin rounded-full border-2 border-border border-t-accent"
+            />
+          )}
+        </div>
       </label>
 
       {/* Cinemas */}
@@ -307,11 +330,11 @@ export default function Filters({
           type="button"
           variant="outline"
           onClick={(e) => {
-            onApply();
+            onBeforeCommit();
             commitReset();
             e.currentTarget.blur();
           }}
-          disabled={loading}
+          disabled={loading || pending}
         >
           Reset
         </Button>
@@ -319,13 +342,13 @@ export default function Filters({
           type="button"
           variant="primary"
           onClick={(e) => {
-            onApply();
+            onBeforeCommit();
             commitApply();
             e.currentTarget.blur();
           }}
-          disabled={loading}
+          disabled={loading || pending}
         >
-          {loading ? 'Applying…' : 'Apply'}
+          {loading || pending ? 'Applying…' : 'Apply'}
         </Button>
       </div>
     </Card>
