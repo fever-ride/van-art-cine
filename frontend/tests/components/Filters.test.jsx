@@ -30,13 +30,13 @@ describe('Filters component', () => {
   test('renders basic controls (search, cinemas, sort, order, mode, buttons)', () => {
     const ui = makeUI();
     const setUI = jest.fn();
-    const onApply = jest.fn();
+    const onBeforeCommit = jest.fn();
 
     render(
       <Filters
         ui={ui}
         setUI={setUI}
-        onApply={onApply}
+        onBeforeCommit={onBeforeCommit}
         cinemaOptions={[]}
       />
     );
@@ -66,18 +66,18 @@ describe('Filters component', () => {
     ).toBeInTheDocument();
   });
 
-  test('updates search query via debounced setUI when typing', () => {
+  test('updates search query via debounced setUI when typing, calling onBeforeCommit first so scroll/layout can be captured before the result count changes', () => {
     jest.useFakeTimers();
 
     const ui = makeUI({ q: '' });
     const setUI = jest.fn();
-    const onApply = jest.fn();
+    const onBeforeCommit = jest.fn();
 
     render(
       <Filters
         ui={ui}
         setUI={setUI}
-        onApply={onApply}
+        onBeforeCommit={onBeforeCommit}
         cinemaOptions={[]}
       />
     );
@@ -91,8 +91,8 @@ describe('Filters component', () => {
     jest.advanceTimersByTime(350);
 
     expect(setUI).toHaveBeenCalledTimes(1);
-    expect(setUI).toHaveBeenCalledWith({ q: 'Ozu' });
-    expect(onApply).not.toHaveBeenCalled();
+    expect(setUI).toHaveBeenCalledWith({ q: 'Ozu' }, { replace: true });
+    expect(onBeforeCommit).toHaveBeenCalledTimes(1);
 
     jest.useRealTimers();
   });
@@ -100,7 +100,7 @@ describe('Filters component', () => {
   test('selecting and clearing cinemas updates the summary text', () => {
     const ui = makeUI();
     const setUI = jest.fn();
-    const onApply = jest.fn();
+    const onBeforeCommit = jest.fn();
 
     const cinemaOptions = [
       { id: 1, name: 'Cinema One' },
@@ -111,7 +111,7 @@ describe('Filters component', () => {
       <Filters
         ui={ui}
         setUI={setUI}
-        onApply={onApply}
+        onBeforeCommit={onBeforeCommit}
         cinemaOptions={cinemaOptions}
       />
     );
@@ -141,16 +141,16 @@ describe('Filters component', () => {
     ).toBeInTheDocument();
   });
 
-  test('Apply button sends local filters (except q) via setUI and calls onApply', () => {
+  test('Apply button sends local filters (except q) via setUI and calls onBeforeCommit', () => {
     const ui = makeUI({ q: 'hello' });
     const setUI = jest.fn();
-    const onApply = jest.fn();
+    const onBeforeCommit = jest.fn();
 
     render(
       <Filters
         ui={ui}
         setUI={setUI}
-        onApply={onApply}
+        onBeforeCommit={onBeforeCommit}
         cinemaOptions={[]}
       />
     );
@@ -171,10 +171,10 @@ describe('Filters component', () => {
       sort: 'title',
       order: 'desc',
     });
-    expect(onApply).toHaveBeenCalledTimes(1);
+    expect(onBeforeCommit).toHaveBeenCalledTimes(1);
   });
 
-  test('Reset button resets filters to default values and calls setUI + onApply', () => {
+  test('Reset button resets filters to default values and calls setUI + onBeforeCommit', () => {
     const ui = makeUI({
       q: 'something',
       cinemaIds: ['1', '2'],
@@ -189,13 +189,13 @@ describe('Filters component', () => {
     });
 
     const setUI = jest.fn();
-    const onApply = jest.fn();
+    const onBeforeCommit = jest.fn();
 
     render(
       <Filters
         ui={ui}
         setUI={setUI}
-        onApply={onApply}
+        onBeforeCommit={onBeforeCommit}
         cinemaOptions={[]}
       />
     );
@@ -216,7 +216,7 @@ describe('Filters component', () => {
       mode: 'single',
       limit: ui.limit,
     });
-    expect(onApply).toHaveBeenCalledTimes(1);
+    expect(onBeforeCommit).toHaveBeenCalledTimes(1);
 
     // Summary text also reflects cleared cinemas
     expect(
@@ -227,13 +227,13 @@ describe('Filters component', () => {
   test('renders custom date pickers instead of native date inputs', () => {
     const ui = makeUI({ mode: 'range', from: '2026-06-10', to: '2026-06-12' });
     const setUI = jest.fn();
-    const onApply = jest.fn();
+    const onBeforeCommit = jest.fn();
 
     const { container } = render(
       <Filters
         ui={ui}
         setUI={setUI}
-        onApply={onApply}
+        onBeforeCommit={onBeforeCommit}
         cinemaOptions={[]}
       />
     );
@@ -246,13 +246,13 @@ describe('Filters component', () => {
   test('switching between Single date and Date range toggles date inputs', () => {
     const ui = makeUI({ mode: 'single' });
     const setUI = jest.fn();
-    const onApply = jest.fn();
+    const onBeforeCommit = jest.fn();
 
     const { container } = render(
       <Filters
         ui={ui}
         setUI={setUI}
-        onApply={onApply}
+        onBeforeCommit={onBeforeCommit}
         cinemaOptions={[]}
       />
     );
@@ -276,13 +276,13 @@ describe('Filters component', () => {
   test('buttons are disabled and label changes when loading is true', () => {
     const ui = makeUI();
     const setUI = jest.fn();
-    const onApply = jest.fn();
+    const onBeforeCommit = jest.fn();
 
     render(
       <Filters
         ui={ui}
         setUI={setUI}
-        onApply={onApply}
+        onBeforeCommit={onBeforeCommit}
         cinemaOptions={[]}
         loading={true}
       />

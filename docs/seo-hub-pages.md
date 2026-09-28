@@ -46,11 +46,9 @@ Checked against the local database on 2026-07-31:
 
 ### What the homepage actually does today
 
-`frontend/app/page.tsx` starts with `'use client'`. The entire "Now
-Playing" list is fetched and rendered client side, through
-`useScreeningsData`. The homepage carries no page level `generateMetadata`
-and no structured data of its own. Only the root layout's static title and
-description apply.
+The homepage renders its screening list entirely client side today, with
+no structured data of its own. Full technical detail is in
+`docs/specs/homepage-ssr.md`.
 
 This matters because the homepage is the single highest authority page on
 the site, and it is already trying to do the job that a "this week in
@@ -80,17 +78,15 @@ realistically list more than 2 or 3 films.
 ### Homepage server rendering: highest priority
 
 Convert the homepage's screening list from client side fetching to server
-rendering, likely using a hybrid approach where the initial list renders on
-the server and the filter interactions still work client side.
+rendering, and add page level structured data once that is in place. This
+item replaces the "time period hub page" part of the original SEO-3 idea.
+The homepage already is that page. It needs to be built correctly, not
+duplicated.
 
-Add page level structured data once this is server rendered: an `ItemList`
-or `CollectionPage` representing the current screening list, so the
-homepage's actual content is present in the first response instead of only
-appearing after client side JavaScript runs.
-
-This item replaces the "time period hub page" part of the original SEO-3
-idea. The homepage already is that page. It needs to be built correctly,
-not duplicated.
+Full requirements, acceptance criteria, and task breakdown for this item
+live in `docs/specs/homepage-ssr.md`. That document is the source of truth
+for this piece of work. This section only records why it was prioritized
+above the other hub page directions.
 
 ### Tag based hub pages: strongest new direction
 

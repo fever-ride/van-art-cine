@@ -191,6 +191,45 @@ underlying film.
 
 **Priority:** High. This has already caused one incorrect merge.
 
+## Frontend Architecture
+
+Scope: `frontend/` (Next.js app), core rendering and state design. This is
+separate from the Frontend / SEO section below. Items here are structural
+design problems, not individual SEO tasks, even though they were noticed
+while working on SEO.
+
+### Done
+
+#### FE-1. Move screening filter state into the URL
+
+Shipped per `docs/specs/url-driven-filters.md`. `useScreeningsUI`
+(`frontend/lib/hooks/useScreeningsUI.ts`) now derives all filter state from
+`searchParams` and writes it back with `router.push`/`router.replace`
+instead of holding it as local React state, and `frontend/app/page.tsx` is
+a Server Component that reads `searchParams` directly and renders any
+filter combination server side, not just the default view.
+
+- A filtered view now has its own bookmarkable, shareable, crawlable URL,
+  and the browser's back/forward buttons step through filter changes.
+- Discrete filter changes (cinema, sort, date) use `router.push`; the
+  debounced search field uses `router.replace`, so rapid typing does not
+  flood browser history.
+- Removed the `initialItems`/skip-refetch workaround this item's problem
+  statement anticipated SEO-3 would need — once filter state lived in the
+  URL, `frontend/app/lib/screenings.ts`'s `getScreeningsServerSide` could
+  just fetch directly from the Server Component for any filter/page
+  combination, no client side data hook required.
+- Along the way, fixed two scroll/layout regressions this refactor
+  reintroduced from `TROUBLESHOOTING.md`'s "Homepage scroll jumps" story
+  (see that doc's Act 5): missing `{ scroll: false }` on the new
+  `setUI`-driven navigation, and a dropped effect that captured the result
+  row height before a debounced search could shrink it out from under a
+  scrolled down reader.
+- Covered by unit tests (`frontend/tests/lib/screeningsUrlState.test.ts`,
+  `frontend/tests/hooks/useScreeningsUI.test.ts`) and verified live in the
+  browser: SSR of the default and filtered views, filter-apply-then-back,
+  pagination, and the scroll-position edge cases above.
+
 ## Frontend / SEO
 
 Scope: `frontend/` (Next.js app) and general site discoverability. See
@@ -216,6 +255,27 @@ through `backend/src/models/films.js` and `frontend/app/lib/films.ts`.
   already fetched but never used.
 - Verified with Google's Rich Results Test. Zero errors, and the nested
   `workPresented`, `performer`, and `offers` fields all parsed correctly.
+
+#### Make homepage pagination controls use real, numbered links
+
+Shipped in `frontend/components/screenings/Pagination.tsx`, with a new
+`total` count from `backend/src/models/screenings.js`'s `fetchScreenings`
+(a `prisma.screening.count({ where })` alongside the existing `findMany`,
+sharing the same filter clause) plumbed through
+`backend/src/controllers/screeningsController.js` and
+`frontend/app/lib/screenings.ts`'s `ScreeningsResponse`.
+
+- Went further than the original problem statement: instead of just making
+  "previous"/"next" real links, added actual page number links (with an
+  ellipsis for long runs, via the pure `frontend/lib/pagination.ts`
+  helper), now that a real page count is available.
+- Every page link (numbers, previous, next) is a `next/link` `Link` with a
+  real `href`, verified present in the server rendered HTML with `curl`
+  (not only reachable after client side JS runs).
+- A plain click still intercepts the link for the app's own scroll-to-table
+  and transition-pending handling; a modified click (cmd/ctrl-click, middle
+  click) is left alone so "open in new tab" and similar still work.
+- Pagination is hidden entirely when there is only one page.
 
 ### Still deferred
 
@@ -271,15 +331,16 @@ and it is already trying to do the job that a "this week in Vancouver
 arthouse cinema" hub page would do. Its main content is effectively
 invisible to a crawler that has not executed client side JavaScript.
 
-**Approach:** Convert the screening list to server rendering, likely with
-the initial list rendered on the server and filter interactions still
-handled client side. Add `ItemList` or `CollectionPage` structured data for
-the current screening list once this is server rendered. Full reasoning
-and alternatives considered are in `docs/seo-hub-pages.md`.
+**Approach:** Depends on FE-1 shipping first. Once `frontend/app/page.tsx`
+is a Server Component reading filter state from `searchParams`, add
+`ItemList` or `CollectionPage` structured data and `generateMetadata` for
+the current screening list. Full spec is in
+`docs/specs/homepage-ssr.md`, and the reasoning for prioritizing this over
+other hub page ideas is in `docs/seo-hub-pages.md`.
 
 **Priority:** High. This replaces the original "time period hub page" idea.
 The homepage already is that page, and needs to be built correctly rather
-than duplicated as a separate route.
+than duplicated as a separate route. Blocked on FE-1.
 
 ---
 
