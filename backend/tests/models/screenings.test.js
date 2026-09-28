@@ -7,6 +7,7 @@ jest.unstable_mockModule('../../src/lib/prismaClient.js', () => ({
   prisma: {
     screening: {
       findMany: jest.fn(),
+      count: jest.fn(),
     },
   },
 }));
@@ -28,6 +29,7 @@ const { fetchScreenings, findByIds } = await import('../../src/models/screenings
 
 beforeEach(() => {
   jest.clearAllMocks();
+  prisma.screening.count.mockResolvedValue(0);
 });
 
 describe('fetchScreenings', () => {
@@ -69,6 +71,7 @@ describe('fetchScreenings', () => {
         cinema: { id: 7, name: 'Rio Theatre' },
       },
     ]);
+    prisma.screening.count.mockResolvedValue(1);
 
     const result = await fetchScreenings({
       date: '2025-01-01',
@@ -98,8 +101,8 @@ describe('fetchScreenings', () => {
     expect(callArg.skip).toBe(0);
 
     // Validate flattening + directors sorting.
-    expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
       id: 1,
       title: 'Test Film',
       cinema_id: 7,
@@ -108,6 +111,25 @@ describe('fetchScreenings', () => {
       directors: 'A Director, Z Director',
       source_url: 'https://cinema.example/tickets',
     });
+
+    // total comes from a separate count(), not items.length, so a caller can
+    // tell "1 result on this page" apart from "1 result total".
+    expect(result.total).toBe(1);
+  });
+
+  test('total reflects the full matching count via a count() sharing the same where clause, not just this page\'s item count', async () => {
+    localRangeToUtc.mockReturnValue([new Date('2025-01-01T00:00:00.000Z'), null]);
+    prisma.screening.findMany.mockResolvedValue([{ id: 1, film: {}, cinema: {} }]);
+    prisma.screening.count.mockResolvedValue(37);
+
+    const result = await fetchScreenings({ cinemaIds: ['7'], limit: 1, offset: 0 });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.total).toBe(37);
+
+    const findManyWhere = prisma.screening.findMany.mock.calls[0][0].where;
+    const countWhere = prisma.screening.count.mock.calls[0][0].where;
+    expect(countWhere).toEqual(findManyWhere);
   });
 
   test('builds UTC window using localRangeToUtc when date is not provided', async () => {

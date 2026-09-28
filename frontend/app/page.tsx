@@ -52,6 +52,7 @@ async function ScreeningsPageContent({
     return (
       <ScreeningsPageClient
         initialItems={[]}
+        initialTotal={0}
         initialError='"From" date must be before or equal to "To" date.'
       />
     );
@@ -61,7 +62,13 @@ async function ScreeningsPageContent({
   const query = buildScreeningsQuery(ui, offset);
   const data = await getScreeningsServerSide(buildSearchParams(query).toString());
 
-  return <ScreeningsPageClient initialItems={data.items} initialError={null} />;
+  return (
+    <ScreeningsPageClient
+      initialItems={data.items}
+      initialTotal={data.total}
+      initialError={null}
+    />
+  );
 }
 
 function ScreeningsPageSkeleton() {

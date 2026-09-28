@@ -5,7 +5,7 @@ const DEFAULT_TZ = 'America/Vancouver';
 /**
  * GET /api/screenings
  * @query {{ date?, from?, to?, cinema_ids?, film_id?, q?, sort?, order?, limit?, offset? }}
- * @returns {200} {{ items: Screening[] }}
+ * @returns {200} {{ items: Screening[], total: number }}
  */
 export async function listHandler(req, res, next) {
   try {
@@ -31,7 +31,7 @@ export async function listHandler(req, res, next) {
     const sort    = req.query.sort   || 'time';
     const order   = req.query.order  || 'asc';
 
-    const rows = await fetchScreenings({
+    const { items, total } = await fetchScreenings({
       date, from, to,
       cinemaIds,
       filmId,
@@ -39,7 +39,7 @@ export async function listHandler(req, res, next) {
       tz: DEFAULT_TZ,
     });
 
-    return res.json({ items: rows });
+    return res.json({ items, total });
   } catch (err) { return next(err); }
 }
 

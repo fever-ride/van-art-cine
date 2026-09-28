@@ -198,49 +198,37 @@ separate from the Frontend / SEO section below. Items here are structural
 design problems, not individual SEO tasks, even though they were noticed
 while working on SEO.
 
-### Still deferred
-
----
+### Done
 
 #### FE-1. Move screening filter state into the URL
 
-**Problem:** `useScreeningsUI` holds all filter state (search text, cinema
-selection, date range, sort, order) in local React state. Only the `page`
-number is reflected in the URL, through `useSearchParams` in
-`frontend/app/page.tsx`. Filter changes never touch the URL at all.
+Shipped per `docs/specs/url-driven-filters.md`. `useScreeningsUI`
+(`frontend/lib/hooks/useScreeningsUI.ts`) now derives all filter state from
+`searchParams` and writes it back with `router.push`/`router.replace`
+instead of holding it as local React state, and `frontend/app/page.tsx` is
+a Server Component that reads `searchParams` directly and renders any
+filter combination server side, not just the default view.
 
-**Impact:** This is the root cause behind several smaller problems, not
-just one. A filtered view cannot be bookmarked, shared, or crawled, since
-the URL never changes to reflect it. The browser's back and forward
-buttons do not step through filter changes. It also forces an awkward
-workaround for server rendering: since the current filter state cannot be
-read from the URL server side, a server rendered page can only reliably
-handle the single default, unfiltered view, not an arbitrary filter
-combination. The homepage server rendering work in SEO-3 papers over this
-by passing a server fetched `initialItems` value into the client side data
-hook and skipping a redundant first fetch when filters are still at their
-default. That workaround only exists because filter state is not URL
-driven, and it is the kind of fix that is likely to be reworked once this
-item is addressed, not a permanent design.
-
-**Approach:** Move all filter fields currently in `useScreeningsUI` into
-URL query parameters, the same way `page` already works. Update
-`frontend/components/screenings/Filters.tsx` so each control updates the
-URL, through `router.push` for discrete choices such as cinema selection
-and sort order, and through a debounced `router.replace` for the free text
-search field, to avoid flooding browser history on every keystroke. Once
-filter state lives in the URL, a Server Component can read `searchParams`
-directly and render any filter combination server side, not just the
-default view. This removes the need for the `initialItems` and
-skip-refetch workaround in SEO-3 entirely, rather than living alongside
-it.
-
-**Priority:** High. This should be decided before finishing the narrower
-homepage server rendering fix in SEO-3, since the two approaches are not
-meant to coexist long term. Pick one of: do this first and let SEO-3 build
-directly on top of URL driven filters, or ship SEO-3's narrower fix now
-with this item explicitly recorded as the reason it will likely need
-rework later.
+- A filtered view now has its own bookmarkable, shareable, crawlable URL,
+  and the browser's back/forward buttons step through filter changes.
+- Discrete filter changes (cinema, sort, date) use `router.push`; the
+  debounced search field uses `router.replace`, so rapid typing does not
+  flood browser history.
+- Removed the `initialItems`/skip-refetch workaround this item's problem
+  statement anticipated SEO-3 would need — once filter state lived in the
+  URL, `frontend/app/lib/screenings.ts`'s `getScreeningsServerSide` could
+  just fetch directly from the Server Component for any filter/page
+  combination, no client side data hook required.
+- Along the way, fixed two scroll/layout regressions this refactor
+  reintroduced from `TROUBLESHOOTING.md`'s "Homepage scroll jumps" story
+  (see that doc's Act 5): missing `{ scroll: false }` on the new
+  `setUI`-driven navigation, and a dropped effect that captured the result
+  row height before a debounced search could shrink it out from under a
+  scrolled down reader.
+- Covered by unit tests (`frontend/tests/lib/screeningsUrlState.test.ts`,
+  `frontend/tests/hooks/useScreeningsUI.test.ts`) and verified live in the
+  browser: SSR of the default and filtered views, filter-apply-then-back,
+  pagination, and the scroll-position edge cases above.
 
 ## Frontend / SEO
 
@@ -267,6 +255,27 @@ through `backend/src/models/films.js` and `frontend/app/lib/films.ts`.
   already fetched but never used.
 - Verified with Google's Rich Results Test. Zero errors, and the nested
   `workPresented`, `performer`, and `offers` fields all parsed correctly.
+
+#### Make homepage pagination controls use real, numbered links
+
+Shipped in `frontend/components/screenings/Pagination.tsx`, with a new
+`total` count from `backend/src/models/screenings.js`'s `fetchScreenings`
+(a `prisma.screening.count({ where })` alongside the existing `findMany`,
+sharing the same filter clause) plumbed through
+`backend/src/controllers/screeningsController.js` and
+`frontend/app/lib/screenings.ts`'s `ScreeningsResponse`.
+
+- Went further than the original problem statement: instead of just making
+  "previous"/"next" real links, added actual page number links (with an
+  ellipsis for long runs, via the pure `frontend/lib/pagination.ts`
+  helper), now that a real page count is available.
+- Every page link (numbers, previous, next) is a `next/link` `Link` with a
+  real `href`, verified present in the server rendered HTML with `curl`
+  (not only reachable after client side JS runs).
+- A plain click still intercepts the link for the app's own scroll-to-table
+  and transition-pending handling; a modified click (cmd/ctrl-click, middle
+  click) is left alone so "open in new tab" and similar still work.
+- Pagination is hidden entirely when there is only one page.
 
 ### Still deferred
 
@@ -481,34 +490,3 @@ interest.
 watchlist activity for a ranking to be meaningful.
 
 **Priority:** Blocked. Depends on user growth, not on engineering work.
-
----
-
-#### SEO-12. Make homepage pagination controls use real links
-
-**Problem:** The homepage's "previous" and "next" pagination controls in
-`frontend/components/screenings/Pagination.tsx` are plain
-`<Button onClick={...}>` elements, not `next/link` `Link` components with a
-real `href`. The page number itself is already read from the URL's `page`
-query parameter in `frontend/app/page.tsx`, so direct navigation to a
-specific page URL already works. What is missing is a crawlable link
-pointing to it.
-
-**Impact:** Search engines mainly discover new URLs by following `<a href>`
-links or reading `sitemap.ts`. Neither exists for paginated homepage URLs
-today, so pages beyond the first are effectively invisible to a crawler.
-Real anchor tags would also let users open a page in a new tab or use the
-browser's back and forward buttons in the normal way, and would still work
-as a full page navigation if client side JavaScript fails to load. Current
-impact is small: only about 13 to 20 films are showing at any given time,
-which usually fits on the first page alone, so this rarely matters yet.
-
-**Approach:** Convert the "previous" and "next" controls to `next/link`
-`Link` components with a real `href` pointing at the target page's query
-string, keeping the existing `onClick` side effects such as scroll
-position handling. `Link` still performs a fast client side transition
-when JavaScript is available, so this does not change the current user
-experience.
-
-**Priority:** Low. Revisit if simultaneous inventory grows enough that
-users regularly reach page 2 or beyond.

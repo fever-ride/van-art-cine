@@ -46,6 +46,9 @@ export interface Screening {
 
 export interface ScreeningsResponse {
   items: Screening[];
+  /** Count of all rows matching the current filters, ignoring limit/offset —
+   * for computing total page count, not just this page's items.length. */
+  total: number;
 }
 
 export interface ScreeningsQuery {

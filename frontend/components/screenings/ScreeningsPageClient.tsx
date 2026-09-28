@@ -15,6 +15,7 @@ const TABLE_SCROLL_MARGIN = 112;
 
 type Props = {
   initialItems: Screening[];
+  initialTotal: number;
   initialError: string | null;
 };
 
@@ -31,7 +32,11 @@ type Props = {
  * component fresh props for the new URL, the same way any other Next.js
  * App Router navigation works. See docs/specs/url-driven-filters.md.
  */
-export default function ScreeningsPageClient({ initialItems, initialError }: Props) {
+export default function ScreeningsPageClient({
+  initialItems,
+  initialTotal,
+  initialError,
+}: Props) {
   const screeningsUI = useScreeningsUI();
   const watchlist = useWatchlist();
 
@@ -48,7 +53,7 @@ export default function ScreeningsPageClient({ initialItems, initialError }: Pro
   if (!Number.isFinite(page) || page < 1) page = 1;
 
   const items = initialItems;
-  const hasMore = items.length === screeningsUI.ui.limit;
+  const totalPages = Math.max(1, Math.ceil(initialTotal / screeningsUI.ui.limit));
   const isPending = screeningsUI.isPending || paginationPending;
 
   const tableRef = useRef<HTMLDivElement>(null);
@@ -96,18 +101,23 @@ export default function ScreeningsPageClient({ initialItems, initialError }: Pro
     el.scrollIntoView({ behavior: 'auto', block: 'start' });
   };
 
-  const goToPage = (nextPage: number) => {
-    if (nextPage < 1) nextPage = 1;
-
+  // Also used as Pagination's buildPageHref, so every page link in the
+  // rendered HTML is the real URL a crawler or a JS-disabled request would
+  // need — not just an onClick handler. See BACKLOG.md SEO-12.
+  const buildPageUrl = (targetPage: number) => {
+    const p = Math.max(1, targetPage);
     const params = new URLSearchParams(searchParams.toString());
-    if (nextPage === 1) {
+    if (p === 1) {
       params.delete('page');
     } else {
-      params.set('page', String(nextPage));
+      params.set('page', String(p));
     }
-
     const qs = params.toString();
-    const url = qs ? `${pathname}?${qs}` : pathname;
+    return qs ? `${pathname}?${qs}` : pathname;
+  };
+
+  const goToPage = (nextPage: number) => {
+    const url = buildPageUrl(nextPage);
     const currentQs = searchParams.toString();
     const currentUrl = currentQs ? `${pathname}?${currentQs}` : pathname;
 
@@ -174,9 +184,6 @@ export default function ScreeningsPageClient({ initialItems, initialError }: Pro
     };
   }, []);
 
-  const disablePrev = page <= 1 || isPending;
-  const disableNext = !hasMore || isPending;
-
   return (
     <div
       ref={contentRowRef}
@@ -222,14 +229,11 @@ export default function ScreeningsPageClient({ initialItems, initialError }: Pro
 
         <Pagination
           className="mt-4"
-          onPrev={() => {
-            if (!disablePrev) handlePageChange(page - 1);
-          }}
-          onNext={() => {
-            if (!disableNext) handlePageChange(page + 1);
-          }}
-          disablePrev={disablePrev}
-          disableNext={disableNext}
+          currentPage={page}
+          totalPages={totalPages}
+          buildPageHref={buildPageUrl}
+          onNavigate={handlePageChange}
+          disabled={isPending}
         />
       </section>
     </div>

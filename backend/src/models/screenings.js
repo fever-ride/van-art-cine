@@ -23,7 +23,9 @@ import { localDayToUtcRange, localRangeToUtc } from '../utils/time.js';
  * @param {number} [opts.limit]
  * @param {number} [opts.offset]
  * @param {string} [opts.tz]           IANA zone for date/range → UTC (default America/Vancouver)
- * @returns {Promise<object[]>} Flat rows with film + cinema fields denormalized for the API
+ * @returns {Promise<{items: object[], total: number}>} `items`: flat rows with film + cinema
+ *   fields denormalized for the API. `total`: count of all matching rows for this `where`,
+ *   ignoring limit/offset — for computing page count, not just this page's `items.length`.
  */
 export async function fetchScreenings(opts = {}) {
   const {
@@ -145,13 +147,16 @@ export async function fetchScreenings(opts = {}) {
     ];
   }
 
-  const rowsRaw = await prisma.screening.findMany({
-    where,
-    select: baseSelect,
-    orderBy,
-    skip: Number(offset),
-    take: Number(limit),
-  });
+  const [rowsRaw, total] = await Promise.all([
+    prisma.screening.findMany({
+      where,
+      select: baseSelect,
+      orderBy,
+      skip: Number(offset),
+      take: Number(limit),
+    }),
+    prisma.screening.count({ where }),
+  ]);
 
   // Denormalize to the legacy API shape: single directors string, film fields at top level.
   const flattened = rowsRaw.map((s) => {
@@ -192,7 +197,7 @@ export async function fetchScreenings(opts = {}) {
     };
   });
 
-  return flattened;
+  return { items: flattened, total };
 }
 
 /**
