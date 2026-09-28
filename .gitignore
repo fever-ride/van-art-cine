@@ -29,6 +29,9 @@ database/logs/
 .idea/
 .vscode/
 
+# Local Claude Code dev-server launch config
+.claude/launch.json
+
 # Ignore everything inside data
 data/*
 
