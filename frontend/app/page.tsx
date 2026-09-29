@@ -4,14 +4,20 @@
  * docs/specs/url-driven-filters.md and docs/specs/homepage-ssr.md. */
 
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import { Noto_Sans } from 'next/font/google';
-import { getScreeningsServerSide, buildSearchParams } from '@/app/lib/screenings';
+import { getScreeningsServerSide, buildSearchParams, type Screening } from '@/app/lib/screenings';
+import { getCinemasServerSide } from '@/app/lib/cinemas';
 import {
   parseUIStateFromSearchParams,
+  serializeUIStateToSearchParams,
   buildScreeningsQuery,
   isInvalidDateRange,
+  type UIState,
 } from '@/lib/hooks/screeningsUrlState';
 import ScreeningsPageClient from '@/components/screenings/ScreeningsPageClient';
+
+const SITE_URL = 'https://www.cinephilesvan.com';
 
 const noto = Noto_Sans({
   subsets: ['latin'],
@@ -40,6 +46,123 @@ function pageNumberFrom(searchParams: RawSearchParams): number {
   return Number.isFinite(page) && page >= 1 ? page : 1;
 }
 
+/** Canonical URL for the given filter/page combination: `serializeUIStateToSearchParams`
+ * already omits any field still at its default, so the plain default view (no
+ * filters, page 1) canonicalizes to just `SITE_URL`, and equivalent URLs (e.g.
+ * an explicit `?sort=time&order=asc`, which are the defaults) collapse to the
+ * same canonical as `/`. `page` is added back in separately since that helper
+ * deliberately excludes it (see its own docstring). */
+function buildCanonicalUrl(ui: UIState, page: number): string {
+  const params = serializeUIStateToSearchParams(ui);
+  if (page > 1) params.set('page', String(page));
+  const qs = params.toString();
+  return `${SITE_URL}${qs ? `/?${qs}` : '/'}`;
+}
+
+/** Short natural language fragment describing the active filter, for
+ * building a dynamic title/description, e.g. "at Rio Theatre" or
+ * `matching "kurosawa"`. `null` when no filter narrows the default view, so
+ * the caller can fall through to the root layout's static metadata instead
+ * of restating it. Checked in this order because a single named cinema
+ * makes the most specific, landing-page-like title; a date range is the
+ * least useful to distinguish since it's only ever meaningful "for now". */
+async function describeActiveFilter(ui: UIState): Promise<string | null> {
+  if (ui.cinemaIds.length === 1) {
+    const cinemas = await getCinemasServerSide();
+    const cinema = cinemas.find((c) => String(c.id) === ui.cinemaIds[0]);
+    if (cinema) return `at ${cinema.name}`;
+  }
+
+  if (ui.q) return `matching "${ui.q}"`;
+
+  if (ui.mode === 'single' && ui.date) return `on ${ui.date}`;
+  if (ui.mode === 'range' && (ui.from || ui.to)) {
+    if (ui.from && ui.to) return `from ${ui.from} to ${ui.to}`;
+    return `starting ${ui.from || ui.to}`;
+  }
+
+  return null;
+}
+
+/**
+ * A search term or a date/date-range is not a stable, real-world thing
+ * people search for (unlike a named cinema) — `q` can be arbitrary typed
+ * text, and a specific day's listing goes stale within 24 hours and would
+ * otherwise let a crawler index effectively unlimited near-duplicate URLs.
+ * Matches Google's own guidance for internal search-results-style pages:
+ * `noindex` the page itself, but still `follow` its links to the real film
+ * pages, which are worth indexing. A named-cinema filter is exempt: that is
+ * exactly the kind of stable, searched-for page worth letting rank.
+ */
+function shouldNoindex(ui: UIState): boolean {
+  if (ui.q) return true;
+  if (ui.mode === 'single' && ui.date) return true;
+  if (ui.mode === 'range' && (ui.from || ui.to)) return true;
+  return false;
+}
+
+/**
+ * Homepage metadata: falls through to the root layout's static
+ * title/description for the plain default view (page 1, no filters), and
+ * builds a dynamic title/description naming the active filter otherwise, so
+ * a bookmarked or shared filtered URL doesn't show the exact same title as
+ * every other one. The canonical link is handled separately — see
+ * `CanonicalLink` below.
+ */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<RawSearchParams>;
+}): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  const ui = parseUIStateFromSearchParams(toReadableSearchParams(resolvedSearchParams));
+  const page = pageNumberFrom(resolvedSearchParams);
+
+  // No `alternates.canonical` here — Next.js's metadata API strips the
+  // query string from a resolved canonical URL, which would collapse every
+  // filtered/paginated URL down to the bare homepage. `CanonicalLink` below
+  // renders the real one directly instead.
+
+  if (isInvalidDateRange(ui)) {
+    return { title: 'Invalid date range', robots: { index: false, follow: false } };
+  }
+
+  const filterDescriptor = await describeActiveFilter(ui);
+  const pageSuffix = page > 1 ? ` — page ${page}` : '';
+
+  if (!filterDescriptor && !pageSuffix) {
+    // Plain default view: the root layout's static title/description
+    // already describe this page well: nothing to add.
+    return {};
+  }
+
+  const title = filterDescriptor
+    ? `Screenings ${filterDescriptor} in Vancouver${pageSuffix}`
+    : `Now Playing${pageSuffix}`;
+  const description = filterDescriptor
+    ? `Screenings ${filterDescriptor} at Vancouver's independent cinemas.`
+    : `More upcoming screenings at Vancouver's independent cinemas${pageSuffix}.`;
+
+  return {
+    title,
+    description,
+    openGraph: { title, description },
+    twitter: { card: 'summary_large_image', title, description },
+    ...(shouldNoindex(ui) ? { robots: { index: false, follow: true } } : {}),
+  };
+}
+
+/**
+ * Renders the real, query-string-aware canonical `<link>` directly instead
+ * of going through `generateMetadata`'s `alternates.canonical` (see the note
+ * there). Next.js hoists a `<link>` rendered anywhere in a Server Component
+ * tree into `<head>` and dedupes it, the same as one set via the Metadata
+ * API — this is a supported pattern, not a hack.
+ */
+function CanonicalLink({ ui, page }: { ui: UIState; page: number }) {
+  return <link rel="canonical" href={buildCanonicalUrl(ui, page)} />;
+}
+
 async function ScreeningsPageContent({
   searchParams,
 }: {
@@ -63,10 +186,85 @@ async function ScreeningsPageContent({
   const data = await getScreeningsServerSide(buildSearchParams(query).toString());
 
   return (
-    <ScreeningsPageClient
-      initialItems={data.items}
-      initialTotal={data.total}
-      initialError={null}
+    <>
+      {/* Skip structured data on a page generateMetadata already marked
+       * noindex (see shouldNoindex) — Google won't process a noindexed
+       * page's structured data, so emitting it here is dead weight. */}
+      {!shouldNoindex(ui) && <NowPlayingStructuredData items={data.items} />}
+      <ScreeningsPageClient
+        initialItems={data.items}
+        initialTotal={data.total}
+        initialError={null}
+      />
+    </>
+  );
+}
+
+/**
+ * `ItemList` structured data for the current page's screening list, reusing
+ * `data.items` from the fetch `ScreeningsPageContent` already made — no
+ * separate fetch. Deduped by film: the page shows one row per showtime, but
+ * the same film screening twice this page would otherwise produce two
+ * entries pointing at the identical `/films/[id]` URL, which is exactly
+ * the kind of list-of-films this schema is meant to describe.
+ *
+ * Each entry's `item` is a (lightweight) `Movie`, matching the fuller Movie
+ * schema `frontend/app/films/[id]/page.tsx` already emits on the film's own
+ * page — not a bare name/url pair — so this list says what it's a list OF,
+ * not just a list of untyped links.
+ */
+function NowPlayingStructuredData({ items }: { items: Screening[] }) {
+  const seenFilmIds = new Set<number>();
+  const uniqueFilms = items.filter((s) => {
+    if (seenFilmIds.has(s.film_id)) return false;
+    seenFilmIds.add(s.film_id);
+    return true;
+  });
+
+  if (uniqueFilms.length === 0) return null;
+
+  const itemList = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: uniqueFilms.map((s, i) => {
+      const ratingNum = s.imdb_rating ? Number(s.imdb_rating) : null;
+      const directors = s.directors
+        ? s.directors.split(',').map((name) => name.trim()).filter(Boolean)
+        : [];
+
+      return {
+        '@type': 'ListItem',
+        position: i + 1,
+        item: {
+          '@type': 'Movie',
+          name: s.title,
+          url: `${SITE_URL}/films/${s.film_id}`,
+          ...(s.year && { dateCreated: String(s.year) }),
+          ...(s.description && { description: s.description }),
+          ...(directors.length && {
+            director: directors.map((name) => ({ '@type': 'Person', name })),
+          }),
+          ...(s.genre && { genre: s.genre }),
+          ...(s.imdb_url && { sameAs: s.imdb_url }),
+          ...(ratingNum &&
+            !isNaN(ratingNum) && {
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: ratingNum,
+                bestRating: 10,
+                worstRating: 0,
+                ...(s.imdb_votes && { ratingCount: s.imdb_votes }),
+              },
+            }),
+        },
+      };
+    }),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }}
     />
   );
 }
@@ -81,9 +279,12 @@ export default async function Home({
   searchParams: Promise<RawSearchParams>;
 }) {
   const resolvedSearchParams = await searchParams;
+  const ui = parseUIStateFromSearchParams(toReadableSearchParams(resolvedSearchParams));
+  const page = pageNumberFrom(resolvedSearchParams);
 
   return (
     <main className={`${noto.className}`}>
+      <CanonicalLink ui={ui} page={page} />
       <section className="bg-hero-bg text-white mb-12">
         <div className="mx-auto max-w-[1400px] px-4 py-16 md:py-20">
           <h1 className="text-4xl font-bold leading-tight md:text-5xl lg:text-6xl mb-4">

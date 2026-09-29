@@ -45,9 +45,12 @@ export const metadata: Metadata = {
     description:
       "Browse movie listings for Vancouver BC independent cinemas. Find what films are playing, filter by title or movie theater, and save your picks to a personal watchlist.",
   },
-  alternates: {
-    canonical: SITE_URL,
-  },
+  // Deliberately no blanket `alternates.canonical` here: a static value would
+  // apply to every route that doesn't set its own (e.g. it pointed /about at
+  // the homepage before this was removed). Pages needing one set it
+  // themselves (films/[id]/page.tsx via generateMetadata; the homepage via
+  // a rendered <link> tag — Next's alternates.canonical strips query
+  // strings, which the homepage's filtered/paginated URLs need to keep).
   robots: {
     index: true,
     follow: true,
