@@ -234,7 +234,8 @@ filter combination server side, not just the default view.
 
 Scope: `frontend/` (Next.js app) and general site discoverability. See
 `docs/seo-hub-pages.md` for the full requirements and design notes behind
-the hub page items below (SEO-3, SEO-7, SEO-8, SEO-9, SEO-10).
+the hub page items below (SEO-7, SEO-8, SEO-9, SEO-10; SEO-3 covered the
+same "hub page" need for the homepage itself and is now done, above).
 
 ### Done
 
@@ -277,6 +278,46 @@ sharing the same filter clause) plumbed through
   click) is left alone so "open in new tab" and similar still work.
 - Pagination is hidden entirely when there is only one page.
 
+#### SEO-3. Server render the homepage now playing list
+
+Shipped per `docs/specs/homepage-ssr.md`, on top of FE-1's Server Component
+conversion of `frontend/app/page.tsx`.
+
+- Added `generateMetadata`: falls through to the root layout's static
+  title/description for the plain default view, and builds a dynamic
+  title/description naming the active filter otherwise (a named cinema, via
+  a new `getCinemasServerSide` in `frontend/app/lib/cinemas.ts`; a search
+  term; a date/range; or a page number beyond 1).
+- Added `ItemList` structured data for the current page's screening list
+  (`NowPlayingStructuredData`), deduped by film, reusing the same fetch the
+  page body already made. Each entry's `item` is a `Movie` (director, genre,
+  rating, etc.), matching the fuller schema already on the film's own page,
+  not a bare name/url pair.
+- Added `noindex` (`shouldNoindex`) for a search term or a date/date-range
+  filter, and skip emitting the structured data at all in that case (Google
+  doesn't process structured data on a page it isn't indexing) — these
+  aren't stable, searched-for pages the way a named-cinema filter is: `q`
+  is arbitrary typed text, and a specific day's listing goes stale within
+  24 hours. Matches Google's own guidance for internal search-results-style
+  pages: `noindex` the page, but still `follow` its links to the real film
+  pages.
+- Found and fixed two canonical-URL bugs along the way, one specific to
+  this page and one pre-existing and site-wide: Next.js's
+  `alternates.canonical` in the Metadata API silently strips a URL's query
+  string, so a per-filter canonical needed a manually rendered
+  `<link rel="canonical">` tag instead (a supported Next.js pattern — it's
+  still hoisted and deduped into `<head>`); separately, the root layout's
+  static `alternates.canonical: SITE_URL` had been applying to every route
+  without its own override, so `/about` and similar pages were pointing
+  their canonical at the homepage. Removed that blanket default; a page
+  with no canonical tag is a safe, neutral state.
+- Confirmed the shared server side fetch already uses `cache: 'no-store'`,
+  from the original FE-1 work.
+- Verified with `curl` against a local dev server across the default view,
+  a cinema filter, a search term, `page=2`, and an invalid date range.
+  Google's Rich Results Test itself needs a public URL — still to run once
+  deployed.
+
 ### Still deferred
 
 ---
@@ -315,32 +356,6 @@ the generic `Organization` type used today.
 
 **Priority:** High. This is the biggest gap, and the data is already
 available.
-
----
-
-#### SEO-3. Server render the homepage now playing list
-
-**Problem:** `frontend/app/page.tsx` starts with `'use client'`. The entire
-"Now Playing" list is fetched and rendered client side. The homepage has no
-page level `generateMetadata` and no structured data of its own, so a
-search engine's first look at the page finds only the static title and
-description from the root layout, not the actual screening list.
-
-**Impact:** The homepage is the single highest authority page on the site,
-and it is already trying to do the job that a "this week in Vancouver
-arthouse cinema" hub page would do. Its main content is effectively
-invisible to a crawler that has not executed client side JavaScript.
-
-**Approach:** Depends on FE-1 shipping first. Once `frontend/app/page.tsx`
-is a Server Component reading filter state from `searchParams`, add
-`ItemList` or `CollectionPage` structured data and `generateMetadata` for
-the current screening list. Full spec is in
-`docs/specs/homepage-ssr.md`, and the reasoning for prioritizing this over
-other hub page ideas is in `docs/seo-hub-pages.md`.
-
-**Priority:** High. This replaces the original "time period hub page" idea.
-The homepage already is that page, and needs to be built correctly rather
-than duplicated as a separate route. Blocked on FE-1.
 
 ---
 
