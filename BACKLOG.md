@@ -597,18 +597,41 @@ with several films from the same person scheduled at once.
 
 #### SEO-10. Add country and language hub pages
 
-**Problem:** `film.country` and `film.language` exist but are sparse and
-inconsistent. Several currently showing films have `null` or `N/A` in
-these fields.
+**Problem:** Re-checked against the 228 films with an upcoming active
+screening (2026-10-05; re-run this check if revisiting much later):
+`country` is usable (non-null, non-"N/A") on 141/228 (61.8%), `language`
+on 130/228 (57.0%) — both films are originally reported as "sparse and
+inconsistent," but that was a qualitative impression, not a measured
+number; at today's actual coverage this is the same order of magnitude as
+genre's own 61% match rate, which was already judged good enough to build
+SEO-4's related-films feature on. Data quality is no longer the blocker.
 
-**Impact:** Same category of idea as genre pages, for example "Japanese
-films playing in Vancouver," but with thinner and less consistent data
-right now.
+**Impact:** Same category of idea as genre pages ("Japanese films playing
+in Vancouver"), and the volume distribution has the same shape genre's did
+(see SEO-4/`docs/specs/related-films.md`'s Jaccard-similarity story): the
+most common values are too common to be a distinctive hub page, and most
+other values are too thin to justify one at all. By language: English 76
+(too broad), French 19, Japanese 11, Spanish 11, German 10 (viable), then
+a long tail of 1-4 each (too thin). By country: United States 44 (too
+broad), France 32, United Kingdom 19, Canada 17, Germany 15, Japan 13
+(viable), then Belgium 9 and below (too thin). A handful of hub pages for
+the mid-volume values is viable; one page per *every* distinct value is
+not.
 
-**Approach:** Revisit after the tag work (SEO-7) ships and after data
-quality for `country` and `language` improves.
+**Approach:** Same pattern as SEO-13's Top Rated hub: one static list of
+which country/language values get a page (the mid-volume ones identified
+above, re-checked at build time rather than assumed from this snapshot),
+each rendered with the existing `PosterGrid`/`PosterCarousel` +
+`ItemListStructuredData` components, filtering `fetchScreenings`'s result
+set by the matching `country`/`language` token. Needs its own design pass
+on: whether country and language are one hub type or two, the URL
+structure per value, and how a value earns a page (a fixed threshold
+re-checked periodically, vs. a hardcoded list) — not yet decided, write a
+spec before building, matching this project's own convention.
 
-**Priority:** Low.
+**Priority:** Medium (up from Low) — the data-quality blocker this was
+waiting on is resolved; what's left is a scope/design decision, not a data
+problem.
 
 ---
 
