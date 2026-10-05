@@ -3,9 +3,12 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getFilmDetail } from '@/app/lib/films';
+import type { Screening } from '@/app/lib/screenings';
+import { ItemListStructuredData } from '@/app/lib/structuredData';
 import FilmHeader from '@/components/films/FilmHeader';
 import FilmMeta from '@/components/films/FilmMeta';
 import FilmShowtimes from '@/components/films/FilmShowtimes';
+import PosterGrid from '@/components/whats-on/PosterGrid';
 
 import { Noto_Sans } from 'next/font/google';
 
@@ -200,12 +203,19 @@ function StructuredData({
  * `generateMetadata` already populated it.
  */
 async function FilmContent({ id }: { id: number }) {
-  const { film, upcoming } = await getFilmDetail(id);
+  const { film, upcoming, related } = await getFilmDetail(id);
+
+  // Soonest upcoming screening, if any — same ordering FilmShowtimes uses,
+  // just surfaced as a single callout in the hero above it.
+  const nextScreening = [...upcoming].sort(
+    (a, b) => new Date(a.start_at_utc).getTime() - new Date(b.start_at_utc).getTime()
+  )[0];
 
   return (
     <>
       <StructuredData film={film} upcoming={upcoming} />
-      <FilmHeader film={film} />
+      <ItemListStructuredData films={related} />
+      <FilmHeader film={film} nextScreening={nextScreening} />
       {/* Two-column layout: film metadata left, showtimes right */}
       <div className="mt-8 grid grid-cols-1 gap-10 md:grid-cols-[0.4fr_0.6fr]">
         <div>
@@ -218,7 +228,31 @@ async function FilmContent({ id }: { id: number }) {
           />
         </div>
       </div>
+      <RelatedFilms films={related} />
     </>
+  );
+}
+
+/** Other currently screening films sharing a director, genre, or cinema
+ * with this one (see docs/specs/related-films.md). Omitted entirely when
+ * there are no matches, rather than showing an empty heading. Styled as
+ * the same bordered/banded card as FilmMeta and FilmShowtimes above it,
+ * rather than a bare heading, so the page reads as one consistent set of
+ * sections instead of two cards plus a floating grid. */
+function RelatedFilms({ films }: { films: Screening[] }) {
+  if (films.length === 0) return null;
+
+  return (
+    <section className="mt-8 overflow-hidden rounded-card border border-border bg-surface">
+      <div className="bg-table-header-bg px-6 py-3">
+        <h2 className="text-[11px] font-medium uppercase tracking-wide text-white">
+          Related Films
+        </h2>
+      </div>
+      <div className="px-6 py-5">
+        <PosterGrid films={films} />
+      </div>
+    </section>
   );
 }
 

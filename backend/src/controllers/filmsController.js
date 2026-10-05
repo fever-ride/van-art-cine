@@ -1,10 +1,10 @@
-import { getFilmById, getFilmPeople, getUpcomingForFilm } from '../models/films.js';
+import { getFilmById, getFilmPeople, getUpcomingForFilm, getRelatedFilms } from '../models/films.js';
 import { NotFoundError } from '../utils/errors.js';
 
 /**
  * GET /api/films/:id
  * @param {{ id: number }}
- * @returns {200} {{ film: Film & { directors, writers, cast }, upcoming: Screening[] }}
+ * @returns {200} {{ film: Film & { directors, writers, cast }, upcoming: Screening[], related: Screening[] }}
  */
 export async function getByIdHandler(req, res, next) {
   try {
@@ -15,7 +15,8 @@ export async function getByIdHandler(req, res, next) {
 
     const { directors, writers, cast } = await getFilmPeople(id);
     const upcoming = await getUpcomingForFilm(id, { limit: 200 });
+    const related = await getRelatedFilms(id);
 
-    return res.json({ film: { ...film, directors, writers, cast }, upcoming });
+    return res.json({ film: { ...film, directors, writers, cast }, upcoming, related });
   } catch (err) { return next(err); }
 }

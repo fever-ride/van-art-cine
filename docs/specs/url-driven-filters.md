@@ -23,9 +23,9 @@ with the browser's back and forward buttons, the same way the existing
   point of view.
 - Do not change how the watchlist works. It stays a separate, client side,
   post-mount concern, unaffected by this work.
-- Do not build new dedicated pages for cinemas, genres, or tags. Those are
-  tracked separately as BACKLOG.md SEO-2, SEO-7, SEO-8, and SEO-10. This
-  spec is about the existing homepage's own filtering mechanism.
+- Do not build new dedicated pages for cinemas or tags. Those are tracked
+  separately as BACKLOG.md SEO-2, SEO-7, and SEO-10. This spec is about
+  the existing homepage's own filtering mechanism.
 - Do not require old bookmarked links to keep working in some legacy
   format. The current filters were never reflected in the URL at all, so
   there is nothing old to stay compatible with, other than the existing

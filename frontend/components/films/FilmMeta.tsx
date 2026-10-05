@@ -39,6 +39,13 @@ export default function FilmMeta({ film }: Props) {
       ? film.description.trim()
       : '';
 
+  const hasAnyDetail =
+    !!description ||
+    langs.length > 0 ||
+    (!isMissingText(film.rated) && !!film.rated) ||
+    writers.length > 0 ||
+    topCast.length > 0;
+
   return (
     <section className="overflow-hidden rounded-card border border-border bg-surface">
       <div className="bg-table-header-bg px-6 py-3">
@@ -48,6 +55,10 @@ export default function FilmMeta({ film }: Props) {
       </div>
 
       <div className="px-6 py-5 space-y-5">
+        {!hasAnyDetail && (
+          <p className="text-sm text-muted">No additional details available.</p>
+        )}
+
         {/* Description */}
         {description && (
           <div>
@@ -58,35 +69,40 @@ export default function FilmMeta({ film }: Props) {
         )}
 
         {/* Details */}
-        <div className="space-y-4 text-sm pt-3">
-          {langs.length > 0 && (
-            <div className="flex gap-4">
-              <span className="font-semibold text-primary w-20">Language</span>
-              <span className="text-primary">{langs.join(', ')}</span>
-            </div>
-          )}
+        {(langs.length > 0 ||
+          (!isMissingText(film.rated) && !!film.rated) ||
+          writers.length > 0 ||
+          topCast.length > 0) && (
+          <div className="space-y-4 text-sm pt-3">
+            {langs.length > 0 && (
+              <div className="flex gap-4">
+                <span className="font-semibold text-primary w-20">Language</span>
+                <span className="text-primary">{langs.join(', ')}</span>
+              </div>
+            )}
 
-          {!isMissingText(film.rated) && film.rated && (
-            <div className="flex gap-4">
-              <span className="font-semibold text-primary w-20">Rated</span>
-              <span className="text-primary">{film.rated}</span>
-            </div>
-          )}
+            {!isMissingText(film.rated) && film.rated && (
+              <div className="flex gap-4">
+                <span className="font-semibold text-primary w-20">Rated</span>
+                <span className="text-primary">{film.rated}</span>
+              </div>
+            )}
 
-          {writers.length > 0 && (
-            <div className="flex gap-4">
-              <span className="font-semibold text-primary w-20">Writer{writers.length > 1 ? 's' : ''}</span>
-              <span className="text-primary">{writers.join(', ')}</span>
-            </div>
-          )}
+            {writers.length > 0 && (
+              <div className="flex gap-4">
+                <span className="font-semibold text-primary w-20">Writer{writers.length > 1 ? 's' : ''}</span>
+                <span className="text-primary">{writers.join(', ')}</span>
+              </div>
+            )}
 
-          {topCast.length > 0 && (
-            <div className="flex gap-4">
-              <span className="font-semibold text-primary w-20">Cast</span>
-              <span className="text-primary">{topCast.join(', ')}</span>
-            </div>
-          )}
-        </div>
+            {topCast.length > 0 && (
+              <div className="flex gap-4">
+                <span className="font-semibold text-primary w-20">Cast</span>
+                <span className="text-primary">{topCast.join(', ')}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -5,7 +5,7 @@ pages and related discoverability work. This grew out of the structured
 data audit that produced BACKLOG.md items SEO-1 through SEO-6, and it
 records the reasoning behind why the original "genre, director, and time
 period" idea (old SEO-3) got split apart. Read this before starting any of
-the SEO-3, SEO-7, SEO-8, SEO-9, SEO-10, or SEO-13 items in BACKLOG.md.
+the SEO-3, SEO-7, SEO-9, SEO-10, or SEO-13 items in BACKLOG.md.
 
 ## Background
 

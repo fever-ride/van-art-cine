@@ -8,6 +8,7 @@
 export interface FilmDetailResponse {
   film: Film;
   upcoming: UpcomingScreening[];
+  related: Screening[];
 }
 
 export interface Film {
@@ -46,6 +47,7 @@ export interface UpcomingScreening {
 }
 
 import { cache } from 'react';
+import { Screening } from './screenings';
 
 export const getFilmDetail = cache(async (film_id: number): Promise<FilmDetailResponse> => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:4000';

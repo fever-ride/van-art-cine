@@ -304,7 +304,7 @@ a decision on visual direction.
 
 Scope: `frontend/` (Next.js app) and general site discoverability. See
 `docs/seo-hub-pages.md` for the full requirements and design notes behind
-the hub page items below (SEO-7, SEO-8, SEO-9, SEO-10; SEO-3 covered the
+the hub page items below (SEO-7, SEO-9, SEO-10; SEO-3 covered the
 same "hub page" need for the homepage itself and is now done, above).
 
 ### Done
@@ -486,8 +486,12 @@ understand topic relationships. It also limits on site engagement signals
 such as pages per session and time on site.
 
 **Approach:** Add a related films section to
-`frontend/app/films/[id]/page.tsx`, sourced from existing director,
-cinema, and genre fields.
+`frontend/app/films/[id]/page.tsx`, ranked by director match, then genre,
+then cinema, each ranked by soonest upcoming screening — not a general
+recommendation engine; the catalog size (236 active films) doesn't
+justify embeddings or collaborative filtering. Full data investigation,
+design decisions, and task breakdown are in
+`docs/specs/related-films.md`.
 
 **Priority:** Medium.
 
@@ -572,27 +576,6 @@ replaced this one.
 
 ---
 
-#### SEO-8. Treat genre as a homepage filter, not a dedicated page, for now
-
-**Problem:** `film.genre` is a raw, comma separated string copied from
-OMDb, and sometimes the literal value `N/A`. Among films currently
-showing, most genres have exactly 1 film, with `Documentary` and `Drama`
-at 3 films each.
-
-**Impact:** A dedicated genre page would be thin today. Genre is still a
-real, recurring category that should accumulate volume over time, unlike
-director (see SEO-9).
-
-**Approach:** Parse and clean `film.genre` into a proper list, and surface
-it as a filter on the homepage rather than as dedicated URLs for now.
-Revisit dedicated genre pages once simultaneous inventory across venues
-grows enough that a genre page would realistically list more than 2 or 3
-films.
-
-**Priority:** Medium.
-
----
-
 #### SEO-9. Do not build director hub pages
 
 **Problem:** Nearly every director with a film currently showing has
@@ -622,8 +605,8 @@ these fields.
 films playing in Vancouver," but with thinner and less consistent data
 right now.
 
-**Approach:** Revisit after the genre (SEO-8) and tag (SEO-7) work ships,
-and after data quality for `country` and `language` improves.
+**Approach:** Revisit after the tag work (SEO-7) ships and after data
+quality for `country` and `language` improves.
 
 **Priority:** Low.
 

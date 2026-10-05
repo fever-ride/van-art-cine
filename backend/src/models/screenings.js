@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prismaClient.js';
 import { localDayToUtcRange, localRangeToUtc } from '../utils/time.js';
-import { buildPosterUrl } from '../utils/posterUrl.js';
+import { SCREENING_SELECT, flattenScreeningRow } from './screeningSelect.js';
 
 /**
  * Screening list queries for the public API.
@@ -80,41 +80,6 @@ export async function fetchScreenings(opts = {}) {
       : {}),
   };
 
-  // Load related film (incl. directors), cinema; directors flattened to a string below.
-  const baseSelect = {
-    id: true,
-    start_at_utc: true,
-    end_at_utc: true,
-    runtime_min: true,
-    tz: true,
-    source_url: true,
-    film: {
-      select: {
-        id: true,
-        title: true,
-        imdb_id: true,
-        tmdb_id: true,
-        year: true,
-        description: true,
-        rated: true,
-        genre: true,
-        language: true,
-        country: true,
-        awards: true,
-        imdb_rating: true,
-        rt_rating_pct: true,
-        imdb_votes: true,
-        imdb_url: true,
-        poster_path: true,
-        film_person: {
-          where: { role: 'director' },
-          select: { person: { select: { name: true } } },
-        },
-      },
-    },
-    cinema: { select: { id: true, name: true } },
-  };
-
   let orderBy;
   const sortKey = String(sort);
   const ratingOrder = { sort: safeOrder, nulls: 'last' };
@@ -152,7 +117,7 @@ export async function fetchScreenings(opts = {}) {
   const [rowsRaw, total] = await Promise.all([
     prisma.screening.findMany({
       where,
-      select: baseSelect,
+      select: SCREENING_SELECT,
       orderBy,
       skip: Number(offset),
       take: Number(limit),
@@ -160,47 +125,7 @@ export async function fetchScreenings(opts = {}) {
     prisma.screening.count({ where }),
   ]);
 
-  // Denormalize to the legacy API shape: single directors string, film fields at top level.
-  const flattened = rowsRaw.map((s) => {
-    const film = s.film ?? {};
-    const cinema = s.cinema ?? {};
-    const directors =
-      (film.film_person ?? [])
-        .map(fp => fp.person?.name)
-        .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b))
-        .join(', ') || null;
-
-    return {
-      id: s.id,
-      title: film.title ?? null,
-      start_at_utc: s.start_at_utc,
-      end_at_utc: s.end_at_utc,
-      runtime_min: s.runtime_min,
-      tz: s.tz,
-      cinema_id: cinema.id ?? null,
-      cinema_name: cinema.name ?? null,
-      film_id: film.id ?? null,
-      imdb_id: film.imdb_id ?? null,
-      tmdb_id: film.tmdb_id ?? null,
-      year: film.year ?? null,
-      directors,
-      description: film.description ?? null,
-      rated: film.rated ?? null,
-      genre: film.genre ?? null,
-      language: film.language ?? null,
-      country: film.country ?? null,
-      awards: film.awards ?? null,
-      imdb_rating: film.imdb_rating ?? null,
-      rt_rating_pct: film.rt_rating_pct ?? null,
-      imdb_votes: film.imdb_votes ?? null,
-      source_url: s.source_url ?? null,
-      imdb_url: film.imdb_url ?? null,
-      poster_url: buildPosterUrl(film.poster_path),
-    };
-  });
-
-  return { items: flattened, total };
+  return { items: rowsRaw.map(flattenScreeningRow), total };
 }
 
 /**

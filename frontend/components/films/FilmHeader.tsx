@@ -1,6 +1,6 @@
 'use client';
 
-import type { Film } from '@/app/lib/films';
+import type { Film, UpcomingScreening } from '@/app/lib/films';
 import {
   cleanDisplayText,
   formatPeopleLine,
@@ -23,9 +23,15 @@ type Props = {
     | 'directors'
     | 'poster_url'
   >;
+  /** Soonest upcoming screening, if any — only its runtime is pulled into
+   * the pill row here. Full details are listed by `FilmShowtimes` below. */
+  nextScreening?: UpcomingScreening;
 };
 
-export default function FilmHeader({ film }: Props) {
+const pillClass =
+  'inline-flex items-center rounded-full bg-white/10 px-2.5 py-1 text-[12px] font-semibold text-white';
+
+export default function FilmHeader({ film, nextScreening }: Props) {
   const {
     title,
     year,
@@ -48,74 +54,62 @@ export default function FilmHeader({ film }: Props) {
   const countriesText = cleanDisplayText(country);
   const genres = formatGenre(genre);
   const dirLine = formatPeopleLine(directors);
-  const directorCount = dirLine ? dirLine.split(', ').length : 0;
   const imdbRating = parseImdbRating(imdb_rating);
 
-  const metaBits: string[] = [];
-  if (year) metaBits.push(String(year));
-  if (countriesText) metaBits.push(countriesText);
-  if (dirLine) {
-    metaBits.push(
-      `Director${directorCount > 1 ? 's' : ''}: ${dirLine}`,
-    );
-  }
+  // All film facts shown as one consistent row of pill chips, instead of
+  // splitting them between plain inline text and pill-only genres.
+  const pills: string[] = [];
+  if (year) pills.push(String(year));
+  if (countriesText) pills.push(countriesText);
+  if (nextScreening?.runtime_min) pills.push(`${nextScreening.runtime_min} min`);
+  pills.push(...genres);
+  if (dirLine) pills.push(`Dir. ${dirLine}`);
 
   return (
-    <section className="rounded-card border border-border bg-surface">
-      <div className="flex flex-col gap-6 p-6 md:flex-row md:items-start md:p-8">
+    <section className="relative overflow-hidden rounded-card bg-hero-bg text-white">
+      {/* Subtle glow behind the poster, matching the depth of the reference
+       * design — decorative only, no content. */}
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.08),transparent_55%)]"
+        aria-hidden="true"
+      />
+
+      <div className="relative flex flex-col gap-6 p-6 md:flex-row md:items-start md:p-8">
         {/* Poster */}
         <div className="shrink-0">
           <img
             src={poster}
             alt={`${title} poster`}
-            className="h-[180px] w-[130px] rounded-card object-cover md:h-[176px] md:w-[128px]"
+            className="h-[180px] w-[130px] rounded-card object-cover shadow-lg ring-1 ring-white/10 md:h-[176px] md:w-[128px]"
           />
         </div>
 
         {/* Content */}
         <div className="min-w-0 grow">
           {/* Title */}
-          <div className="text-3xl font-bold leading-tight text-primary md:text-3xl">
+          <div className="text-3xl font-bold leading-tight text-white md:text-4xl">
             {title}
           </div>
 
-          {/* Meta row: Year • Country • Directors | Genres */}
-          <div className="mt-2 min-w-0 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
-            {metaBits.length > 0 && (
-              <span className="whitespace-normal break-words">
-                {metaBits.join(' • ')}
-              </span>
-            )}
-
-            {genres.length > 0 && metaBits.length > 0 && (
-              <span
-                className="mx-2 h-4 w-px bg-border"
-                aria-hidden="true"
-              />
-            )}
-
-            {genres.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
-                {genres.map((g) => (
-                  <span
-                    key={g}
-                    className="inline-flex items-center rounded-full bg-pill px-2.5 py-1 text-[12px] font-semibold text-primary"
-                  >
-                    {g}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* All facts as one consistent row of pills */}
+          {pills.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {pills.map((p, i) => (
+                <span key={`${p}-${i}`} className={pillClass}>
+                  {p}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Ratings */}
           <div className="mt-4 flex flex-wrap items-center gap-4">
             {imdbRating != null && (
               <div className="flex items-baseline gap-2">
-                <span className="text-sm font-medium text-muted">IMDb</span>
-                <span className="text-2xl font-bold text-primary">{imdbRating.toFixed(1)}</span>
+                <span className="text-sm font-medium text-gray-300">IMDb</span>
+                <span className="text-2xl font-bold text-white">{imdbRating.toFixed(1)}</span>
                 {typeof imdb_votes === 'number' && (
-                  <span className="text-sm text-muted">
+                  <span className="text-sm text-gray-300">
                     ({imdb_votes.toLocaleString()})
                   </span>
                 )}
@@ -124,8 +118,8 @@ export default function FilmHeader({ film }: Props) {
 
             {isValidRtRating(rt_rating_pct) && (
               <div className="flex items-baseline gap-2">
-                <span className="text-sm font-medium text-muted">Rotten Tomatoes</span>
-                <span className="text-2xl font-bold text-primary">{rt_rating_pct}%</span>
+                <span className="text-sm font-medium text-gray-300">Rotten Tomatoes</span>
+                <span className="text-2xl font-bold text-white">{rt_rating_pct}%</span>
               </div>
             )}
           </div>

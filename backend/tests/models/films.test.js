@@ -18,9 +18,54 @@ jest.unstable_mockModule('../../src/lib/prismaClient.js', () => ({
 }));
 
 const { prisma } = await import('../../src/lib/prismaClient.js');
-const { getFilmById, getFilmPeople, getUpcomingForFilm } = await import(
+const { getFilmById, getFilmPeople, getUpcomingForFilm, getRelatedFilms } = await import(
   '../../src/models/films.js'
 );
+
+/** Minimal fixture matching SCREENING_SELECT's shape, for getRelatedFilms tests. */
+function screeningRow({
+  id,
+  filmId,
+  title,
+  genre = null,
+  directorId = null,
+  directorName = null,
+  rating = null,
+  startAtUtc,
+  cinemaId = 1,
+  cinemaName = 'Test Cinema',
+}) {
+  return {
+    id,
+    start_at_utc: startAtUtc,
+    end_at_utc: null,
+    runtime_min: null,
+    tz: 'America/Vancouver',
+    source_url: null,
+    film: {
+      id: filmId,
+      title,
+      imdb_id: null,
+      tmdb_id: null,
+      year: null,
+      description: null,
+      rated: null,
+      genre,
+      language: null,
+      country: null,
+      awards: null,
+      imdb_rating: rating,
+      rt_rating_pct: null,
+      imdb_votes: null,
+      imdb_url: null,
+      poster_path: null,
+      film_person: directorId
+        ? [{ person: { name: directorName } }]
+        : [],
+    },
+    cinema: { id: cinemaId, name: cinemaName },
+  };
+}
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -251,6 +296,113 @@ describe('films model', () => {
           source_url: 'https://example.com',
         },
       ]);
+    });
+  });
+
+  describe('getRelatedFilms', () => {
+    test('returns [] when the target film is not found', async () => {
+      prisma.film.findUnique.mockResolvedValue(null);
+
+      const result = await getRelatedFilms(999);
+
+      expect(result).toEqual([]);
+      expect(prisma.screening.findMany).not.toHaveBeenCalled();
+    });
+
+    test('director bucket alone filling the cap skips the genre and cinema queries entirely', async () => {
+      prisma.film.findUnique.mockResolvedValue({
+        genre: 'Drama',
+        film_person: [{ person_id: 1 }],
+      });
+      // Call 1: target's own cinema ids (not used once director bucket fills the cap).
+      prisma.screening.findMany.mockResolvedValueOnce([
+        { cinema_id: 1 },
+      ]);
+      // Call 2: director bucket — 6 distinct films, enough to hit the cap alone.
+      prisma.screening.findMany.mockResolvedValueOnce(
+        Array.from({ length: 6 }, (_, i) =>
+          screeningRow({
+            id: 100 + i,
+            filmId: 200 + i,
+            title: `Director Film ${i}`,
+            directorId: 1,
+            directorName: 'Shared Director',
+            startAtUtc: new Date(2026, 9, 10 + i),
+          })
+        )
+      );
+
+      const result = await getRelatedFilms(1, { limit: 6 });
+
+      expect(result).toHaveLength(6);
+      expect(result.map((r) => r.film_id)).toEqual([200, 201, 202, 203, 204, 205]);
+      // Only the two calls above — genre/cinema buckets never queried.
+      expect(prisma.screening.findMany).toHaveBeenCalledTimes(2);
+    });
+
+    test('fills remaining slots from genre, then cinema, once director is exhausted', async () => {
+      prisma.film.findUnique.mockResolvedValue({
+        genre: 'Drama, Comedy',
+        film_person: [{ person_id: 1 }],
+      });
+      prisma.screening.findMany
+        // target's own cinema ids
+        .mockResolvedValueOnce([{ cinema_id: 1 }])
+        // director bucket: only 2 distinct films
+        .mockResolvedValueOnce([
+          screeningRow({ id: 1, filmId: 10, title: 'D1', directorId: 1, startAtUtc: new Date(2026, 9, 1) }),
+          screeningRow({ id: 2, filmId: 11, title: 'D2', directorId: 1, startAtUtc: new Date(2026, 9, 2) }),
+        ])
+        // genre bucket: 3 distinct films (one overlaps a director pick, must be excluded)
+        .mockResolvedValueOnce([
+          screeningRow({ id: 3, filmId: 10, title: 'D1', genre: 'Drama', startAtUtc: new Date(2026, 9, 1) }),
+          screeningRow({ id: 4, filmId: 20, title: 'G1', genre: 'Drama', startAtUtc: new Date(2026, 9, 3) }),
+          screeningRow({ id: 5, filmId: 21, title: 'G2', genre: 'Comedy', startAtUtc: new Date(2026, 9, 4) }),
+        ])
+        // cinema bucket: director (2) + genre (2 new) = 4, still short of the
+        // limit (5), so this bucket's one new film should also get pulled in.
+        .mockResolvedValueOnce([
+          screeningRow({ id: 6, filmId: 30, title: 'C1', startAtUtc: new Date(2026, 9, 5) }),
+        ]);
+
+      const result = await getRelatedFilms(1, { limit: 5 });
+
+      expect(result.map((r) => r.film_id)).toEqual([10, 11, 20, 21, 30]);
+      expect(prisma.screening.findMany).toHaveBeenCalledTimes(4);
+    });
+
+    test('dedupes a film with multiple matching screenings down to its soonest one', async () => {
+      prisma.film.findUnique.mockResolvedValue({
+        genre: null,
+        film_person: [],
+      });
+      prisma.screening.findMany
+        .mockResolvedValueOnce([{ cinema_id: 1 }]) // target cinema ids
+        .mockResolvedValueOnce([
+          // Same film (id 50), two screenings; query already orders
+          // soonest-first, so the first row is the one that should win.
+          screeningRow({ id: 1, filmId: 50, title: 'Same Film', startAtUtc: new Date(2026, 9, 1) }),
+          screeningRow({ id: 2, filmId: 50, title: 'Same Film', startAtUtc: new Date(2026, 9, 8) }),
+        ]);
+
+      const result = await getRelatedFilms(1, { limit: 6 });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(1);
+    });
+
+    test('a film with no director, no genre, and no cinema (no own upcoming screenings) returns []', async () => {
+      prisma.film.findUnique.mockResolvedValue({
+        genre: 'N/A',
+        film_person: [],
+      });
+      prisma.screening.findMany.mockResolvedValueOnce([]); // target has no cinema ids either
+
+      const result = await getRelatedFilms(1);
+
+      expect(result).toEqual([]);
+      // Only the "target's own cinema ids" call — no bucket has anything to query.
+      expect(prisma.screening.findMany).toHaveBeenCalledTimes(1);
     });
   });
 });
