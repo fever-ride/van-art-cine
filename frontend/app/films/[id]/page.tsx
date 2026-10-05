@@ -2,13 +2,14 @@
 
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
 import { getFilmDetail } from '@/app/lib/films';
 import type { Screening } from '@/app/lib/screenings';
 import { ItemListStructuredData } from '@/app/lib/structuredData';
 import FilmHeader from '@/components/films/FilmHeader';
 import FilmMeta from '@/components/films/FilmMeta';
 import FilmShowtimes from '@/components/films/FilmShowtimes';
-import PosterGrid from '@/components/whats-on/PosterGrid';
+import PosterCarousel from '@/components/whats-on/PosterCarousel';
 
 import { Noto_Sans } from 'next/font/google';
 
@@ -24,8 +25,13 @@ const noto = Noto_Sans({
  * so it blocks the initial response. The `getFilmDetail` result is cached via
  * React.cache() and reused by FilmContent at no extra API cost.
  *
- * Falls back to a generic title if the film cannot be fetched (e.g. invalid id
- * or API error), rather than throwing and triggering the error boundary.
+ * A genuinely missing film (backend 404) calls `notFound()` here, before any
+ * HTML streams — this is the only point in the request where that still
+ * changes the response's HTTP status, since the page body below renders
+ * inside a Suspense boundary that commits its 200 status before its own
+ * fetch can reject. Any other error (backend down, network failure) falls
+ * back to a generic, explicitly noindexed title instead of hard-failing,
+ * since that's not evidence the film doesn't exist.
  */
 export async function generateMetadata({
   params,
@@ -48,7 +54,7 @@ export async function generateMetadata({
       title,
       description,
       alternates: {
-        canonical: `https://www.cinephilesvan.com/films/${id}`,
+        canonical: `https://www.cinephilesvan.com/films/${film.id}`,
       },
       openGraph: {
         title,
@@ -62,9 +68,11 @@ export async function generateMetadata({
         ...(film.poster_url ? { images: [film.poster_url] } : {}),
       },
     };
-  } catch {
-    // Non-fatal: render the page without rich metadata rather than hard-failing.
-    return { title: 'Film' };
+  } catch (err) {
+    if ((err as { status?: number })?.status === 404) {
+      notFound();
+    }
+    return { title: 'Film', robots: { index: false, follow: false } };
   }
 }
 
@@ -250,7 +258,7 @@ function RelatedFilms({ films }: { films: Screening[] }) {
         </h2>
       </div>
       <div className="px-6 py-5">
-        <PosterGrid films={films} />
+        <PosterCarousel films={films} />
       </div>
     </section>
   );
@@ -296,6 +304,14 @@ function FilmPageSkeleton() {
 /**
  * Route entry point. Resolves the `id` param and delegates rendering to
  * `FilmContent` behind a Suspense boundary.
+ *
+ * Checks the film exists here, awaited, before returning any JSX — not just
+ * in `generateMetadata`. `notFound()` only still changes the response's
+ * HTTP status if it's reached before the page starts streaming; once
+ * `FilmContent` resolves inside the `Suspense` boundary below, the 200
+ * shell has already committed and a 404 there can't undo it. The fetch
+ * itself is `React.cache()`-wrapped, so this doesn't cost a second request
+ * — `FilmContent` reuses the same resolved promise.
  */
 export default async function FilmPage({
   params,
@@ -303,11 +319,22 @@ export default async function FilmPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const film_id = Number(id);
+
+  try {
+    await getFilmDetail(film_id);
+  } catch (err) {
+    if ((err as { status?: number })?.status === 404) {
+      notFound();
+    }
+    // Non-404 errors (backend down, network failure) fall through to
+    // FilmContent's own fetch below, which surfaces them via error.tsx.
+  }
 
   return (
     <main className={`${noto.className} mx-auto max-w-7xl px-4 py-8`}>
       <Suspense fallback={<FilmPageSkeleton />}>
-        <FilmContent id={Number(id)} />
+        <FilmContent id={film_id} />
       </Suspense>
     </main>
   );

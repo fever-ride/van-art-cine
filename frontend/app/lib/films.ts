@@ -52,6 +52,10 @@ import { Screening } from './screenings';
 export const getFilmDetail = cache(async (film_id: number): Promise<FilmDetailResponse> => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:4000';
   const res = await fetch(`${baseUrl}/api/films/${film_id}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`API ${res.status}`);
+  if (!res.ok) {
+    const err = new Error(`API ${res.status}`) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
+  }
   return res.json() as Promise<FilmDetailResponse>;
 });

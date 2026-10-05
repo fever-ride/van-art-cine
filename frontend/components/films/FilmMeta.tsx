@@ -49,9 +49,9 @@ export default function FilmMeta({ film }: Props) {
   return (
     <section className="overflow-hidden rounded-card border border-border bg-surface">
       <div className="bg-table-header-bg px-6 py-3">
-        <h3 className="text-[11px] font-medium uppercase tracking-wide text-white">
+        <h2 className="text-[11px] font-medium uppercase tracking-wide text-white">
           Film Details
-        </h3>
+        </h2>
       </div>
 
       <div className="px-6 py-5 space-y-5">

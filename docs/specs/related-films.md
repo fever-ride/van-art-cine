@@ -91,9 +91,12 @@ checking first, even though it will stay rare.
    tie keeps the original principle ("films you could actually go see
    soon," matching SEO-13's Top Rated page) as the tiebreaker once score
    can't distinguish two candidates, rather than as the primary sort key.
-3. **Cap at 6 related films total**, taking the top-scored candidates
-   with score > 0. A 2x3 or 3x2 grid, matching the poster-grid layout
-   already established for Top Rated.
+3. **Cap at 10 related films total**, taking the top-scored candidates
+   with score > 0. Presented as a horizontally scrollable strip
+   (`PosterCarousel`), the same "this week" component Top Rated uses,
+   rather than a wrapping grid — a fixed grid reads oddly at 10 items,
+   where a scroll-snap strip the reader controls themselves scales to any
+   count without a layout the page has to plan around.
 4. **A film with zero signal overlap with every other currently screening
    film (including no shared cinema — i.e. it has no upcoming screening of
    its own) simply omits the section.** No placeholder content, no generic
@@ -106,16 +109,17 @@ checking first, even though it will stay rare.
    rather than inventing a parallel schema. This is additive to the film
    detail page's own existing `Movie`/`ScreeningEvent` JSON-LD, not a
    replacement for it.
-6. **Reuse `FilmPosterCard`** (`frontend/components/whats-on/`, built for
-   Top Rated) for the visual presentation, for consistency with the one
-   other place this codebase already shows a small grid of film posters.
+6. **Reuse `FilmPosterCard` and `PosterCarousel`**
+   (`frontend/components/whats-on/`, built for Top Rated) for the visual
+   presentation, for consistency with the one other place this codebase
+   already shows a scrollable strip of film posters.
 
 ## Acceptance criteria
 
 - A film detail page with at least one scoring signal in common with
   another currently screening film shows a related-films section linking
   to the top-scored matches, ranked per the Design decisions above, capped
-  at 6.
+  at 10.
 - A film with zero signal overlap with every other film renders the page
   with no related-films section — not an empty heading, not an error.
 - Every related-film link is a real `<a href>` present in the initial

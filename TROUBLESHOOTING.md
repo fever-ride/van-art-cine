@@ -584,3 +584,50 @@ Fixing the commit strategy meant re-reading and testing this code path closely, 
 3. Kill/rate-limit the network mid-run → previously-processed rows stay committed; re-running only touches the remaining films.
 4. `SELECT name FROM person WHERE name = 'N/A'` → no rows.
 5. A film with `&apos;`/`&eacute;`-style entities in its OMDb `Plot`/person names → stored and displayed decoded, not as raw markup.
+
+---
+
+## Film detail page 404s were "soft 404s" — `notFound()` never changed the HTTP status
+
+A frontend story: three separate attempts to fix a wrong status code all failed for the same reason, and the actual cause was a file nobody had looked at because nothing pointed to it.
+
+### Symptom
+
+`curl -I http://localhost:4001/films/999999999` (a nonexistent film id) returned `HTTP/1.1 200 OK`, not `404` — even though the page's own content correctly said "Film not found" and had a `noindex` meta tag. Caught during an SEO audit, triggered by that same day's database cleanup having deleted several duplicate film rows whose old ids were now exactly this case.
+
+### Investigation
+
+- Ruled out the backend immediately: `curl -I http://localhost:4000/api/films/999999999` → a real `404` with `{"error":"NOT_FOUND","message":"Film not found"}`, consistently, the whole time. The bug was 100% frontend.
+- **First attempt:** catch the 404 in `generateMetadata` and call `next/navigation`'s `notFound()` there. Still 200.
+- **Second attempt:** moved the existence check to the very top of the page component itself — `await`ed, before returning any JSX, before the explicit `<Suspense>` wrapping the main content — and called `notFound()` there instead. Still 200, confirmed in `next dev`.
+- Suspected `next dev` itself might not report statuses reliably around streaming/`notFound()`, so re-verified in an **isolated, clean `next build && next start`** — copied the whole frontend into a scratch directory (`rsync -a --exclude node_modules --exclude .next`, then symlinked `node_modules` back in) rather than building in place, specifically to avoid repeating an earlier mistake this same session where running `next build` directly in the project directory corrupted the `.next` cache a `next dev` process was actively using. Still 200 in the clean build too — so this wasn't a dev-mode artifact, the fix itself was wrong.
+- Bisected by building minimal reproduction routes in that same scratch copy and adding pieces of the real page back one at a time: a bare `notFound()`, a dynamic `[id]` segment, `generateMetadata` doing an async check, an explicit `<Suspense>`, the real `getFilmDetail`/`React.cache()` import, the real child components (`FilmHeader`, `FilmMeta`, etc.), a `next/font/google` loader. Every single piece, alone and all together, correctly returned 404 in the scratch route. Only testing the *actual* `app/films/[id]/` directory reproduced the bug.
+- At that point, actually listing the directory's contents (rather than reasoning about `page.tsx` alone) turned up a file not mentioned anywhere in the investigation so far: `loading.tsx`. Moving it out (in the scratch copy) made the nonexistent-film request immediately return a real `404`.
+
+### Cause
+
+A route segment's `loading.tsx` isn't just a nicer spinner — **its mere presence tells Next.js App Router to wrap that segment's entire page in an implicit Suspense boundary**, on top of (outside of) anything the page explicitly wraps in `<Suspense>` itself. That implicit boundary sits *above* everything in `page.tsx`, including a top-of-function `await` + `notFound()` deliberately placed to run before any output. Once Next starts streaming that implicit boundary's fallback, the response's HTTP status has already committed to 200 — a `notFound()` thrown afterward, even by the very first line of the page component, still swaps in the correct *content* (the route's `not-found.tsx`), but can no longer change the status code. The page's own explicit `<Suspense fallback={<FilmPageSkeleton />}>` around the data-dependent content was a complete red herring here; it wasn't the boundary causing the problem.
+
+### Fix
+
+Deleted `app/films/[id]/loading.tsx`. The route's existing explicit `<Suspense fallback={<FilmPageSkeleton />}>` around the main content already covers "show something while this loads," without creating an outer Suspense boundary the page can't get in front of. Combined with:
+
+- `getFilmDetail` (`app/lib/films.ts`) attaching `.status` to the error it throws on a non-OK response, mirroring the backend's own `fetchJSON`/`err.status` convention (`backend/src/lib/*` / `app/lib/watchlist.ts`) — so callers can tell "doesn't exist" (404) apart from "backend unreachable" (anything else) instead of string-matching `error.message`.
+- `await getFilmDetail(...)` + `notFound()` at the top of the page component, before the `<Suspense>` it returns — this is the part that actually only works once `loading.tsx` is gone.
+- `generateMetadata` also checking the same condition (it runs independently of the page component — confirmed via debug logs showing both catch blocks fire) and falling back to `robots: { index: false }` for any *other* error, rather than a plain, indexable generic title.
+- A dedicated `app/films/[id]/not-found.tsx` with its own `noindex` metadata — previously there was only a client-side `error.tsx` string-matching `error.message.includes('404')`, which could get the *words* right but, per the above, never the status.
+
+### Prevention / lessons
+
+1. **`loading.tsx`'s presence changes a route's rendering/streaming architecture — it is not cosmetic.** It wraps the *entire* page in an implicit Suspense boundary, not just "a nicer spinner" while data loads. Anything that still needs to affect the HTTP response status (`notFound()`, `redirect()`) must run somewhere that boundary doesn't wrap it — for a route with a sibling `loading.tsx`, that's nowhere inside the page component at all. A route that needs both a reliable status code and a loading skeleton should get the skeleton from an explicit inner `<Suspense>` only, with no `loading.tsx` file alongside it.
+2. **Correct rendered content is not evidence of a correct status code.** The page said "Film not found" correctly through all three fix attempts — that alone could look like success if only the rendered page (or a screenshot) is checked. The bug was only visible to `curl -I`/response-header inspection.
+3. **Don't trust `next dev` for verifying HTTP status codes around `notFound()`/streaming** — every check against the running dev server showed 200 regardless of which fix was in place; only an isolated `next build && next start` gave a trustworthy answer. And when doing that: **never run `next build` in the same directory a `next dev` process is actively serving from** (it corrupts the dev server's `.next` cache) — copy the project elsewhere first (`rsync --exclude node_modules --exclude .next`, symlink `node_modules`) and build/start there on a different port.
+4. **When a targeted fix doesn't work and the mechanism seems sound, bisect by building up a minimal reproduction, not by re-reading the same file harder.** Several plausible theories (a metadata/page race, redundant dual `notFound()` calls, `React.cache()` module-identity issues across an import boundary, a font-loader side effect) were each tested and ruled out individually in a scratch route before the actual cause — a file not even mentioned in the original bug report — was found by just listing the directory.
+
+### Quick verify
+
+```bash
+# Must be checked against an isolated `next build && next start`, not `next dev` (lesson 3).
+curl -I http://localhost:<port>/films/999999999   # expect 404, not 200
+curl -I http://localhost:<port>/films/<real-id>    # expect 200, unaffected
+```

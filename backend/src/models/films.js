@@ -181,7 +181,7 @@ function personIdsByRole(filmPerson, role) {
  *   screening of the film passed in.
  */
 export async function getRelatedFilms(filmId, opts = {}) {
-  const { limit = 6 } = opts;
+  const { limit = 10 } = opts;
   const id = Number(filmId);
   const now = new Date();
 

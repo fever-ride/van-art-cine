@@ -86,10 +86,10 @@ export default function FilmHeader({ film, nextScreening }: Props) {
 
         {/* Content */}
         <div className="min-w-0 grow">
-          {/* Title */}
-          <div className="text-3xl font-bold leading-tight text-white md:text-4xl">
+          {/* Title — the film detail page's one <h1> */}
+          <h1 className="text-3xl font-bold leading-tight text-white md:text-4xl">
             {title}
-          </div>
+          </h1>
 
           {/* All facts as one consistent row of pills */}
           {pills.length > 0 && (
