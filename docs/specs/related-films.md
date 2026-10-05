@@ -1,6 +1,11 @@
 # Spec: Related Films on the Film Detail Page
 
-Status: Draft, not yet implemented.
+Status: Implemented. Originally shipped as a director > genre > cinema
+priority-bucket design (see git history); revised to the weighted-scoring
+design below after the bucket approach produced visibly weak matches in
+production (e.g. a documentary surfacing as "related" to a 1965 drama
+purely because both happened to share the single word "Drama" in a
+multi-tag genre field).
 
 Tracked in BACKLOG.md as SEO-4. Background on why this sits in the broader
 hub-pages/SEO initiative, and the data investigation behind the design
@@ -57,28 +62,41 @@ checking first, even though it will stay rare.
 
 ## Design decisions
 
-1. **Rule-based matching only, in this priority order: same director,
-   then same genre, then same cinema.** Director first because it's the
-   rarest and most specific signal; cinema last because it's nearly
-   universal (99%) and the least specific — "also plays at the
-   Cinematheque" says little about similarity on its own, but is worth
-   having as a fallback so nearly every film has *something* to show.
-2. **Rank candidates within and across these buckets by their own
-   soonest upcoming screening date, ascending — not alphabetically.**
-   The point is "films you could actually go see soon," the same
-   principle behind SEO-13's Top Rated page — not an abstract catalog
-   relationship to a film that may not even be running anymore. Break an
-   exact tie (two candidates with the identical soonest screening
-   timestamp) by higher `imdb_rating` first — data already on hand from
-   the Top Rated work, no new source needed, and a reasonable standard
-   secondary signal once the primary "soonest" ordering can't distinguish
-   two candidates.
-3. **Cap at 6 related films total**, filling from the priority order
-   above (all director matches first, then genre, then cinema) until the
-   cap is reached or every source is exhausted. A 2x3 or 3x2 grid, matching
-   the poster-grid layout already established for Top Rated.
-4. **A film with no match via any of the three relations (currently 1 of
-   236) simply omits the section.** No placeholder content, no generic
+1. **Rule-based matching only, but as a weighted similarity score across
+   five signals, not a director > genre > cinema priority order.** The
+   original v1 shipped as strict buckets (fill every director match before
+   looking at genre, etc.), which let a single bucket fully decide the
+   result regardless of how many signals two films actually shared — e.g.
+   a documentary with no other relation to a target film still outranked
+   genuinely similar films, purely because it matched the broad "Drama"
+   genre token and the bucket order never looked past that. The revised
+   design scores every candidate once, summing:
+   - shared directors (weight 3 per person) and shared cast (weight 1 per
+     person) — counted, not just present/absent, so two shared cast
+     members score higher than one
+   - genre, country, and language overlap (weights 2, 1, 1) — each as
+     Jaccard similarity (intersection / union) of the two films' token
+     sets, not "any token in common," so sharing one of four genres counts
+     for less than sharing both of two
+   - a flat same-cinema bonus (weight 0.5) — intentionally the smallest
+     signal, since it's about logistics ("also playing near you"), not
+     content similarity; its job is to guarantee almost every film has
+     *something* to show (99% cinema-match coverage), not to rank highly
+     on its own
+   Director outweighs cast because directorial voice carries more of a
+   film's identity than any one performance; weights are a judgment call,
+   not derived from any ground truth — revisit if matches still look off.
+2. **Rank by total score, descending; break ties by soonest upcoming
+   screening date, then by higher `imdb_rating`.** Soonest-first within a
+   tie keeps the original principle ("films you could actually go see
+   soon," matching SEO-13's Top Rated page) as the tiebreaker once score
+   can't distinguish two candidates, rather than as the primary sort key.
+3. **Cap at 6 related films total**, taking the top-scored candidates
+   with score > 0. A 2x3 or 3x2 grid, matching the poster-grid layout
+   already established for Top Rated.
+4. **A film with zero signal overlap with every other currently screening
+   film (including no shared cinema — i.e. it has no upcoming screening of
+   its own) simply omits the section.** No placeholder content, no generic
    "browse all films" fallback — consistent with how `PosterCarousel`/
    `NowPlayingStructuredData` already handle an empty list elsewhere in
    this codebase.
@@ -94,11 +112,12 @@ checking first, even though it will stay rare.
 
 ## Acceptance criteria
 
-- A film detail page with at least one related film (by director, genre,
-  or cinema) shows a related-films section linking to those films, in
-  the priority order and soonest-screening ranking above, capped at 6.
-- A film with no matches via any relation renders the page with no
-  related-films section — not an empty heading, not an error.
+- A film detail page with at least one scoring signal in common with
+  another currently screening film shows a related-films section linking
+  to the top-scored matches, ranked per the Design decisions above, capped
+  at 6.
+- A film with zero signal overlap with every other film renders the page
+  with no related-films section — not an empty heading, not an error.
 - Every related-film link is a real `<a href>` present in the initial
   server rendered HTML (verified with `curl`, not just reachable after a
   click), consistent with the rest of this project's SEO work.
@@ -119,10 +138,16 @@ checking first, even though it will stay rare.
 2. Expose it from `frontend/app/lib/films.ts`, following the same
    pattern `getFilmDetail` already uses (absolute URL fetch, `cache()`
    wrapped).
-3. Extract the pure ranking/bucketing logic into its own testable
+3. ~~Extract the pure ranking/bucketing logic into its own testable
    function, the same way `frontend/lib/topRated.ts`'s `selectTopRated`
-   was split out from the page that uses it — unit test it directly,
-   not only through the page.
+   was split out from the page that uses it.~~ Deviated: the scoring logic
+   lives server-side in `getRelatedFilms` (`backend/src/models/films.js`)
+   instead, matching the backend's own convention of unit-testing query +
+   business logic together with a mocked Prisma client (see
+   `fetchScreenings`) — it needs direct DB access per candidate (director/
+   cast ids, genre/country/language, cinema overlap), which doesn't fit a
+   frontend-only pure function. Covered directly by
+   `backend/tests/models/films.test.js`.
 4. Add the related-films section to
    `frontend/app/films/[id]/page.tsx`, rendering `FilmPosterCard`s and
    the reused `ItemListStructuredData`.
@@ -133,11 +158,16 @@ checking first, even though it will stay rare.
 
 ## Risks
 
-- The genre bucket matches on any overlapping token from a raw,
-  uncleaned, comma-separated OMDb string — occasionally a shared but very
-  broad genre tag could pair two tonally unrelated films. Acceptable for
-  v1: genre is already the weakest of the three signals in the priority
-  order, and director/cinema are exact-ID matches with no such ambiguity.
+- The weights (3 / 1 / 2 / 1 / 1 / 0.5) are a reasoned judgment call, not
+  fit to any ground truth — there's no labelled "these films are actually
+  similar" dataset to validate against. If matches still look consistently
+  off for some genre or catalog segment, revisit the weights first before
+  assuming the scoring approach itself is wrong.
+- Every score query runs over the full pool of currently active, upcoming
+  screenings (no longer scoped by bucket), computed fresh on every film
+  detail page request. Fine at this catalog's current size (~230 active
+  films); if the catalog grows substantially, this is the first place to
+  add caching.
 - The "~1 film with zero matches" and the exact match-rate percentages in
   Background will drift as the catalog changes. Re-run the same check
   before trusting these numbers if this spec is revisited much later.

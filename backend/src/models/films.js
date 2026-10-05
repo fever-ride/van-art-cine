@@ -112,41 +112,68 @@ export async function getUpcomingForFilm(id, opts = {}) {
   }));
 }
 
-/** Splits a raw, comma separated OMDb genre string into clean tokens,
- * dropping placeholders like "N/A". Mirrors
+/** Splits a raw, comma separated OMDb-style string (genre/country/language)
+ * into clean, lowercased tokens, dropping placeholders like "N/A". Mirrors
  * frontend/app/lib/formatGenre.ts's filtering, kept separate since this
- * runs server side against Prisma query conditions, not display text. */
-function parseGenreTokens(genre) {
-  if (!genre) return [];
-  return genre
+ * runs server side for similarity scoring, not display text. */
+function splitCsvTokens(value) {
+  if (!value) return [];
+  return value
     .split(',')
-    .map((g) => g.trim())
-    .filter((g) => g.length > 0 && g.toUpperCase() !== 'N/A');
+    .map((v) => v.trim().toLowerCase())
+    .filter((v) => v.length > 0 && v !== 'n/a');
 }
 
-/** Dedupes screening rows down to one per film (keeping the first
- * occurrence — callers pass rows already ordered soonest-first, tie
- * broken by highest rating, so "first" is the right one to keep), and
- * drops any film already present in `excludeFilmIds`. */
-function dedupeByFilm(rows, excludeFilmIds) {
-  const seen = new Set(excludeFilmIds);
-  const out = [];
-  for (const r of rows) {
-    const id = r.film?.id;
-    if (id == null || seen.has(id)) continue;
-    seen.add(id);
-    out.push(r);
-  }
-  return out;
+/** Jaccard similarity (intersection / union) of two token sets, in [0, 1].
+ * 0 when either set is empty — an unknown field should never contribute a
+ * match, rather than looking identical to a genuine empty-set tie. */
+function jaccard(a, b) {
+  if (a.size === 0 || b.size === 0) return 0;
+  let shared = 0;
+  for (const x of a) if (b.has(x)) shared++;
+  return shared / (a.size + b.size - shared);
+}
+
+/** Count of ids present in both sets — used for director/cast, where a
+ * single shared person is a much stronger signal than a fractional
+ * similarity score, and more than one shared person should count for more. */
+function countShared(a, b) {
+  let n = 0;
+  for (const x of a) if (b.has(x)) n++;
+  return n;
+}
+
+/** Relative weight of each similarity signal in `getRelatedFilms`'s score.
+ * Director and cast are counted per shared person (so e.g. two shared cast
+ * members score higher than one); genre/country/language are Jaccard
+ * similarity in [0, 1]; cinema is a flat bonus for sharing any venue.
+ * Director outweighs a cast member because directorial voice carries more
+ * of a film's identity than any single actor; cinema is intentionally the
+ * smallest signal — it's about logistics (what's already playing near you),
+ * not content similarity, and exists mainly so a film with no other
+ * matching metadata still surfaces something instead of an empty section. */
+const SCORE_WEIGHTS = {
+  director: 3,
+  cast: 1,
+  genre: 2,
+  country: 1,
+  language: 1,
+  cinema: 0.5,
+};
+
+function personIdsByRole(filmPerson, role) {
+  return new Set(filmPerson.filter((fp) => fp.role === role).map((fp) => fp.person_id));
 }
 
 /**
  * Related films for a film detail page: other currently screening films
- * sharing a director, then genre, then cinema with the given film —
- * ranked within each bucket by soonest upcoming screening, tie broken by
- * higher imdb_rating. See docs/specs/related-films.md for the full
- * reasoning (data investigation, why rule based matching and not
- * embeddings/collaborative filtering, why this priority order).
+ * ranked by a weighted similarity score (shared director/cast, genre,
+ * country, and language overlap, plus a small same-cinema bonus), tie
+ * broken by soonest upcoming screening then higher imdb_rating. Replaces an
+ * earlier director > genre > cinema priority-bucket design, which let a
+ * single shared bucket (e.g. a common genre tag) fully decide the result
+ * regardless of how many other signals two films actually shared. See
+ * docs/specs/related-films.md for the full reasoning.
  *
  * @returns {Promise<object[]>} Up to `limit` rows in the same flat shape
  *   `fetchScreenings` returns (frontend's `Screening` type) — each row is
@@ -162,76 +189,125 @@ export async function getRelatedFilms(filmId, opts = {}) {
     where: { id },
     select: {
       genre: true,
-      film_person: {
-        where: { role: 'director' },
-        select: { person_id: true },
-      },
+      country: true,
+      language: true,
+      film_person: { select: { person_id: true, role: true } },
     },
   });
   if (!target) return [];
 
-  const directorIds = target.film_person.map((fp) => fp.person_id);
-  const genreTokens = parseGenreTokens(target.genre);
+  const targetDirectors = personIdsByRole(target.film_person, 'director');
+  const targetCast = personIdsByRole(target.film_person, 'cast');
+  const targetGenres = new Set(splitCsvTokens(target.genre));
+  const targetCountries = new Set(splitCsvTokens(target.country));
+  const targetLanguages = new Set(splitCsvTokens(target.language));
 
   const targetCinemaRows = await prisma.screening.findMany({
     where: { film_id: id, is_active: true, start_at_utc: { gte: now } },
     select: { cinema_id: true },
     distinct: ['cinema_id'],
   });
-  const cinemaIds = targetCinemaRows.map((r) => r.cinema_id);
+  const targetCinemas = new Set(targetCinemaRows.map((r) => r.cinema_id));
 
-  const orderBy = [
-    { start_at_utc: 'asc' },
-    { film: { imdb_rating: { sort: 'desc', nulls: 'last' } } },
-  ];
+  const hasAnySignal =
+    targetDirectors.size > 0 ||
+    targetCast.size > 0 ||
+    targetGenres.size > 0 ||
+    targetCountries.size > 0 ||
+    targetLanguages.size > 0 ||
+    targetCinemas.size > 0;
+  if (!hasAnySignal) return [];
 
-  async function fetchBucket(whereExtra) {
-    return prisma.screening.findMany({
-      where: {
-        is_active: true,
-        start_at_utc: { gte: now },
-        film_id: { not: id },
-        ...whereExtra,
-      },
-      select: SCREENING_SELECT,
-      orderBy,
-    });
-  }
-
-  const picked = [];
-
-  if (directorIds.length > 0) {
-    const rows = await fetchBucket({
+  const poolRows = await prisma.screening.findMany({
+    where: { is_active: true, start_at_utc: { gte: now }, film_id: { not: id } },
+    select: {
+      film_id: true,
+      cinema_id: true,
+      start_at_utc: true,
       film: {
-        film_person: {
-          some: { role: 'director', person_id: { in: directorIds } },
+        select: {
+          genre: true,
+          country: true,
+          language: true,
+          imdb_rating: true,
+          film_person: { select: { person_id: true, role: true } },
         },
       },
-    });
-    picked.push(...dedupeByFilm(rows, []));
+    },
+    orderBy: { start_at_utc: 'asc' },
+  });
+
+  // Group by film: a film can have several upcoming screenings, but it
+  // should be scored once, using the union of every cinema it plays at and
+  // its soonest screening (rows already arrive soonest-first) for ranking.
+  const byFilm = new Map();
+  for (const row of poolRows) {
+    const existing = byFilm.get(row.film_id);
+    if (!existing) {
+      byFilm.set(row.film_id, {
+        film_id: row.film_id,
+        film: row.film,
+        soonestStartAtUtc: row.start_at_utc,
+        cinemaIds: new Set([row.cinema_id]),
+      });
+    } else {
+      existing.cinemaIds.add(row.cinema_id);
+    }
   }
 
-  if (picked.length < limit && genreTokens.length > 0) {
-    const rows = await fetchBucket({
-      OR: genreTokens.map((token) => ({ film: { genre: { contains: token } } })),
-    });
-    picked.push(
-      ...dedupeByFilm(
-        rows,
-        picked.map((r) => r.film.id)
-      )
-    );
+  const scored = [];
+  for (const entry of byFilm.values()) {
+    const directors = personIdsByRole(entry.film.film_person, 'director');
+    const cast = personIdsByRole(entry.film.film_person, 'cast');
+    const genres = new Set(splitCsvTokens(entry.film.genre));
+    const countries = new Set(splitCsvTokens(entry.film.country));
+    const languages = new Set(splitCsvTokens(entry.film.language));
+    const sharesCinema = [...entry.cinemaIds].some((c) => targetCinemas.has(c));
+
+    const score =
+      SCORE_WEIGHTS.director * countShared(targetDirectors, directors) +
+      SCORE_WEIGHTS.cast * countShared(targetCast, cast) +
+      SCORE_WEIGHTS.genre * jaccard(targetGenres, genres) +
+      SCORE_WEIGHTS.country * jaccard(targetCountries, countries) +
+      SCORE_WEIGHTS.language * jaccard(targetLanguages, languages) +
+      (sharesCinema ? SCORE_WEIGHTS.cinema : 0);
+
+    if (score > 0) {
+      scored.push({
+        film_id: entry.film_id,
+        score,
+        soonestStartAtUtc: entry.soonestStartAtUtc,
+        imdb_rating: entry.film.imdb_rating,
+      });
+    }
   }
 
-  if (picked.length < limit && cinemaIds.length > 0) {
-    const rows = await fetchBucket({ cinema_id: { in: cinemaIds } });
-    picked.push(
-      ...dedupeByFilm(
-        rows,
-        picked.map((r) => r.film.id)
-      )
-    );
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    const byTime = new Date(a.soonestStartAtUtc) - new Date(b.soonestStartAtUtc);
+    if (byTime !== 0) return byTime;
+    return (b.imdb_rating ?? -Infinity) - (a.imdb_rating ?? -Infinity);
+  });
+
+  const topFilmIds = scored.slice(0, limit).map((s) => s.film_id);
+  if (topFilmIds.length === 0) return [];
+
+  const winnerRows = await prisma.screening.findMany({
+    where: { is_active: true, start_at_utc: { gte: now }, film_id: { in: topFilmIds } },
+    select: SCREENING_SELECT,
+    orderBy: { start_at_utc: 'asc' },
+  });
+
+  const seen = new Set();
+  const bestRowByFilm = new Map();
+  for (const row of winnerRows) {
+    if (seen.has(row.film.id)) continue;
+    seen.add(row.film.id);
+    bestRowByFilm.set(row.film.id, row);
   }
 
-  return picked.slice(0, limit).map(flattenScreeningRow);
+  return topFilmIds
+    .map((fid) => bestRowByFilm.get(fid))
+    .filter(Boolean)
+    .map(flattenScreeningRow);
 }

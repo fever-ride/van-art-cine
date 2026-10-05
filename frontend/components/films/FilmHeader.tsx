@@ -131,9 +131,12 @@ export default function FilmHeader({ film, nextScreening }: Props) {
                 href={imdb_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+                className="inline-flex items-center gap-2 rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
               >
-                View film on IMDb
+                <span className="rounded-[3px] bg-[#F5C518] px-1.5 py-0.5 text-[11px] font-extrabold leading-none text-black">
+                  IMDb
+                </span>
+                View Profile
               </a>
             ) : null}
           </div>

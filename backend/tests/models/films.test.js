@@ -22,14 +22,12 @@ const { getFilmById, getFilmPeople, getUpcomingForFilm, getRelatedFilms } = awai
   '../../src/models/films.js'
 );
 
-/** Minimal fixture matching SCREENING_SELECT's shape, for getRelatedFilms tests. */
+/** Minimal fixture matching SCREENING_SELECT's shape, for the final
+ * "winner rows" fetch in getRelatedFilms tests. */
 function screeningRow({
   id,
   filmId,
   title,
-  genre = null,
-  directorId = null,
-  directorName = null,
   rating = null,
   startAtUtc,
   cinemaId = 1,
@@ -50,7 +48,7 @@ function screeningRow({
       year: null,
       description: null,
       rated: null,
-      genre,
+      genre: null,
       language: null,
       country: null,
       awards: null,
@@ -59,11 +57,40 @@ function screeningRow({
       imdb_votes: null,
       imdb_url: null,
       poster_path: null,
-      film_person: directorId
-        ? [{ person: { name: directorName } }]
-        : [],
+      film_person: [],
     },
     cinema: { id: cinemaId, name: cinemaName },
+  };
+}
+
+/** Fixture for a row in getRelatedFilms's candidate "pool" query — the
+ * lighter shape used purely for scoring, distinct from SCREENING_SELECT's
+ * full shape used for the final winner rows. */
+function poolRow({
+  filmId,
+  cinemaId = 1,
+  startAtUtc,
+  genre = null,
+  country = null,
+  language = null,
+  directorIds = [],
+  castIds = [],
+  rating = null,
+}) {
+  return {
+    film_id: filmId,
+    cinema_id: cinemaId,
+    start_at_utc: startAtUtc,
+    film: {
+      genre,
+      country,
+      language,
+      imdb_rating: rating,
+      film_person: [
+        ...directorIds.map((person_id) => ({ person_id, role: 'director' })),
+        ...castIds.map((person_id) => ({ person_id, role: 'cast' })),
+      ],
+    },
   };
 }
 
@@ -309,100 +336,134 @@ describe('films model', () => {
       expect(prisma.screening.findMany).not.toHaveBeenCalled();
     });
 
-    test('director bucket alone filling the cap skips the genre and cinema queries entirely', async () => {
+    test('returns [] when the target has no director/cast/genre/country/language and no own upcoming screenings', async () => {
       prisma.film.findUnique.mockResolvedValue({
-        genre: 'Drama',
-        film_person: [{ person_id: 1 }],
+        genre: 'N/A',
+        country: null,
+        language: null,
+        film_person: [],
       });
-      // Call 1: target's own cinema ids (not used once director bucket fills the cap).
-      prisma.screening.findMany.mockResolvedValueOnce([
-        { cinema_id: 1 },
-      ]);
-      // Call 2: director bucket — 6 distinct films, enough to hit the cap alone.
-      prisma.screening.findMany.mockResolvedValueOnce(
-        Array.from({ length: 6 }, (_, i) =>
-          screeningRow({
-            id: 100 + i,
-            filmId: 200 + i,
-            title: `Director Film ${i}`,
-            directorId: 1,
-            directorName: 'Shared Director',
-            startAtUtc: new Date(2026, 9, 10 + i),
-          })
-        )
-      );
+      prisma.screening.findMany.mockResolvedValueOnce([]); // target's own cinema ids: none
 
-      const result = await getRelatedFilms(1, { limit: 6 });
+      const result = await getRelatedFilms(1);
 
-      expect(result).toHaveLength(6);
-      expect(result.map((r) => r.film_id)).toEqual([200, 201, 202, 203, 204, 205]);
-      // Only the two calls above — genre/cinema buckets never queried.
-      expect(prisma.screening.findMany).toHaveBeenCalledTimes(2);
+      expect(result).toEqual([]);
+      // Only the "target's own cinema ids" call — no signal to score a pool against.
+      expect(prisma.screening.findMany).toHaveBeenCalledTimes(1);
     });
 
-    test('fills remaining slots from genre, then cinema, once director is exhausted', async () => {
+    test('a film matching on several weaker signals outranks one matching only on director', async () => {
       prisma.film.findUnique.mockResolvedValue({
-        genre: 'Drama, Comedy',
-        film_person: [{ person_id: 1 }],
+        genre: 'Drama, Romance',
+        country: 'France',
+        language: 'French',
+        film_person: [{ person_id: 1, role: 'director' }],
       });
       prisma.screening.findMany
-        // target's own cinema ids
-        .mockResolvedValueOnce([{ cinema_id: 1 }])
-        // director bucket: only 2 distinct films
+        .mockResolvedValueOnce([{ cinema_id: 9 }]) // target's own cinema ids
         .mockResolvedValueOnce([
-          screeningRow({ id: 1, filmId: 10, title: 'D1', directorId: 1, startAtUtc: new Date(2026, 9, 1) }),
-          screeningRow({ id: 2, filmId: 11, title: 'D2', directorId: 1, startAtUtc: new Date(2026, 9, 2) }),
+          // Shares only the director (score: 3).
+          poolRow({ filmId: 100, cinemaId: 1, startAtUtc: new Date(2026, 9, 1), directorIds: [1] }),
+          // Shares genre + country + language but no director (score: 2 + 1 + 1 = 4).
+          poolRow({
+            filmId: 200,
+            cinemaId: 1,
+            startAtUtc: new Date(2026, 9, 2),
+            genre: 'Drama, Romance',
+            country: 'France',
+            language: 'French',
+          }),
+          // Shares only the cinema (score: 0.5).
+          poolRow({ filmId: 300, cinemaId: 9, startAtUtc: new Date(2026, 9, 3) }),
         ])
-        // genre bucket: 3 distinct films (one overlaps a director pick, must be excluded)
+        // Winner rows come back in a different order than score order, to
+        // confirm the function re-sorts by score rather than query order.
         .mockResolvedValueOnce([
-          screeningRow({ id: 3, filmId: 10, title: 'D1', genre: 'Drama', startAtUtc: new Date(2026, 9, 1) }),
-          screeningRow({ id: 4, filmId: 20, title: 'G1', genre: 'Drama', startAtUtc: new Date(2026, 9, 3) }),
-          screeningRow({ id: 5, filmId: 21, title: 'G2', genre: 'Comedy', startAtUtc: new Date(2026, 9, 4) }),
-        ])
-        // cinema bucket: director (2) + genre (2 new) = 4, still short of the
-        // limit (5), so this bucket's one new film should also get pulled in.
-        .mockResolvedValueOnce([
-          screeningRow({ id: 6, filmId: 30, title: 'C1', startAtUtc: new Date(2026, 9, 5) }),
+          screeningRow({ id: 3, filmId: 300, title: 'Cinema Only', startAtUtc: new Date(2026, 9, 3) }),
+          screeningRow({ id: 1, filmId: 100, title: 'Director Only', startAtUtc: new Date(2026, 9, 1) }),
+          screeningRow({ id: 2, filmId: 200, title: 'Genre+Country+Language', startAtUtc: new Date(2026, 9, 2) }),
         ]);
 
-      const result = await getRelatedFilms(1, { limit: 5 });
+      const result = await getRelatedFilms(1, { limit: 3 });
 
-      expect(result.map((r) => r.film_id)).toEqual([10, 11, 20, 21, 30]);
-      expect(prisma.screening.findMany).toHaveBeenCalledTimes(4);
+      expect(result.map((r) => r.film_id)).toEqual([200, 100, 300]);
     });
 
-    test('dedupes a film with multiple matching screenings down to its soonest one', async () => {
+    test('ties on score are broken by soonest screening, then by higher imdb_rating', async () => {
       prisma.film.findUnique.mockResolvedValue({
         genre: null,
+        country: null,
+        language: null,
+        film_person: [{ person_id: 1, role: 'director' }],
+      });
+      prisma.screening.findMany
+        .mockResolvedValueOnce([]) // target's own cinema ids
+        .mockResolvedValueOnce([
+          // All three share only the director (score: 3 each).
+          poolRow({ filmId: 10, startAtUtc: new Date(2026, 9, 10), directorIds: [1], rating: 9 }),
+          poolRow({ filmId: 20, startAtUtc: new Date(2026, 9, 5), directorIds: [1], rating: 2 }),
+          poolRow({ filmId: 30, startAtUtc: new Date(2026, 9, 5), directorIds: [1], rating: 9 }),
+        ])
+        .mockResolvedValueOnce([
+          screeningRow({ id: 1, filmId: 10, title: 'Latest', startAtUtc: new Date(2026, 9, 10) }),
+          screeningRow({ id: 2, filmId: 20, title: 'Soonest, lower rating', startAtUtc: new Date(2026, 9, 5) }),
+          screeningRow({ id: 3, filmId: 30, title: 'Soonest, higher rating', startAtUtc: new Date(2026, 9, 5) }),
+        ]);
+
+      const result = await getRelatedFilms(1, { limit: 3 });
+
+      // 30 and 20 tie for soonest start; 30 wins on rating. 10 is later, so it's last.
+      expect(result.map((r) => r.film_id)).toEqual([30, 20, 10]);
+    });
+
+    test('dedupes a film with screenings at multiple cinemas, unioning them for the cinema-match bonus', async () => {
+      prisma.film.findUnique.mockResolvedValue({
+        genre: null,
+        country: null,
+        language: null,
         film_person: [],
       });
       prisma.screening.findMany
-        .mockResolvedValueOnce([{ cinema_id: 1 }]) // target cinema ids
+        .mockResolvedValueOnce([{ cinema_id: 9 }]) // target plays at cinema 9
         .mockResolvedValueOnce([
-          // Same film (id 50), two screenings; query already orders
-          // soonest-first, so the first row is the one that should win.
+          // Same film (id 50), two screenings at different cinemas; only the
+          // second matches the target's cinema, but that's enough for the bonus.
+          poolRow({ filmId: 50, cinemaId: 1, startAtUtc: new Date(2026, 9, 1) }),
+          poolRow({ filmId: 50, cinemaId: 9, startAtUtc: new Date(2026, 9, 8) }),
+        ])
+        .mockResolvedValueOnce([
           screeningRow({ id: 1, filmId: 50, title: 'Same Film', startAtUtc: new Date(2026, 9, 1) }),
-          screeningRow({ id: 2, filmId: 50, title: 'Same Film', startAtUtc: new Date(2026, 9, 8) }),
         ]);
 
       const result = await getRelatedFilms(1, { limit: 6 });
 
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(1);
+      expect(result[0].film_id).toBe(50);
     });
 
-    test('a film with no director, no genre, and no cinema (no own upcoming screenings) returns []', async () => {
+    test('caps results at `limit` even when more candidates score above zero', async () => {
       prisma.film.findUnique.mockResolvedValue({
-        genre: 'N/A',
-        film_person: [],
+        genre: null,
+        country: null,
+        language: null,
+        film_person: [{ person_id: 1, role: 'director' }],
       });
-      prisma.screening.findMany.mockResolvedValueOnce([]); // target has no cinema ids either
+      prisma.screening.findMany
+        .mockResolvedValueOnce([]) // target's own cinema ids
+        .mockResolvedValueOnce(
+          Array.from({ length: 4 }, (_, i) =>
+            poolRow({ filmId: 100 + i, startAtUtc: new Date(2026, 9, 1 + i), directorIds: [1] })
+          )
+        )
+        .mockResolvedValueOnce(
+          Array.from({ length: 2 }, (_, i) =>
+            screeningRow({ id: i + 1, filmId: 100 + i, title: `Film ${i}`, startAtUtc: new Date(2026, 9, 1 + i) })
+          )
+        );
 
-      const result = await getRelatedFilms(1);
+      const result = await getRelatedFilms(1, { limit: 2 });
 
-      expect(result).toEqual([]);
-      // Only the "target's own cinema ids" call — no bucket has anything to query.
-      expect(prisma.screening.findMany).toHaveBeenCalledTimes(1);
+      expect(result.map((r) => r.film_id)).toEqual([100, 101]);
     });
   });
 });

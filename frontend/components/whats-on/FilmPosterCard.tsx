@@ -14,6 +14,9 @@ export default function FilmPosterCard({ screening }: { screening: Screening }) 
     screening.poster_url && screening.poster_url.trim() !== ''
       ? screening.poster_url
       : FALLBACK_POSTER;
+  const isNew =
+    typeof screening.year === 'number' &&
+    screening.year >= new Date().getFullYear() - 1;
 
   return (
     <Link
@@ -26,11 +29,18 @@ export default function FilmPosterCard({ screening }: { screening: Screening }) 
           alt={`${screening.title} poster`}
           className="aspect-[2/3] w-full object-cover transition-transform group-hover:scale-[1.03]"
         />
-        {rating != null && (
-          <span className="absolute right-2 top-2 rounded-full bg-black/75 px-2 py-0.5 text-xs font-semibold text-white">
-            {rating.toFixed(1)}
-          </span>
-        )}
+        <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
+          {isNew && (
+            <span className="rounded-full bg-highlight px-2 py-0.5 text-xs font-semibold text-primary">
+              NEW
+            </span>
+          )}
+          {rating != null && (
+            <span className="rounded-full bg-black/75 px-2 py-0.5 text-xs font-semibold text-white">
+              {rating.toFixed(1)}
+            </span>
+          )}
+        </div>
       </div>
       <div className="mt-2 line-clamp-2 text-sm font-semibold text-primary group-hover:underline">
         {screening.title}
