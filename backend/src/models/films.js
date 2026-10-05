@@ -1,14 +1,5 @@
 import { prisma } from '../lib/prismaClient.js';
-
-function buildPosterUrl(posterPath) {
-  if (!posterPath) return null;
-
-  // maybe move these to env
-  const base = 'https://image.tmdb.org/t/p/';
-  const size = 'w342'; // medium size
-
-  return `${base}${size}${posterPath}`;
-}
+import { buildPosterUrl } from '../utils/posterUrl.js';
 
 /**
  * Get a single film by ID.

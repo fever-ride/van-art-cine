@@ -42,6 +42,7 @@ export interface Screening {
 
   source_url?: string | null;
   imdb_url?: string | null;
+  poster_url?: string | null;
 }
 
 export interface ScreeningsResponse {

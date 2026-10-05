@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prismaClient.js';
 import { localDayToUtcRange, localRangeToUtc } from '../utils/time.js';
+import { buildPosterUrl } from '../utils/posterUrl.js';
 
 /**
  * Screening list queries for the public API.
@@ -104,6 +105,7 @@ export async function fetchScreenings(opts = {}) {
         rt_rating_pct: true,
         imdb_votes: true,
         imdb_url: true,
+        poster_path: true,
         film_person: {
           where: { role: 'director' },
           select: { person: { select: { name: true } } },
@@ -194,6 +196,7 @@ export async function fetchScreenings(opts = {}) {
       imdb_votes: film.imdb_votes ?? null,
       source_url: s.source_url ?? null,
       imdb_url: film.imdb_url ?? null,
+      poster_url: buildPosterUrl(film.poster_path),
     };
   });
 

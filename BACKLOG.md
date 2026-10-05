@@ -230,6 +230,76 @@ filter combination server side, not just the default view.
   browser: SSR of the default and filtered views, filter-apply-then-back,
   pagination, and the scroll-position edge cases above.
 
+#### FE-2. Adopt Base UI (not shadcn) for interactive components (pilot: MustSeesMenu)
+
+The nav bar's hover/click menu into `/whats-on/*` hub pages
+(`frontend/components/MustSeesMenu.tsx`, see SEO-13) was originally
+hand-rolled and was missing real keyboard navigation, focus management,
+and the WAI-ARIA navigation-menu pattern — it also needed a manually
+positioned portal to avoid being clipped by NavBar's `overflow-x-auto`
+pill row, and a hand-timed "hover intent" delay to avoid closing itself
+when the pointer crossed into the (now non-child, portaled) panel.
+
+**Tried `npx shadcn@latest add navigation-menu` first, then backed that
+part out.** shadcn generates a wrapper component styled with its own
+default Tailwind classes and a separate visual language from this
+project's existing hand-rolled components — adopting it would have mixed
+"fix the interaction/accessibility gap" with "change the visual design,"
+which are separate decisions (see the broader-adoption note below). It
+also required an `init` step that collided with this project's own CSS
+variable names and briefly broke things — full incident writeup in
+`TROUBLESHOOTING.md`.
+
+**What shipped instead:** `frontend/components/MustSeesMenu.tsx` imports
+`@base-ui/react/navigation-menu` directly — the headless primitives
+library shadcn's generated component was itself built on — and styles it
+by hand with this project's own existing Tailwind tokens and component
+conventions. This gets the interaction/accessibility fix with none of the
+visual-language mismatch: verified live, Tab moves focus from the trigger
+into the panel's links, Escape closes the panel and returns focus to the
+trigger, and `keepMounted` on `NavigationMenu.Content` keeps the link in
+the initial server rendered HTML (confirmed with `curl`) without a
+hand-rolled duplicate-render workaround. `shadcn`,
+`class-variance-authority`, `cn`, `lucide-react`, and `tw-animate-css`
+(all shadcn-ecosystem-specific, not needed to use Base UI directly) were
+installed during the aborted attempt and have been uninstalled;
+`@base-ui/react` is the only new dependency that remains.
+
+**Found and fixed three visual mismatches after the initial pass**,
+caught by re-reviewing against the rest of the site rather than this
+component in isolation:
+
+- The trigger had an extra `rounded-btn` corner radius that "My
+  Watchlist"/"About" (the other pills in the same row) don't have.
+  Removed it to match them exactly (confirmed `0px` on both via
+  `getComputedStyle`).
+- The popup rendered in the wrong font (`Arial` instead of `Noto Sans`).
+  `NavigationMenu.Portal` renders into `document.body`, outside
+  `NavBar.tsx`'s `<header className={noto.className}>` wrapper, so the
+  portaled content never inherited that font class — confirmed with
+  `getComputedStyle` before and after. Fixed by re-instantiating the same
+  `Noto_Sans(...)` call (this project's existing per-file convention, not
+  a shared fonts module) and applying it directly to the portaled
+  content. Worth remembering for any future portaled component: a portal
+  escapes CSS inheritance from its DOM ancestors generally, not just
+  `overflow`/clipping — anything the ancestor tree provides (fonts,
+  CSS custom property scoping, etc.) needs to be reapplied explicitly.
+- The popup's shadow (`shadow-lg`, a generic Tailwind preset) didn't match
+  this codebase's other small anchored popover
+  (`ScreeningDateInput.tsx`'s date picker, `shadow-[0_12px_28px_rgba(0,0,0,0.12)]`).
+  Matched it exactly instead of inventing a new value.
+
+**Scope of this item is deliberately narrow — one pilot component, no
+visual changes anywhere else.** Whether to adopt Base UI (or shadcn, or
+anything else) more broadly for `Button`/`Card`/`Input`/the sign-in modal,
+as part of a real visual design pass, is a separate, larger, not-yet
+-decided question. Revisit once this component has been live a while.
+
+**Priority:** Done for the pilot. Broader adoption: unscheduled, pending
+a decision on visual direction.
+
+---
+
 ## Frontend / SEO
 
 Scope: `frontend/` (Next.js app) and general site discoverability. See
@@ -318,6 +388,52 @@ conversion of `frontend/app/page.tsx`.
   Google's Rich Results Test itself needs a public URL — still to run once
   deployed.
 
+#### SEO-13. Add a Top Rated Screenings hub page
+
+Shipped at `/whats-on/top-rated` (`frontend/app/whats-on/top-rated/page.tsx`).
+This replaced SEO-7's tag based hub page as the new hub page direction —
+see SEO-7 below for why tags turned out not to support one.
+
+- Data investigation before building anything: checked the currently
+  upcoming catalog (249 distinct films) for `imdb_rating >= 8.0` — 14
+  qualify, 5 of which have a screening within the next 7 days. Real,
+  usable numbers, unlike tags (see SEO-7) or "new release by year" (also
+  considered; shelved — 71% of the current catalog is a 2025/2026 title,
+  which doesn't discriminate anything, though this may just be VIFF
+  festival season temporarily skewing that number; worth re-checking
+  outside festival season).
+- One page, not two: originally considered separate "this week" and "this
+  month" pages, but the this-week list is always a strict subset of the
+  this-month list (same ranking, tighter date cutoff) — as two separate
+  indexable URLs, the "this week" page would carry zero content not also
+  on the "this month" page. Combined into one page instead: `PosterCarousel`
+  highlights the this-week subset, `PosterGrid` lists the full this-month
+  set below it — both `frontend/components/whats-on/`, sharing one
+  `FilmPosterCard`.
+- Selection logic (`frontend/lib/topRated.ts`, `selectTopRated`) is pure
+  and unit tested (`frontend/tests/lib/topRated.test.ts`): dedupes a film
+  down to its soonest upcoming showtime, ranks by rating then title, caps
+  at `TOP_RATED_MAX_FILMS` (20).
+- The backend caps `limit` at 200
+  (`backend/src/validators/screeningsValidators.js`), under this catalog's
+  current ~500 total upcoming screenings, so the page fetches
+  `sort=imdb&order=desc&limit=200` rather than trying to fetch
+  "everything": sorting by rating first guarantees every screening
+  belonging to a qualifying film lands within the cap regardless of
+  catalog size, since only the relatively few high-rated films' rows need
+  to fit.
+- Added `poster_path` (as a derived `poster_url`, reusing
+  `backend/src/models/films.js`'s TMDB image URL builder, now shared via
+  `backend/src/utils/posterUrl.js`) to `/api/screenings`'s response — it
+  had never been exposed there before, only on the film detail endpoint.
+  Also improves the homepage's own `ItemList` structured data, which
+  picked up `image` on every entry for free.
+- Extracted the homepage's structured data builder into
+  `frontend/app/lib/structuredData.tsx` so both pages share one `Movie` +
+  `ItemList` schema instead of two copies drifting apart.
+- Added to `frontend/app/sitemap.ts`, which also surfaced and fixed an
+  unrelated, real bug — see SEO-5 above.
+
 ### Still deferred
 
 ---
@@ -380,18 +496,23 @@ cinema, and genre fields.
 #### SEO-5. Expand sitemap coverage
 
 **Problem:** `sitemap.ts` only includes films that currently have an
-upcoming screening, capped at 500 films through
-`/api/screenings?limit=500`. Films with no upcoming screenings are left
-out, and any future cinema or hub pages would be left out too.
+upcoming screening. Films with no upcoming screenings are left out.
 
-**Impact:** Some valid, indexable pages are never listed for search engines
-to discover through the sitemap.
+**Fixed already, found while adding the Top Rated hub page's route:** the
+sitemap's single `/api/screenings?limit=500` call was silently returning
+zero film routes, not just capping at 500 — the backend validator
+(`backend/src/validators/screeningsValidators.js`) caps `limit` at 200, so
+that request always failed validation, `!res.ok` was true, and the catch-all
+fallback returned only the static routes with no visible error. Fixed by
+paginating with the response's own `total` instead of one fixed-size
+request. `curl localhost:3000/sitemap.xml` now lists all ~249 current film
+routes instead of 0.
 
-**Approach:** Include films without upcoming screenings, raise or remove
-the 500 item cap, and add cinema and hub page routes once SEO-2 and SEO-7
-exist.
+**Still open:** films with no upcoming screenings are still excluded, and
+any future cinema landing pages (SEO-2) would need adding too. The Top
+Rated hub page (see the new item above SEO-7) is already included.
 
-**Priority:** Low to medium. Depends on SEO-2 and SEO-7.
+**Priority:** Low to medium for the remaining scope. Depends on SEO-2.
 
 ---
 
@@ -417,20 +538,37 @@ example `Q&A`, `Director in attendance`, `Live music`, and
 `4K restoration`. There is no page that aggregates screenings by these
 tags.
 
-**Impact:** These tags capture search intent specific to arthouse
-audiences, such as wanting a Q&A screening or a live scored film, that a
-mainstream cinema listing site would not serve. Unlike genre or director,
-this data already exists in a clean, low effort form.
+**Reassessed, deferred (not dropped):** Checked the actual data before
+building anything. Two problems, not one:
 
-**Approach:** Group the raw tag values into a small set of canonical
-categories before building pages, for example Q&A and filmmaker presence,
-restoration and print format, live accompaniment, and milestone
-screenings. Do not build a dedicated page per `Hosted by <name>` value,
-since those identify a specific host rather than a repeatable category.
-Full grouping proposal and open questions on URL structure are in
+1. Volume right now is much thinner than the original data check found:
+   only 4 upcoming screenings have any tag at all (vs. ~10-20 tagged
+   screenings/month historically) — future screenings just haven't been
+   through the same tagging/enrichment pass yet as they get closer to
+   their date.
+2. More importantly, tag coverage is not evenly spread across venues: of
+   174 tagged screenings all-time, 155 (89%) are from Rio Theatre alone;
+   the next largest venue (VIFF Centre) accounts for 16, and every other
+   venue (including The Cinematheque) has 0-1. A "Q&A screenings in
+   Vancouver" page built from this data would really be "Rio Theatre's own
+   event calendar" wearing a general-aggregator label — a real accuracy
+   problem, not just a volume one, and not one that fixes itself as more
+   future screenings get tagged unless other venues start tagging their
+   own listings as consistently as Rio Theatre does.
+
+Revisit if venues besides Rio Theatre start consistently marking up these
+event types. Do not build per-`Hosted by <name>` pages regardless (see the
+original Approach below) — those were already known to be too thin, same
+reasoning as SEO-9's dropped director pages.
+
+**Approach (if revisited):** Group the raw tag values into a small set of
+canonical categories, for example Q&A and filmmaker presence, restoration
+and print format, live accompaniment, and milestone screenings. Full
+grouping proposal and open questions on URL structure are in
 `docs/seo-hub-pages.md`.
 
-**Priority:** High. Best supported new hub page direction found so far.
+**Priority:** Deferred. See SEO-13 above for the hub page direction that
+replaced this one.
 
 ---
 

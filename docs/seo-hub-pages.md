@@ -5,7 +5,7 @@ pages and related discoverability work. This grew out of the structured
 data audit that produced BACKLOG.md items SEO-1 through SEO-6, and it
 records the reasoning behind why the original "genre, director, and time
 period" idea (old SEO-3) got split apart. Read this before starting any of
-the SEO-3, SEO-7, SEO-8, SEO-9, or SEO-10 items in BACKLOG.md.
+the SEO-3, SEO-7, SEO-8, SEO-9, SEO-10, or SEO-13 items in BACKLOG.md.
 
 ## Background
 
@@ -88,16 +88,29 @@ live in `docs/specs/homepage-ssr.md`. That document is the source of truth
 for this piece of work. This section only records why it was prioritized
 above the other hub page directions.
 
-### Tag based hub pages: strongest new direction
+### Tag based hub pages: reassessed, deferred (BACKLOG.md SEO-7)
 
-`screening.tags` is the best supported new direction found so far. It is
-already populated, already clean, and captures search intent that is
-specific to arthouse audiences and unlikely to be served by a mainstream
-cinema listing site: people looking for a Q&A screening, a live scored
-film, or a restoration print.
+This looked like the strongest new direction on paper — `screening.tags`
+is already populated and already clean — but checking the actual data
+before building anything (2026-09-29) found two problems:
 
-Before building pages from this data, the raw tag values need a taxonomy
-pass:
+- Volume right now is thin: only 4 upcoming screenings have any tag at
+  all, versus ~10-20/month historically. Future screenings just haven't
+  been through the tagging pass yet as they approach their date, so this
+  alone might resolve itself over time.
+- The more serious problem: tag coverage is not evenly spread across
+  venues. Of 174 tagged screenings all-time, 89% (155) are from Rio
+  Theatre alone; The Cinematheque, a major venue, has 0-1. A hub page for
+  "Q&A screenings in Vancouver" built from this data would really be "Rio
+  Theatre's own event calendar" — a real accuracy problem, not a volume
+  one, and one that does not resolve itself just by waiting for more
+  screenings to get tagged, unless other venues start marking up their own
+  listings as consistently as Rio Theatre does.
+
+If this is revisited, the taxonomy proposal below is still the right
+starting point. `/whats-on/<category-slug>` is still the intended URL
+shape — see `frontend/app/whats-on/top-rated/page.tsx` for the hub page
+that ended up using this namespace instead.
 
 - Group tags into a small set of canonical categories. A first pass
   grouping might look like:
@@ -113,9 +126,29 @@ pass:
   thin as the director pages this document already deferred. If a specific
   host name is worth surfacing, do it as a detail on the screening itself,
   not as its own hub page.
-- Decide the URL shape before writing code. A candidate is
-  `/whats-on/<category-slug>`, keeping it under a single namespace rather
-  than introducing a separate top level route per category type.
+
+### Top rated hub page: shipped (BACKLOG.md SEO-13)
+
+The direction that actually replaced the tag idea above. Checked the real
+numbers first (see BACKLOG.md SEO-13 for the full data investigation):
+14 currently upcoming films at `imdb_rating >= 8.0`, 5 of them screening
+within the next 7 days — real, usable volume, and not concentrated in one
+venue the way tags turned out to be.
+
+One page (`/whats-on/top-rated`), not two "this week"/"this month" pages:
+the this-week list is always a strict subset of the this-month list (same
+ranking, tighter date cutoff), so as separate indexable URLs the "this
+week" page would carry no content the "this month" page doesn't already
+have. A single page with a "this week" carousel highlight above the full
+"this month" list avoids that duplication while still calling out what's
+especially timely.
+
+"New release by year" was also considered and shelved for now: 71% of the
+currently upcoming catalog is a 2025/2026 title, which doesn't discriminate
+anything — though this may just be VIFF festival season (this check was
+done in late September, right in VIFF's own festival window) temporarily
+flooding the catalog with brand new premieres. Worth re-checking outside
+festival season before deciding this one either way.
 
 ### Country and language hub pages: lower priority
 

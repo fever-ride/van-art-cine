@@ -63,6 +63,7 @@ describe('fetchScreenings', () => {
           rt_rating_pct: 95,
           imdb_votes: 1000,
           imdb_url: 'https://imdb.example',
+          poster_path: '/abc123.jpg',
           film_person: [
             { person: { name: 'Z Director' } },
             { person: { name: 'A Director' } },
@@ -110,6 +111,7 @@ describe('fetchScreenings', () => {
       film_id: 10,
       directors: 'A Director, Z Director',
       source_url: 'https://cinema.example/tickets',
+      poster_url: 'https://image.tmdb.org/t/p/w342/abc123.jpg',
     });
 
     // total comes from a separate count(), not items.length, so a caller can

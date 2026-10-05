@@ -8,6 +8,7 @@ import type { Metadata } from 'next';
 import { Noto_Sans } from 'next/font/google';
 import { getScreeningsServerSide, buildSearchParams, type Screening } from '@/app/lib/screenings';
 import { getCinemasServerSide } from '@/app/lib/cinemas';
+import { ItemListStructuredData } from '@/app/lib/structuredData';
 import {
   parseUIStateFromSearchParams,
   serializeUIStateToSearchParams,
@@ -206,12 +207,9 @@ async function ScreeningsPageContent({
  * separate fetch. Deduped by film: the page shows one row per showtime, but
  * the same film screening twice this page would otherwise produce two
  * entries pointing at the identical `/films/[id]` URL, which is exactly
- * the kind of list-of-films this schema is meant to describe.
- *
- * Each entry's `item` is a (lightweight) `Movie`, matching the fuller Movie
- * schema `frontend/app/films/[id]/page.tsx` already emits on the film's own
- * page — not a bare name/url pair — so this list says what it's a list OF,
- * not just a list of untyped links.
+ * the kind of list-of-films this schema is meant to describe. Schema
+ * building itself lives in `frontend/app/lib/structuredData.tsx`, shared
+ * with `frontend/app/whats-on/top-rated/page.tsx`.
  */
 function NowPlayingStructuredData({ items }: { items: Screening[] }) {
   const seenFilmIds = new Set<number>();
@@ -221,52 +219,7 @@ function NowPlayingStructuredData({ items }: { items: Screening[] }) {
     return true;
   });
 
-  if (uniqueFilms.length === 0) return null;
-
-  const itemList = {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    itemListElement: uniqueFilms.map((s, i) => {
-      const ratingNum = s.imdb_rating ? Number(s.imdb_rating) : null;
-      const directors = s.directors
-        ? s.directors.split(',').map((name) => name.trim()).filter(Boolean)
-        : [];
-
-      return {
-        '@type': 'ListItem',
-        position: i + 1,
-        item: {
-          '@type': 'Movie',
-          name: s.title,
-          url: `${SITE_URL}/films/${s.film_id}`,
-          ...(s.year && { dateCreated: String(s.year) }),
-          ...(s.description && { description: s.description }),
-          ...(directors.length && {
-            director: directors.map((name) => ({ '@type': 'Person', name })),
-          }),
-          ...(s.genre && { genre: s.genre }),
-          ...(s.imdb_url && { sameAs: s.imdb_url }),
-          ...(ratingNum &&
-            !isNaN(ratingNum) && {
-              aggregateRating: {
-                '@type': 'AggregateRating',
-                ratingValue: ratingNum,
-                bestRating: 10,
-                worstRating: 0,
-                ...(s.imdb_votes && { ratingCount: s.imdb_votes }),
-              },
-            }),
-        },
-      };
-    }),
-  };
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }}
-    />
-  );
+  return <ItemListStructuredData films={uniqueFilms} />;
 }
 
 function ScreeningsPageSkeleton() {

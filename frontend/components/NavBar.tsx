@@ -9,6 +9,7 @@ import { Noto_Sans } from 'next/font/google';
 import { Button, getButtonClassName } from '@/components/ui';
 import SignInDropdown from '@/components/auth/SignInDropdown';
 import CreateAccountModal from '@/components/auth/CreateAccountModal';
+import MustSeesMenu from '@/components/MustSeesMenu';
 
 const noto = Noto_Sans({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
@@ -109,6 +110,8 @@ export default function NavBar() {
         {/* Row 2: Section menu */}
         <div className="-mx-4 border-t border-border-light px-4">
           <nav className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto">
+            <MustSeesMenu />
+
             <Link
               href="/watchlist"
               target="_blank"
