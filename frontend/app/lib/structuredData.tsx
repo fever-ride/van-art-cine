@@ -59,6 +59,18 @@ export function buildItemListSchema(films: Screening[]) {
   };
 }
 
+/** Escapes `<` to its unicode escape so a JSON-LD blob can't break out of its
+ * `<script>` tag — e.g. a scraped title/description that happens to contain
+ * a literal `</script>` sequence would otherwise close the tag early and
+ * corrupt the rest of the page. `<` round-trips through `JSON.parse`/
+ * schema consumers exactly as `<`, so this changes nothing about how the
+ * structured data itself is read. Use this instead of a bare
+ * `JSON.stringify` wherever a schema object is injected via
+ * `dangerouslySetInnerHTML`. */
+export function safeJsonLd(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
 /** Renders a `buildItemListSchema` result as a `<script type="application/ld+json">`
  * tag, or nothing for an empty list (an empty ItemList is not useful structured data). */
 export function ItemListStructuredData({ films }: { films: Screening[] }) {
@@ -67,7 +79,7 @@ export function ItemListStructuredData({ films }: { films: Screening[] }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(buildItemListSchema(films)) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(buildItemListSchema(films)) }}
     />
   );
 }
