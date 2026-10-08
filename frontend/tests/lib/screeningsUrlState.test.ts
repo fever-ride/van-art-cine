@@ -171,10 +171,13 @@ describe('round trip', () => {
       to: '2026-08-10',
       q: 'Ozu',
       cinemaIds: ['3', '7'],
+      genreValues: [],
+      languageValues: [],
       filmId: '',
       sort: 'title',
       order: 'desc',
       limit: defaultUI.limit,
+      view: 'table',
     };
 
     const params = serializeUIStateToSearchParams(original);

@@ -30,6 +30,8 @@ export default function Filters({
 }: Props) {
   const [localUI, setLocalUI] = useState<Omit<UIState, 'q'>>({
     cinemaIds: ui.cinemaIds,
+    genreValues: ui.genreValues,
+    languageValues: ui.languageValues,
     filmId: ui.filmId,
     date: ui.date,
     from: ui.from,
@@ -38,11 +40,14 @@ export default function Filters({
     order: ui.order,
     mode: ui.mode,
     limit: ui.limit,
+    view: ui.view,
   });
 
   useEffect(() => {
     setLocalUI({
       cinemaIds: ui.cinemaIds,
+      genreValues: ui.genreValues,
+      languageValues: ui.languageValues,
       filmId: ui.filmId,
       date: ui.date,
       from: ui.from,
@@ -51,6 +56,7 @@ export default function Filters({
       order: ui.order,
       mode: ui.mode,
       limit: ui.limit,
+      view: ui.view,
     });
   }, [ui]);
 
@@ -113,6 +119,8 @@ export default function Filters({
     setLocalQ('');
     setLocalUI({
       cinemaIds: [],
+      genreValues: [],
+      languageValues: [],
       filmId: '',
       date: '',
       from: '',
@@ -121,10 +129,13 @@ export default function Filters({
       order: 'asc',
       mode: 'single',
       limit: ui.limit,
+      view: ui.view,
     });
     setUI({
       q: '',
       cinemaIds: [],
+      genreValues: [],
+      languageValues: [],
       filmId: '',
       date: '',
       from: '',

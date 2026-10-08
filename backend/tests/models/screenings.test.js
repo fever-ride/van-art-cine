@@ -8,6 +8,7 @@ jest.unstable_mockModule('../../src/lib/prismaClient.js', () => ({
     screening: {
       findMany: jest.fn(),
       count: jest.fn(),
+      groupBy: jest.fn(),
     },
   },
 }));
@@ -25,7 +26,7 @@ const { prisma } = await import('../../src/lib/prismaClient.js');
 const { localDayToUtcRange, localRangeToUtc } = await import('../../src/utils/time.js');
 
 // Import the module under test after mocks are registered.
-const { fetchScreenings, findByIds } = await import('../../src/models/screenings.js');
+const { fetchScreenings, findByIds, fetchFilms } = await import('../../src/models/screenings.js');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -341,6 +342,149 @@ describe('findByIds', () => {
         source_url: 'https://cinema.example/c',
         status: 'inactive',
       },
+    ]);
+  });
+});
+
+describe('fetchFilms', () => {
+  beforeEach(() => {
+    // Most fetchFilms tests don't care about the date window, only that
+    // buildScreeningWhere resolves one without throwing.
+    localRangeToUtc.mockReturnValue([new Date('2025-01-01T00:00:00.000Z'), null]);
+  });
+
+  test('paginates by distinct film_id (groupBy), not screening rows, and total is the distinct film count', async () => {
+    prisma.screening.groupBy.mockResolvedValue([
+      { film_id: 10, _min: { start_at_utc: new Date('2025-01-01T18:00:00.000Z') } },
+      { film_id: 20, _min: { start_at_utc: new Date('2025-01-02T18:00:00.000Z') } },
+      { film_id: 30, _min: { start_at_utc: new Date('2025-01-03T18:00:00.000Z') } },
+    ]);
+    prisma.screening.findMany.mockResolvedValue([
+      { id: 1, start_at_utc: new Date('2025-01-01T18:00:00.000Z'), film: { id: 10, title: 'Film Ten' }, cinema: { id: 1, name: 'Cinema A' } },
+      { id: 2, start_at_utc: new Date('2025-01-01T20:00:00.000Z'), film: { id: 10, title: 'Film Ten' }, cinema: { id: 1, name: 'Cinema A' } },
+      { id: 3, start_at_utc: new Date('2025-01-02T18:00:00.000Z'), film: { id: 20, title: 'Film Twenty' }, cinema: { id: 2, name: 'Cinema B' } },
+    ]);
+
+    const result = await fetchFilms({ limit: 2, offset: 0 });
+
+    expect(prisma.screening.groupBy).toHaveBeenCalledTimes(1);
+    const groupByArg = prisma.screening.groupBy.mock.calls[0][0];
+    expect(groupByArg.by).toEqual(['film_id']);
+    expect(groupByArg._min).toEqual({ start_at_utc: true });
+    expect(groupByArg.orderBy).toEqual({ _min: { start_at_utc: 'asc' } });
+    expect(groupByArg.where).toMatchObject({ is_active: true });
+
+    // Only the page's film_ids (first 2 of 3) are fetched, not every film.
+    const findManyArg = prisma.screening.findMany.mock.calls[0][0];
+    expect(findManyArg.where.film_id).toEqual({ in: [10, 20] });
+
+    expect(result.total).toBe(3); // distinct film count, independent of limit
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0]).toMatchObject({ film_id: 10, title: 'Film Ten' });
+    expect(result.items[0].showtimes).toHaveLength(2);
+    expect(result.items[1]).toMatchObject({ film_id: 20, title: 'Film Twenty' });
+    expect(result.items[1].showtimes).toHaveLength(1);
+  });
+
+  test('carries full film metadata and showtime fields through to each group', async () => {
+    prisma.screening.groupBy.mockResolvedValue([
+      { film_id: 10, _min: { start_at_utc: new Date('2025-01-01T18:00:00.000Z') } },
+    ]);
+    prisma.screening.findMany.mockResolvedValue([
+      {
+        id: 1,
+        start_at_utc: new Date('2025-01-01T18:00:00.000Z'),
+        source_url: 'https://cinema.example/tickets',
+        film: {
+          id: 10,
+          title: 'Test Film',
+          description: 'Desc',
+          genre: 'Drama',
+          country: 'Canada',
+          language: 'English',
+          year: 2024,
+          imdb_rating: 8.2,
+          rt_rating_pct: 95,
+          imdb_votes: 1000,
+          imdb_url: 'https://imdb.example',
+          poster_path: '/abc123.jpg',
+          film_person: [{ person: { name: 'A Director' } }],
+        },
+        cinema: { id: 7, name: 'Rio Theatre' },
+      },
+    ]);
+
+    const result = await fetchFilms({ limit: 20, offset: 0 });
+
+    expect(result.items[0]).toMatchObject({
+      film_id: 10,
+      title: 'Test Film',
+      directors: 'A Director',
+      description: 'Desc',
+      genre: 'Drama',
+      country: 'Canada',
+      language: 'English',
+      year: 2024,
+      imdb_rating: 8.2,
+      rt_rating_pct: 95,
+      imdb_votes: 1000,
+      imdb_url: 'https://imdb.example',
+      poster_url: 'https://image.tmdb.org/t/p/w342/abc123.jpg',
+    });
+    expect(result.items[0].showtimes[0]).toEqual({
+      screening_id: 1,
+      start_at_utc: new Date('2025-01-01T18:00:00.000Z'),
+      cinema_id: 7,
+      cinema_name: 'Rio Theatre',
+      source_url: 'https://cinema.example/tickets',
+    });
+  });
+
+  test('short-circuits without querying screenings when the requested page has no matching films', async () => {
+    prisma.screening.groupBy.mockResolvedValue([
+      { film_id: 10, _min: { start_at_utc: new Date('2025-01-01T18:00:00.000Z') } },
+    ]);
+
+    const result = await fetchFilms({ limit: 20, offset: 5 }); // past the single matching film
+
+    expect(result).toEqual({ items: [], total: 1 });
+    expect(prisma.screening.findMany).not.toHaveBeenCalled();
+  });
+
+  test('preserves the soonest-showtime-first film order decided by groupBy, regardless of the order findMany rows arrive in', async () => {
+    prisma.screening.groupBy.mockResolvedValue([
+      { film_id: 20, _min: { start_at_utc: new Date('2025-01-01T18:00:00.000Z') } },
+      { film_id: 10, _min: { start_at_utc: new Date('2025-01-02T18:00:00.000Z') } },
+    ]);
+    // Rows arrive film 10 first, film 20 second — the reverse of groupBy's order.
+    prisma.screening.findMany.mockResolvedValue([
+      { id: 1, start_at_utc: new Date('2025-01-02T18:00:00.000Z'), film: { id: 10, title: 'Film Ten' }, cinema: { id: 1, name: 'A' } },
+      { id: 2, start_at_utc: new Date('2025-01-01T18:00:00.000Z'), film: { id: 20, title: 'Film Twenty' }, cinema: { id: 2, name: 'B' } },
+    ]);
+
+    const result = await fetchFilms({ limit: 20, offset: 0 });
+
+    expect(result.items.map((f) => f.film_id)).toEqual([20, 10]);
+  });
+
+  test('passes cinemaIds/genres/languages/q through to the same where-builder fetchScreenings uses', async () => {
+    prisma.screening.groupBy.mockResolvedValue([]);
+
+    await fetchFilms({
+      cinemaIds: ['7', '9'],
+      q: 'inception',
+      genres: ['Drama'],
+      languages: ['French'],
+    });
+
+    const where = prisma.screening.groupBy.mock.calls[0][0].where;
+    expect(where).toMatchObject({
+      cinema_id: { in: [7, 9] },
+      film: { normalized_title: { contains: 'inception' } },
+    });
+    expect(where.AND).toEqual([
+      { OR: [{ film: { genre: { contains: 'Drama', mode: 'insensitive' } } }] },
+      { OR: [{ film: { language: { contains: 'French', mode: 'insensitive' } } }] },
     ]);
   });
 });

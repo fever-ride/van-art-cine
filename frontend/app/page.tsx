@@ -6,9 +6,14 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { Noto_Sans } from 'next/font/google';
-import { getScreeningsServerSide, buildSearchParams, type Screening } from '@/app/lib/screenings';
+import {
+  getScreeningsServerSide,
+  getFilmsServerSide,
+  buildSearchParams,
+  type Screening,
+} from '@/app/lib/screenings';
 import { getCinemasServerSide } from '@/app/lib/cinemas';
-import { ItemListStructuredData } from '@/app/lib/structuredData';
+import { ItemListStructuredData, type MovieEntitySource } from '@/app/lib/structuredData';
 import {
   parseUIStateFromSearchParams,
   serializeUIStateToSearchParams,
@@ -177,13 +182,38 @@ async function ScreeningsPageContent({
       <ScreeningsPageClient
         initialItems={[]}
         initialTotal={0}
+        initialFilmItems={[]}
+        initialFilmTotal={0}
         initialError='"From" date must be before or equal to "To" date.'
       />
     );
   }
 
   const offset = (page - 1) * ui.limit;
+  // Table view and Film view filter the exact same underlying screenings
+  // (buildScreeningsQuery is shared), but paginate and shape them
+  // differently — Film view fetches /api/films (paginated by distinct film
+  // count, each film carrying its full showtime list) instead of the
+  // row-paginated /api/screenings, so a film's showtimes never split across
+  // page boundaries. Only the active view's data is fetched.
   const query = buildScreeningsQuery(ui, offset);
+
+  if (ui.view === 'film') {
+    const data = await getFilmsServerSide(buildSearchParams(query).toString());
+    return (
+      <>
+        {!shouldNoindex(ui) && <NowPlayingStructuredData films={data.items} />}
+        <ScreeningsPageClient
+          initialItems={[]}
+          initialTotal={0}
+          initialFilmItems={data.items}
+          initialFilmTotal={data.total}
+          initialError={null}
+        />
+      </>
+    );
+  }
+
   const data = await getScreeningsServerSide(buildSearchParams(query).toString());
 
   return (
@@ -191,35 +221,40 @@ async function ScreeningsPageContent({
       {/* Skip structured data on a page generateMetadata already marked
        * noindex (see shouldNoindex) — Google won't process a noindexed
        * page's structured data, so emitting it here is dead weight. */}
-      {!shouldNoindex(ui) && <NowPlayingStructuredData items={data.items} />}
+      {!shouldNoindex(ui) && <NowPlayingStructuredData films={dedupeByFilm(data.items)} />}
       <ScreeningsPageClient
         initialItems={data.items}
         initialTotal={data.total}
+        initialFilmItems={[]}
+        initialFilmTotal={0}
         initialError={null}
       />
     </>
   );
 }
 
-/**
- * `ItemList` structured data for the current page's screening list, reusing
- * `data.items` from the fetch `ScreeningsPageContent` already made — no
- * separate fetch. Deduped by film: the page shows one row per showtime, but
- * the same film screening twice this page would otherwise produce two
- * entries pointing at the identical `/films/[id]` URL, which is exactly
- * the kind of list-of-films this schema is meant to describe. Schema
- * building itself lives in `frontend/app/lib/structuredData.tsx`, shared
- * with `frontend/app/whats-on/top-rated/page.tsx`.
- */
-function NowPlayingStructuredData({ items }: { items: Screening[] }) {
+/** Table view's `/api/screenings` is one row per showtime, so the same film
+ * can appear multiple times on a page — dedupe before building a
+ * list-of-films schema, or the same `/films/[id]` URL would get two
+ * entries. Film view's `/api/films` is already one entry per film and
+ * doesn't need this. */
+function dedupeByFilm(items: Screening[]): Screening[] {
   const seenFilmIds = new Set<number>();
-  const uniqueFilms = items.filter((s) => {
+  return items.filter((s) => {
     if (seenFilmIds.has(s.film_id)) return false;
     seenFilmIds.add(s.film_id);
     return true;
   });
+}
 
-  return <ItemListStructuredData films={uniqueFilms} />;
+/**
+ * `ItemList` structured data for the current page's film list, reusing
+ * whichever fetch `ScreeningsPageContent` already made — no separate fetch.
+ * Schema building itself lives in `frontend/app/lib/structuredData.tsx`,
+ * shared with `frontend/app/whats-on/top-rated/page.tsx`.
+ */
+function NowPlayingStructuredData({ films }: { films: MovieEntitySource[] }) {
+  return <ItemListStructuredData films={films} />;
 }
 
 function ScreeningsPageSkeleton() {

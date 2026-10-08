@@ -6,15 +6,29 @@
  * fuller per-film Movie + ScreeningEvent schema this is a lighter version
  * of — a list entry doesn't need everything a film's own page does.
  */
-import type { Screening } from './screenings';
-
 const SITE_URL = 'https://www.cinephilesvan.com';
 
-/** A lightweight `Movie` entity for one film, from whatever `Screening` row
- * happens to represent it (any of a film's showtimes carries the same film
- * fields). Not a bare name/url pair — includes director, genre, and rating
- * when present, so a list entry says what film it actually is. */
-export function buildMovieEntity(s: Screening) {
+/** The film fields a list entry's `Movie` schema needs — satisfied
+ * structurally by both `Screening` (a row-per-showtime shape, Table view)
+ * and `FilmListItem` (a row-per-film shape, Film view), so the same builder
+ * works for either without converting one into the other. */
+export interface MovieEntitySource {
+  film_id: number;
+  title: string;
+  poster_url?: string | null;
+  year?: number | null;
+  description?: string | null;
+  directors?: string | null;
+  genre?: string | null;
+  imdb_url?: string | null;
+  imdb_rating?: number | null;
+  imdb_votes?: number | null;
+}
+
+/** A lightweight `Movie` entity for one film. Not a bare name/url pair —
+ * includes director, genre, and rating when present, so a list entry says
+ * what film it actually is. */
+export function buildMovieEntity(s: MovieEntitySource) {
   const ratingNum = s.imdb_rating ? Number(s.imdb_rating) : null;
   const directors = s.directors
     ? s.directors.split(',').map((name) => name.trim()).filter(Boolean)
@@ -47,7 +61,7 @@ export function buildMovieEntity(s: Screening) {
 
 /** `ItemList` wrapping one `buildMovieEntity` per film, in the given order —
  * callers decide ordering/dedup (e.g. by film_id, by rating) before this. */
-export function buildItemListSchema(films: Screening[]) {
+export function buildItemListSchema(films: MovieEntitySource[]) {
   return {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
@@ -73,7 +87,7 @@ export function safeJsonLd(value: unknown): string {
 
 /** Renders a `buildItemListSchema` result as a `<script type="application/ld+json">`
  * tag, or nothing for an empty list (an empty ItemList is not useful structured data). */
-export function ItemListStructuredData({ films }: { films: Screening[] }) {
+export function ItemListStructuredData({ films }: { films: MovieEntitySource[] }) {
   if (films.length === 0) return null;
 
   return (

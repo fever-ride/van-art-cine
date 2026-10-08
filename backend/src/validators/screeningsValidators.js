@@ -13,6 +13,14 @@ export const listScreeningsValidator = [
     .withMessage('cinema_ids must be a comma-separated string'),
   query('film_id').optional().isInt({ min: 1 }).withMessage('film_id must be a positive integer').toInt(),
   query('q').optional().isString().trim(),
+  query('genre')
+    .optional()
+    .isString()
+    .withMessage('genre must be a comma-separated string'),
+  query('language')
+    .optional()
+    .isString()
+    .withMessage('language must be a comma-separated string'),
   query('sort')
     .optional()
     .isIn(ALLOWED_SORTS)

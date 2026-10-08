@@ -10,6 +10,8 @@ function makeUI(overrides = {}) {
   return {
     q: '',
     cinemaIds: [],
+    genreValues: [],
+    languageValues: [],
     filmId: '',
     date: '',
     from: '',
@@ -18,6 +20,7 @@ function makeUI(overrides = {}) {
     order: 'asc',
     mode: 'single',
     limit: 50,
+    view: 'table',
     ...overrides,
   };
 }
@@ -207,6 +210,8 @@ describe('Filters component', () => {
     expect(setUI).toHaveBeenCalledWith({
       q: '',
       cinemaIds: [],
+      genreValues: [],
+      languageValues: [],
       filmId: '',
       date: '',
       from: '',

@@ -10,7 +10,12 @@ import { SCREENING_SELECT, flattenScreeningRow } from './screeningSelect.js';
  */
 
 /**
- * List active screenings with optional filters, sort, and pagination.
+ * Builds the Prisma `where` clause shared by every query that answers "which
+ * screening rows match these filters" — `fetchScreenings` (row-paginated,
+ * powers Table view) and `fetchFilms` (film-paginated, powers Film view).
+ * Both views are filtering the exact same underlying screenings by the exact
+ * same rules; only how the matching rows get paginated and shaped differs.
+ * Pulled out so that rule never has to be kept in sync by hand across the two.
  *
  * @param {object} opts
  * @param {string} [opts.date]           Single local calendar day (YYYY-MM-DD); mutually exclusive with from/to in practice
@@ -19,29 +24,21 @@ import { SCREENING_SELECT, flattenScreeningRow } from './screeningSelect.js';
  * @param {number[]} [opts.cinemaIds]  Restrict to these cinema IDs
  * @param {number} [opts.filmId]       Restrict to this film
  * @param {string} [opts.q]            Substring match on film.normalized_title (already lowercased by controller)
- * @param {string} [opts.sort]         time | title | imdb | rt | votes | year
- * @param {string} [opts.order]        ASC | DESC
- * @param {number} [opts.limit]
- * @param {number} [opts.offset]
+ * @param {string[]} [opts.genres]     Restrict to films whose genre field contains any of these tokens (OR)
+ * @param {string[]} [opts.languages]  Restrict to films whose language field contains any of these tokens (OR)
  * @param {string} [opts.tz]           IANA zone for date/range → UTC (default America/Vancouver)
- * @returns {Promise<{items: object[], total: number}>} `items`: flat rows with film + cinema
- *   fields denormalized for the API. `total`: count of all matching rows for this `where`,
- *   ignoring limit/offset — for computing page count, not just this page's `items.length`.
+ * @returns {object} Prisma `where` for `screening`
  */
-export async function fetchScreenings(opts = {}) {
+function buildScreeningWhere(opts = {}) {
   const {
     date, from, to,
     cinemaIds,
     filmId,
     q,
-    sort = 'time',
-    order = 'ASC',
-    limit = 50,
-    offset = 0,
+    genres,
+    languages,
     tz = 'America/Vancouver',
   } = opts;
-
-  const safeOrder = (String(order).toLowerCase() === 'desc') ? 'desc' : 'asc';
 
   // Resolve [gte, lt) in UTC for start_at_utc: either one calendar day or an arbitrary local range.
   let gte = null;
@@ -68,7 +65,28 @@ export async function fetchScreenings(opts = {}) {
         }
       : {};
 
-  const where = {
+  // Genre and language are each an explicit, user-chosen "show me anything
+  // tagged X or Y" facet — unlike the related-films scoring model (which
+  // deliberately avoids "any shared token" for a passive recommendation,
+  // see docs/specs/related-films.md), checking two genre boxes is supposed
+  // to widen the result set, not narrow it. Each facet's own checked values
+  // OR together; the two facets then AND against each other. Built as a
+  // Prisma `AND` array (not a second `OR` key) — Prisma's `where` is a
+  // plain object, so two same-named `OR` keys here would silently
+  // overwrite rather than combine.
+  const facetConditions = [];
+  if (genres?.length > 0) {
+    facetConditions.push({
+      OR: genres.map((g) => ({ film: { genre: { contains: g, mode: 'insensitive' } } })),
+    });
+  }
+  if (languages?.length > 0) {
+    facetConditions.push({
+      OR: languages.map((l) => ({ film: { language: { contains: l, mode: 'insensitive' } } })),
+    });
+  }
+
+  return {
     is_active: true,
     ...startAtUtc,
     ...(cinemaIds?.length > 0
@@ -78,7 +96,48 @@ export async function fetchScreenings(opts = {}) {
     ...(q
       ? { film: { normalized_title: { contains: q } } }
       : {}),
+    ...(facetConditions.length > 0 ? { AND: facetConditions } : {}),
   };
+}
+
+/**
+ * List active screenings with optional filters, sort, and pagination.
+ *
+ * @param {object} opts
+ * @param {string} [opts.date]           Single local calendar day (YYYY-MM-DD); mutually exclusive with from/to in practice
+ * @param {string} [opts.from]         Range start (local, ISO date string)
+ * @param {string} [opts.to]           Range end (local)
+ * @param {number[]} [opts.cinemaIds]  Restrict to these cinema IDs
+ * @param {number} [opts.filmId]       Restrict to this film
+ * @param {string} [opts.q]            Substring match on film.normalized_title (already lowercased by controller)
+ * @param {string[]} [opts.genres]     Restrict to films whose genre field contains any of these tokens (OR)
+ * @param {string[]} [opts.languages]  Restrict to films whose language field contains any of these tokens (OR)
+ * @param {string} [opts.sort]         time | title | imdb | rt | votes | year
+ * @param {string} [opts.order]        ASC | DESC
+ * @param {number} [opts.limit]
+ * @param {number} [opts.offset]
+ * @param {string} [opts.tz]           IANA zone for date/range → UTC (default America/Vancouver)
+ * @returns {Promise<{items: object[], total: number}>} `items`: flat rows with film + cinema
+ *   fields denormalized for the API. `total`: count of all matching rows for this `where`,
+ *   ignoring limit/offset — for computing page count, not just this page's `items.length`.
+ */
+export async function fetchScreenings(opts = {}) {
+  const {
+    date, from, to,
+    cinemaIds,
+    filmId,
+    q,
+    genres,
+    languages,
+    sort = 'time',
+    order = 'ASC',
+    limit = 50,
+    offset = 0,
+    tz = 'America/Vancouver',
+  } = opts;
+
+  const safeOrder = (String(order).toLowerCase() === 'desc') ? 'desc' : 'asc';
+  const where = buildScreeningWhere({ date, from, to, cinemaIds, filmId, q, genres, languages, tz });
 
   let orderBy;
   const sortKey = String(sort);
@@ -126,6 +185,112 @@ export async function fetchScreenings(opts = {}) {
   ]);
 
   return { items: rowsRaw.map(flattenScreeningRow), total };
+}
+
+/**
+ * List films (not screenings) matching the same filters `fetchScreenings`
+ * supports, paginated by distinct film count, each film carrying its own
+ * full showtimes list. Powers Film view's `GET /api/films` — fixes the bug
+ * where row-based pagination split one film's showtimes across page
+ * boundaries, making it appear as a separate, incomplete card on each page.
+ *
+ * Three steps, each reusing an existing shared piece rather than
+ * reinventing it:
+ *   1. Find which distinct film_ids match the filters and page through
+ *      *that* list (not the screening rows) — `groupBy` on film_id, sorted
+ *      by each film's own soonest showtime. The catalog is small enough
+ *      (~200-300 active screenings) that pulling every matching film_id
+ *      and slicing in JS is simpler than a second synced count query, and
+ *      is the same "fetch everything, group in JS" shape already used by
+ *      `getScreeningFacets`.
+ *   2. Batch-fetch *every* screening for just this page's film_ids via
+ *      `SCREENING_SELECT`/`flattenScreeningRow` (same shared module
+ *      `fetchScreenings` and `getRelatedFilms` already use) — one batched
+ *      query (well, Prisma's own batching per relation level), not one
+ *      query per film, so this doesn't become the N+1 pattern that calling
+ *      `getFilmById`-style single-film functions in a loop would.
+ *   3. Group the flat rows into one entry per film — a backend-side mirror
+ *      of the frontend's `groupScreeningsByFilm` (frontend/lib), since here
+ *      the grouping needs to happen before the response is shaped, not
+ *      after it reaches the client.
+ *
+ * @param {object} opts  Same filter fields as `fetchScreenings` (date/from/to,
+ *   cinemaIds, q, genres, languages, tz), plus `limit`/`offset` — here counted
+ *   in films, not screenings.
+ * @returns {Promise<{items: object[], total: number}>} `total` is the count of
+ *   distinct matching films, not screenings.
+ */
+export async function fetchFilms(opts = {}) {
+  const {
+    date, from, to,
+    cinemaIds,
+    q,
+    genres,
+    languages,
+    limit = 20,
+    offset = 0,
+    tz = 'America/Vancouver',
+  } = opts;
+
+  const where = buildScreeningWhere({ date, from, to, cinemaIds, q, genres, languages, tz });
+
+  const grouped = await prisma.screening.groupBy({
+    by: ['film_id'],
+    where,
+    _min: { start_at_utc: true },
+    orderBy: { _min: { start_at_utc: 'asc' } },
+  });
+
+  const total = grouped.length;
+  const pageFilmIds = grouped
+    .slice(Number(offset), Number(offset) + Number(limit))
+    .map((g) => g.film_id);
+
+  if (pageFilmIds.length === 0) return { items: [], total };
+
+  const rows = await prisma.screening.findMany({
+    where: { ...where, film_id: { in: pageFilmIds } },
+    select: SCREENING_SELECT,
+    orderBy: { start_at_utc: 'asc' },
+  });
+
+  const byFilm = new Map();
+  for (const row of rows.map(flattenScreeningRow)) {
+    let group = byFilm.get(row.film_id);
+    if (!group) {
+      group = {
+        film_id: row.film_id,
+        title: row.title,
+        directors: row.directors,
+        poster_url: row.poster_url,
+        genre: row.genre,
+        country: row.country,
+        language: row.language,
+        year: row.year,
+        description: row.description,
+        imdb_rating: row.imdb_rating,
+        rt_rating_pct: row.rt_rating_pct,
+        imdb_votes: row.imdb_votes,
+        imdb_url: row.imdb_url,
+        runtime_min: row.runtime_min,
+        showtimes: [],
+      };
+      byFilm.set(row.film_id, group);
+    }
+    group.showtimes.push({
+      screening_id: row.id,
+      start_at_utc: row.start_at_utc,
+      cinema_id: row.cinema_id,
+      cinema_name: row.cinema_name,
+      source_url: row.source_url,
+    });
+  }
+
+  // Preserve the film order step 1 already decided (soonest-showtime-first)
+  // rather than whatever order step 2's flat rows happen to arrive in.
+  const items = pageFilmIds.map((id) => byFilm.get(id)).filter(Boolean);
+
+  return { items, total };
 }
 
 /**
@@ -210,4 +375,88 @@ export async function findByIds({ ids, includePast }) {
   });
 
   return mapped;
+}
+
+/** Splits a raw, comma-separated OMDb-style string into trimmed tokens,
+ * dropping placeholders like "N/A". Keeps original casing (unlike
+ * `films.js`'s own `splitCsvTokens`, which lowercases for similarity
+ * scoring) since these values are facet labels meant to be displayed. */
+function splitDisplayTokens(value) {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0 && v.toUpperCase() !== 'N/A');
+}
+
+/**
+ * Facet counts for the Film view's filter panel: for every cinema, genre,
+ * and language currently represented among active, upcoming screenings,
+ * how many distinct films match it. Each count is the number of distinct
+ * films, not screenings — a film playing 5 times at one cinema counts
+ * once, matching how the filter checkboxes read ("41 films", not "41
+ * showtimes").
+ *
+ * Computed once over the full unfiltered catalog, not recomputed against
+ * the caller's current selection — a simpler, static-count model (like the
+ * reference this was modeled on appears to use) rather than a live
+ * faceted-search recompute. Revisit if that distinction turns out to
+ * matter in practice.
+ */
+export async function getScreeningFacets() {
+  const rows = await prisma.screening.findMany({
+    where: { is_active: true, start_at_utc: { gte: new Date() } },
+    select: {
+      film_id: true,
+      cinema: { select: { id: true, name: true } },
+      film: { select: { genre: true, language: true } },
+    },
+  });
+
+  const cinemas = new Map(); // cinema_id -> { id, name, filmIds: Set }
+  const genres = new Map(); // token -> Set<film_id>
+  const languages = new Map(); // token -> Set<film_id>
+  const seenFilmsForTokens = new Set();
+
+  for (const row of rows) {
+    const filmId = row.film_id;
+
+    if (row.cinema) {
+      let entry = cinemas.get(row.cinema.id);
+      if (!entry) {
+        entry = { id: row.cinema.id, name: row.cinema.name, filmIds: new Set() };
+        cinemas.set(row.cinema.id, entry);
+      }
+      entry.filmIds.add(filmId);
+    }
+
+    // Genre/language are per-film, not per-screening — only count each
+    // film once regardless of how many screenings/cinemas it has here.
+    if (!seenFilmsForTokens.has(filmId)) {
+      seenFilmsForTokens.add(filmId);
+      for (const g of splitDisplayTokens(row.film?.genre)) {
+        if (!genres.has(g)) genres.set(g, new Set());
+        genres.get(g).add(filmId);
+      }
+      for (const l of splitDisplayTokens(row.film?.language)) {
+        if (!languages.has(l)) languages.set(l, new Set());
+        languages.get(l).add(filmId);
+      }
+    }
+  }
+
+  const toSortedList = (map) =>
+    [...map.entries()]
+      .map(([name, filmIds]) => ({ name, count: filmIds.size }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+  const cinemaList = [...cinemas.values()]
+    .map((c) => ({ id: c.id, name: c.name, count: c.filmIds.size }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+  return {
+    cinemas: cinemaList,
+    genres: toSortedList(genres),
+    languages: toSortedList(languages),
+  };
 }

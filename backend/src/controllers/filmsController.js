@@ -1,5 +1,57 @@
 import { getFilmById, getFilmPeople, getUpcomingForFilm, getRelatedFilms } from '../models/films.js';
+import { fetchFilms } from '../models/screenings.js';
 import { NotFoundError } from '../utils/errors.js';
+
+const DEFAULT_TZ = 'America/Vancouver';
+
+function splitCsvParam(raw) {
+  if (!raw) return null;
+  const values = raw
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+  return values.length > 0 ? values : null;
+}
+
+/**
+ * GET /api/films
+ * @query {{ date?, from?, to?, cinema_ids?, q?, genre?, language?, limit?, offset? }}
+ * @returns {200} {{ items: FilmGroup[], total: number }} — `total` is the
+ *   count of distinct matching films, not screenings (see `fetchFilms`).
+ */
+export async function listHandler(req, res, next) {
+  try {
+    const date = req.query.date?.trim();
+    const from = req.query.from?.trim();
+    const to   = req.query.to?.trim();
+
+    let cinemaIds = null;
+    const cinemaIdsParam = req.query.cinema_ids;
+    if (cinemaIdsParam) {
+      cinemaIds = cinemaIdsParam
+        .split(',')
+        .map(id => Number(id.trim()))
+        .filter(n => Number.isFinite(n) && n > 0);
+
+      if (cinemaIds.length === 0) cinemaIds = null;
+    }
+
+    const genres    = splitCsvParam(req.query.genre);
+    const languages = splitCsvParam(req.query.language);
+    const q       = (req.query.q || '').toString().trim().toLowerCase();
+    const limit   = req.query.limit  ?? 20;
+    const offset  = req.query.offset ?? 0;
+
+    const { items, total } = await fetchFilms({
+      date, from, to,
+      cinemaIds,
+      q, genres, languages, limit, offset,
+      tz: DEFAULT_TZ,
+    });
+
+    return res.json({ items, total });
+  } catch (err) { return next(err); }
+}
 
 /**
  * GET /api/films/:id

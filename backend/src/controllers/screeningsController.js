@@ -1,10 +1,19 @@
-import { fetchScreenings, findByIds } from '../models/screenings.js';
+import { fetchScreenings, findByIds, getScreeningFacets } from '../models/screenings.js';
 
 const DEFAULT_TZ = 'America/Vancouver';
 
+function splitCsvParam(raw) {
+  if (!raw) return null;
+  const values = raw
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+  return values.length > 0 ? values : null;
+}
+
 /**
  * GET /api/screenings
- * @query {{ date?, from?, to?, cinema_ids?, film_id?, q?, sort?, order?, limit?, offset? }}
+ * @query {{ date?, from?, to?, cinema_ids?, film_id?, q?, genre?, language?, sort?, order?, limit?, offset? }}
  * @returns {200} {{ items: Screening[], total: number }}
  */
 export async function listHandler(req, res, next) {
@@ -24,6 +33,9 @@ export async function listHandler(req, res, next) {
       if (cinemaIds.length === 0) cinemaIds = null;
     }
 
+    const genres    = splitCsvParam(req.query.genre);
+    const languages = splitCsvParam(req.query.language);
+
     const filmId  = req.query.film_id ?? null;
     const q       = (req.query.q || '').toString().trim().toLowerCase();
     const limit   = req.query.limit  ?? 50;
@@ -35,11 +47,22 @@ export async function listHandler(req, res, next) {
       date, from, to,
       cinemaIds,
       filmId,
-      q, sort, order, limit, offset,
+      q, genres, languages, sort, order, limit, offset,
       tz: DEFAULT_TZ,
     });
 
     return res.json({ items, total });
+  } catch (err) { return next(err); }
+}
+
+/**
+ * GET /api/screenings/facets
+ * @returns {200} {{ cinemas: {id,name,count}[], genres: {name,count}[], languages: {name,count}[] }}
+ */
+export async function facetsHandler(req, res, next) {
+  try {
+    const facets = await getScreeningFacets();
+    return res.json(facets);
   } catch (err) { return next(err); }
 }
 

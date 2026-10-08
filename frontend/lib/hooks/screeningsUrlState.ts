@@ -24,6 +24,7 @@
 import type { SortKey, Order, ScreeningsQuery } from '@/app/lib/screenings';
 
 export type Mode = 'single' | 'range';
+export type View = 'table' | 'film';
 
 export type UIState = {
   mode: Mode;
@@ -32,10 +33,13 @@ export type UIState = {
   to: string;
   q: string;
   cinemaIds: string[];
+  genreValues: string[];
+  languageValues: string[];
   filmId: string;
   sort: SortKey;
   order: Order;
   limit: number;
+  view: View;
 };
 
 // Duplicated from useScreeningsUI.ts for now, so this file has no
@@ -48,11 +52,20 @@ export const defaultUI: UIState = {
   to: '',
   q: '',
   cinemaIds: [],
+  genreValues: [],
+  languageValues: [],
   filmId: '',
   sort: 'time',
   order: 'asc',
   limit: 20,
+  // Table is the existing, proven behavior — Film is opt-in, not a default
+  // switch under existing visitors/bookmarks.
+  view: 'table',
 };
+
+function isView(value: string): value is View {
+  return value === 'table' || value === 'film';
+}
 
 const SORT_KEYS: readonly SortKey[] = ['time', 'title', 'imdb', 'rt', 'votes', 'year'];
 const ORDER_KEYS: readonly Order[] = ['asc', 'desc'];
@@ -94,11 +107,24 @@ export function parseUIStateFromSearchParams(
         .filter(Boolean)
     : base.cinemaIds;
 
+  const genreParam = searchParams.get('genre');
+  const genreValues = genreParam
+    ? genreParam.split(',').map((s) => s.trim()).filter(Boolean)
+    : base.genreValues;
+
+  const languageParam = searchParams.get('language');
+  const languageValues = languageParam
+    ? languageParam.split(',').map((s) => s.trim()).filter(Boolean)
+    : base.languageValues;
+
   const sortParam = searchParams.get('sort');
   const sort = sortParam && isSortKey(sortParam) ? sortParam : base.sort;
 
   const orderParam = searchParams.get('order');
   const order = orderParam && isOrder(orderParam) ? orderParam : base.order;
+
+  const viewParam = searchParams.get('view');
+  const view = viewParam && isView(viewParam) ? viewParam : base.view;
 
   return {
     mode,
@@ -107,10 +133,13 @@ export function parseUIStateFromSearchParams(
     to: mode === 'range' ? to : '',
     q: searchParams.get('q') ?? base.q,
     cinemaIds,
+    genreValues,
+    languageValues,
     filmId: searchParams.get('film_id') ?? base.filmId,
     sort,
     order,
     limit: base.limit,
+    view,
   };
 }
 
@@ -119,7 +148,10 @@ export function serializeUIStateToSearchParams(ui: UIState): URLSearchParams {
 
   if (ui.q && ui.q !== defaultUI.q) params.set('q', ui.q);
   if (ui.cinemaIds.length > 0) params.set('cinema_ids', ui.cinemaIds.join(','));
+  if (ui.genreValues.length > 0) params.set('genre', ui.genreValues.join(','));
+  if (ui.languageValues.length > 0) params.set('language', ui.languageValues.join(','));
   if (ui.filmId && ui.filmId !== defaultUI.filmId) params.set('film_id', ui.filmId);
+  if (ui.view !== defaultUI.view) params.set('view', ui.view);
 
   if (ui.mode === 'single') {
     if (ui.date) params.set('date', ui.date);
@@ -166,6 +198,8 @@ export function buildScreeningsQuery(
   const query: ScreeningsQuery = {
     q: ui.q,
     cinema_ids: ui.cinemaIds.length > 0 ? ui.cinemaIds.map(Number) : undefined,
+    genre: ui.genreValues.length > 0 ? ui.genreValues : undefined,
+    language: ui.languageValues.length > 0 ? ui.languageValues : undefined,
     film_id: ui.filmId ? numOrUndefined(ui.filmId) : undefined,
     sort: ui.sort,
     order: ui.order,
