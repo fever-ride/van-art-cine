@@ -134,18 +134,50 @@ def extract_year(item: Dict[str, Any]) -> Optional[int]:
         return None
 
 
-def pick_result(results: List[Dict[str, Any]], year: Optional[int]) -> Optional[Dict[str, Any]]:
+def pick_result(
+    results: List[Dict[str, Any]], title: str, year: Optional[int]
+) -> Optional[Dict[str, Any]]:
     """
     Choose the best TMDB search result for a film.
-    If a target year is provided, prefer the first result whose release year matches.
-    Otherwise, fall back to the first result in TMDB's ranked list.
+
+    Preference order:
+      1) An exact title match (case/whitespace-normalized) whose release
+         year also matches `year`, when a year was given.
+      2) An exact title match regardless of year -- catches the common case
+         for very new/festival titles where TMDB has no release_date at all
+         for the real film, so no year could ever match it, but a loose
+         "first result whose year matches" would otherwise skip right past
+         it to a same-year, unrelated result that happens to rank higher by
+         popularity (seen in production: "Tokyo Godfathers" matched to a
+         same-year making-of short; "Look Back" matched to an unrelated
+         "Euphoria: A Look Back" special, both via this exact failure mode).
+      3) The first result whose release year matches `year` (the original,
+         looser behavior) -- kept as a fallback for legitimate cases where
+         TMDB's own title differs from the scraped one (a retitled release,
+         a translated/alternate title) but the year still pins down the
+         right film.
+      4) The first result in TMDB's own ranked list.
     """
     if not results:
         return None
+
+    exact_title_matches = [
+        r for r in results if norm_title(r.get("title", "")) == norm_title(title)
+    ]
+
     if year is not None:
-        for it in results:
-            if extract_year(it) == year:
-                return it
+        for r in exact_title_matches:
+            if extract_year(r) == year:
+                return r
+
+    if exact_title_matches:
+        return exact_title_matches[0]
+
+    if year is not None:
+        for r in results:
+            if extract_year(r) == year:
+                return r
+
     # fallback to first (TMDB ranking)
     return results[0]
 
@@ -198,8 +230,23 @@ def find_tmdb_and_imdb(
     if not results:
         results = search_tmdb_movies(remove_parentheses(title), year)
 
-    # 3) choose best candidate
-    chosen = pick_result(results, year)
+    # 3) retry with no year constraint at all if still nothing. TMDB's
+    # `year` search param is a hard filter, not a preference -- a real film
+    # that simply has no release_date recorded on TMDB (common for very
+    # new/festival titles that haven't had a wide release yet) can never
+    # match it, so a year-filtered search for it always returns zero
+    # results regardless of whether the scraped `year` is correct. Without
+    # this retry, that film would be reported "not found" even though an
+    # unconstrained search finds it immediately (seen in production: "The
+    # Bryce Lee Story", "I Saw the TV Glow: Summer of Schoenbrun", "Naomi
+    # Osaka: The Second Set", "Pocket Mirror" all hit this).
+    if not results and year is not None:
+        results = search_tmdb_movies(title, None)
+        if not results:
+            results = search_tmdb_movies(remove_parentheses(title), None)
+
+    # 4) choose best candidate
+    chosen = pick_result(results, title, year)
     if not chosen:
         out = {"tmdb_id": None, "imdb_id": None, "poster_path": None}
         CACHE[key] = out

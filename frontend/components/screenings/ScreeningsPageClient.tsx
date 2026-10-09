@@ -2,13 +2,23 @@
 
 import { useState, useEffect, useLayoutEffect, useRef, useTransition } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import type { Screening } from '@/app/lib/screenings';
+import { apiScreeningFacets, type Screening, type ScreeningFacets, type FilmListItem } from '@/app/lib/screenings';
 import { useScreeningsUI } from '@/lib/hooks/useScreeningsUI';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { apiListCinemas, type Cinema } from '@/app/lib/cinemas';
 import Filters from '@/components/screenings/Filters';
 import ResultsTable from '@/components/screenings/ResultsTable';
 import Pagination from '@/components/screenings/Pagination';
+import FilmListView from '@/components/screenings/FilmListView';
+import ScreeningsFilterPanel from '@/components/screenings/ScreeningsFilterPanel';
+
+const EMPTY_FACETS: ScreeningFacets = {
+  cinemas: [],
+  genres: [],
+  languages: [],
+  eras: [],
+  ratings: { imdb: [], rt: [] },
+};
 
 /** Matches `scroll-mt-28` on #screenings-results */
 const TABLE_SCROLL_MARGIN = 112;
@@ -16,6 +26,13 @@ const TABLE_SCROLL_MARGIN = 112;
 type Props = {
   initialItems: Screening[];
   initialTotal: number;
+  /** Film view's own data — fetched from `/api/films` (paginated by film
+   * count), separately from `initialItems`/`initialTotal` (Table view's
+   * `/api/screenings`, paginated by row). Only the active view's pair is
+   * populated by the server; the other arrives empty. See
+   * `frontend/app/page.tsx`'s `ScreeningsPageContent`. */
+  initialFilmItems: FilmListItem[];
+  initialFilmTotal: number;
   initialError: string | null;
 };
 
@@ -35,6 +52,8 @@ type Props = {
 export default function ScreeningsPageClient({
   initialItems,
   initialTotal,
+  initialFilmItems,
+  initialFilmTotal,
   initialError,
 }: Props) {
   const screeningsUI = useScreeningsUI();
@@ -47,13 +66,16 @@ export default function ScreeningsPageClient({
 
   const [cinemaOptions, setCinemaOptions] = useState<Cinema[]>([]);
   const [cinemaLoading, setCinemaLoading] = useState(false);
+  const [facets, setFacets] = useState<ScreeningFacets>(EMPTY_FACETS);
 
   const rawPage = searchParams.get('page');
   let page = Number(rawPage);
   if (!Number.isFinite(page) || page < 1) page = 1;
 
+  const isFilmView = screeningsUI.ui.view === 'film';
   const items = initialItems;
-  const totalPages = Math.max(1, Math.ceil(initialTotal / screeningsUI.ui.limit));
+  const activeTotal = isFilmView ? initialFilmTotal : initialTotal;
+  const totalPages = Math.max(1, Math.ceil(activeTotal / screeningsUI.ui.limit));
   const isPending = screeningsUI.isPending || paginationPending;
 
   const tableRef = useRef<HTMLDivElement>(null);
@@ -184,58 +206,128 @@ export default function ScreeningsPageClient({
     };
   }, []);
 
+  // Facet counts for the Film view's filter panel. Gated on isFilmView (and
+  // on not already having fetched) rather than firing unconditionally on
+  // mount: a Table view visitor — still the default, more common path —
+  // never touches this panel, so fetching it for them was a wasted request
+  // on every single homepage load. Fetched once on first switch to Film
+  // view, not re-fetched on every toggle back and forth.
+  useEffect(() => {
+    if (!isFilmView || facets !== EMPTY_FACETS) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const data = await apiScreeningFacets();
+        if (!cancelled) setFacets(data);
+      } catch (e) {
+        console.warn('Failed to load screening facets', e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isFilmView, facets]);
+
   return (
-    <div
-      ref={contentRowRef}
-      className="flex flex-col gap-4 md:flex-row [overflow-anchor:none]"
-      style={rowMinHeight ? { minHeight: rowMinHeight } : undefined}
-    >
-      <aside
-        className="self-start md:w-[275px] md:flex-shrink-0 md:sticky md:top-30
-                   md:max-h-[calc(100vh_-_7.5rem_-_1rem)] md:overflow-y-auto"
-      >
-        <Filters
-          ui={screeningsUI.ui}
-          setUI={screeningsUI.setUI}
-          onBeforeCommit={handleBeforeFilterCommit}
-          loading={cinemaLoading}
-          pending={screeningsUI.isPending}
-          cinemaOptions={cinemaOptions}
-        />
-      </aside>
-
-      <section className="flex-1 [overflow-anchor:none]">
-        {initialError && (
-          <p className="mt-3 text-sm text-muted">Error: {initialError}</p>
-        )}
-        <div
-          ref={tableRef}
-          id="screenings-results"
-          className="scroll-mt-28 overflow-x-auto rounded-card border border-border bg-surface"
-          style={{ scrollMarginTop: '7rem', overflowAnchor: 'none' }}
+    <div className="[overflow-anchor:none]">
+      <div className="mb-4 inline-flex rounded-btn bg-surface-subtle p-1">
+        <button
+          type="button"
+          onClick={() => screeningsUI.setUI({ view: 'film' })}
+          className={`rounded-control px-4 py-1.5 text-sm font-semibold transition-colors ${
+            isFilmView ? 'bg-surface text-primary shadow-sm' : 'text-muted'
+          }`}
         >
-          {items.length > 0 ? (
-            <ResultsTable
-              items={items}
-              savedIds={watchlist.savedIds}
-              onSavedChange={watchlist.handleSavedChange}
-            />
-          ) : (
-            !initialError && (
-              <p className="px-4 py-8 text-sm text-muted">No screenings found.</p>
-            )
-          )}
-        </div>
+          Movies
+        </button>
+        <button
+          type="button"
+          onClick={() => screeningsUI.setUI({ view: 'table' })}
+          className={`rounded-control px-4 py-1.5 text-sm font-semibold transition-colors ${
+            !isFilmView ? 'bg-surface text-primary shadow-sm' : 'text-muted'
+          }`}
+        >
+          Showtimes
+        </button>
+      </div>
 
-        <Pagination
-          className="mt-4"
-          currentPage={page}
-          totalPages={totalPages}
-          buildPageHref={buildPageUrl}
-          onNavigate={handlePageChange}
-          disabled={isPending}
-        />
-      </section>
+      {isFilmView ? (
+        <div>
+          <ScreeningsFilterPanel
+            ui={screeningsUI.ui}
+            setUI={screeningsUI.setUI}
+            facets={facets}
+            pending={screeningsUI.isPending}
+          />
+          {initialError && <p className="mt-3 text-sm text-muted">Error: {initialError}</p>}
+          <div id="screenings-results" className="scroll-mt-28" style={{ scrollMarginTop: '7rem' }}>
+            <FilmListView films={initialFilmItems} />
+          </div>
+          <Pagination
+            className="mt-4"
+            currentPage={page}
+            totalPages={totalPages}
+            buildPageHref={buildPageUrl}
+            onNavigate={handlePageChange}
+            disabled={isPending}
+          />
+        </div>
+      ) : (
+        <div
+          ref={contentRowRef}
+          className="flex flex-col gap-4 md:flex-row [overflow-anchor:none]"
+          style={rowMinHeight ? { minHeight: rowMinHeight } : undefined}
+        >
+          <aside
+            className="self-start md:w-[275px] md:flex-shrink-0 md:sticky md:top-30
+                       md:max-h-[calc(100vh_-_7.5rem_-_1rem)] md:overflow-y-auto"
+          >
+            <Filters
+              ui={screeningsUI.ui}
+              setUI={screeningsUI.setUI}
+              onBeforeCommit={handleBeforeFilterCommit}
+              loading={cinemaLoading}
+              pending={screeningsUI.isPending}
+              cinemaOptions={cinemaOptions}
+            />
+          </aside>
+
+          <section className="flex-1 [overflow-anchor:none]">
+            {initialError && (
+              <p className="mt-3 text-sm text-muted">Error: {initialError}</p>
+            )}
+            <div
+              ref={tableRef}
+              id="screenings-results"
+              className="scroll-mt-28 overflow-x-auto rounded-card border border-border bg-surface"
+              style={{ scrollMarginTop: '7rem', overflowAnchor: 'none' }}
+            >
+              {items.length > 0 ? (
+                <ResultsTable
+                  items={items}
+                  savedIds={watchlist.savedIds}
+                  onSavedChange={watchlist.handleSavedChange}
+                />
+              ) : (
+                !initialError && (
+                  <p className="px-4 py-8 text-sm text-muted">No screenings found.</p>
+                )
+              )}
+            </div>
+
+            <Pagination
+              className="mt-4"
+              currentPage={page}
+              totalPages={totalPages}
+              buildPageHref={buildPageUrl}
+              onNavigate={handlePageChange}
+              disabled={isPending}
+            />
+          </section>
+        </div>
+      )}
     </div>
   );
 }

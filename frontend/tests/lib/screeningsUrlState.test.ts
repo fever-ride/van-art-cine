@@ -171,10 +171,16 @@ describe('round trip', () => {
       to: '2026-08-10',
       q: 'Ozu',
       cinemaIds: ['3', '7'],
+      genreValues: [],
+      languageValues: [],
+      eraValues: ['2020s', 'pre-1990'],
+      minImdb: '7.5',
+      minRt: '80',
       filmId: '',
       sort: 'title',
       order: 'desc',
       limit: defaultUI.limit,
+      view: 'table',
     };
 
     const params = serializeUIStateToSearchParams(original);

@@ -59,11 +59,83 @@ export interface ScreeningsQuery {
   cinema_ids?: number[];
   film_id?: number;
   q?: string;
+  genre?: string[];
+  language?: string[];
+  era?: string[];
+  min_imdb?: number;
+  min_rt?: number;
   sort?: SortKey;
   order?: Order;
   limit?: number;
   offset?: number;
   tz?: string;
+}
+
+export interface FilmShowtime {
+  screening_id: number;
+  start_at_utc: string;
+  cinema_id: number;
+  cinema_name: string;
+  source_url: string | null;
+}
+
+/** One entry per film from `GET /api/films` — the Film view's data source,
+ * paginated by distinct film count so a film's showtimes never split across
+ * page boundaries the way row-based `/api/screenings` pagination could.
+ * Field names mirror `Screening`'s own snake_case wire shape rather than
+ * introducing a second camelCase convention for the same data. */
+export interface FilmListItem {
+  film_id: number;
+  title: string;
+  directors: string | null;
+  poster_url: string | null;
+  genre: string | null;
+  country: string | null;
+  language: string | null;
+  year: number | null;
+  description: string | null;
+  rated: string | null;
+  imdb_rating: number | null;
+  rt_rating_pct: number | null;
+  imdb_votes: number | null;
+  imdb_url: string | null;
+  runtime_min: number | null;
+  showtimes: FilmShowtime[];
+}
+
+export interface FilmsResponse {
+  items: FilmListItem[];
+  /** Count of distinct films matching the current filters, ignoring
+   * limit/offset — unlike `ScreeningsResponse.total`, this is a film count,
+   * not a screening-row count. */
+  total: number;
+}
+
+export interface ScreeningFacetValue {
+  name: string;
+  count: number;
+}
+
+export interface EraFacetValue {
+  key: string;
+  label: string;
+  count: number;
+}
+
+export interface RatingThresholdValue {
+  threshold: number;
+  count: number;
+}
+
+export interface ScreeningFacets {
+  cinemas: Array<{ id: number; name: string; count: number }>;
+  genres: ScreeningFacetValue[];
+  languages: ScreeningFacetValue[];
+  eras: EraFacetValue[];
+  ratings: {
+    imdb: RatingThresholdValue[];
+    rt: RatingThresholdValue[];
+  };
 }
 
 export function buildSearchParams(params: ScreeningsQuery = {}): URLSearchParams {
@@ -77,6 +149,11 @@ export function buildSearchParams(params: ScreeningsQuery = {}): URLSearchParams
 
     if (k === 'cinema_ids' && Array.isArray(v)) {
       if (v.length > 0) sp.set('cinema_ids', v.join(','));
+      return;
+    }
+
+    if ((k === 'genre' || k === 'language' || k === 'era') && Array.isArray(v)) {
+      if (v.length > 0) sp.set(k, v.join(','));
       return;
     }
 
@@ -123,3 +200,46 @@ export const getScreeningsServerSide = cache(
     return res.json() as Promise<ScreeningsResponse>;
   }
 );
+
+/**
+ * Server side only — same reasoning as `getScreeningsServerSide` (absolute
+ * URL, `cache()`-wrapped on the already-built query string). Powers Film
+ * view in `frontend/app/page.tsx`: the query is built the same way as the
+ * Table view's (`buildScreeningsQuery`) since both are filtering the exact
+ * same underlying screenings, just paginated and shaped differently — see
+ * `fetchFilms` on the backend for why that shared filter logic lives in one
+ * place rather than two.
+ */
+export const getFilmsServerSide = cache(
+  async (queryString: string): Promise<FilmsResponse> => {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:4000';
+    const res = await fetch(`${baseUrl}/api/films?${queryString}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json() as Promise<FilmsResponse>;
+  }
+);
+
+/** Facet counts (cinema/genre/language) for the filter panel, computed over
+ * the full active+upcoming catalog — see `getScreeningFacets` on the
+ * backend for why this isn't recomputed per the caller's current
+ * selection. Revalidated hourly like the sitemap's own screenings fetch;
+ * these counts don't need to be second-to-second fresh. */
+export const getScreeningFacets = cache(async (): Promise<ScreeningFacets> => {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:4000';
+  const res = await fetch(`${baseUrl}/api/screenings/facets`, {
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json() as Promise<ScreeningFacets>;
+});
+
+/** Client side fetch, same reasoning/fallback as `apiListCinemas`
+ * (`frontend/app/lib/cinemas.ts`): a relative URL works here since this
+ * runs from the browser, not during server rendering. */
+export async function apiScreeningFacets(): Promise<ScreeningFacets> {
+  const res = await fetch('/api/screenings/facets', { credentials: 'include' });
+  if (!res.ok) return { cinemas: [], genres: [], languages: [], eras: [], ratings: { imdb: [], rt: [] } };
+  return res.json() as Promise<ScreeningFacets>;
+}

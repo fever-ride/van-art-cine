@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { getFilmDetail } from '@/app/lib/films';
 import type { Screening } from '@/app/lib/screenings';
-import { ItemListStructuredData } from '@/app/lib/structuredData';
+import { ItemListStructuredData, safeJsonLd } from '@/app/lib/structuredData';
 import FilmHeader from '@/components/films/FilmHeader';
 import FilmMeta from '@/components/films/FilmMeta';
 import FilmShowtimes from '@/components/films/FilmShowtimes';
@@ -190,13 +190,13 @@ function StructuredData({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(movieSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(movieSchema) }}
       />
       {screeningEventSchemas.map((schema, i) => (
         <script
           key={i}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
         />
       ))}
     </>

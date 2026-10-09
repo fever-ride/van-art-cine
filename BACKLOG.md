@@ -191,6 +191,37 @@ underlying film.
 
 **Priority:** High. This has already caused one incorrect merge.
 
+---
+
+#### DP-9. Parse `film.awards` into structured counts
+
+**Problem:** `film.awards` is OMDb's own free-text summary (e.g.
+"Nominated for 1 Oscar. 5 wins & 2 nominations total", "6 nominations"),
+not a structured field — not currently surfaced anywhere in the frontend.
+
+**Impact:** Checked the real data before writing this up: of 1470 films,
+396 have `awards` as `null` and 339 are the literal string `"N/A"` — call
+it exactly half the catalog with no awards content at all, mostly the
+international festival titles OMDb's English-language-award-focused data
+doesn't cover. No parsing step can recover award data OMDb never
+collected, which caps how much value this feature could ever deliver —
+worth weighing before investing effort, since even a perfect parser only
+has something to show for roughly the other half.
+
+**Approach:** For the half that does have text, the field follows a small
+number of recurring templates ("Won N Oscar(s)", "Nominated for N
+Oscar(s)", "N win(s) & M nomination(s) total", "N nomination(s)" alone,
+"N win(s)" alone) — a regex parser should cover the large majority of
+cases. Prefer that over an LLM/AI pipeline step: the field isn't actually
+free-form enough to need one, and a regex gives deterministic, auditable
+output instead of occasionally-wrong structured data for what is
+fundamentally a template-matching problem. Reserve an LLM pass only for
+whatever long tail a regex can't parse, if that tail turns out to be worth
+the trouble.
+
+**Priority:** Deferred. Revisit once there's appetite to weigh the ~50%
+coverage ceiling against the effort.
+
 ## Frontend Architecture
 
 Scope: `frontend/` (Next.js app), core rendering and state design. This is
@@ -597,18 +628,41 @@ with several films from the same person scheduled at once.
 
 #### SEO-10. Add country and language hub pages
 
-**Problem:** `film.country` and `film.language` exist but are sparse and
-inconsistent. Several currently showing films have `null` or `N/A` in
-these fields.
+**Problem:** Re-checked against the 228 films with an upcoming active
+screening (2026-10-05; re-run this check if revisiting much later):
+`country` is usable (non-null, non-"N/A") on 141/228 (61.8%), `language`
+on 130/228 (57.0%) — both films are originally reported as "sparse and
+inconsistent," but that was a qualitative impression, not a measured
+number; at today's actual coverage this is the same order of magnitude as
+genre's own 61% match rate, which was already judged good enough to build
+SEO-4's related-films feature on. Data quality is no longer the blocker.
 
-**Impact:** Same category of idea as genre pages, for example "Japanese
-films playing in Vancouver," but with thinner and less consistent data
-right now.
+**Impact:** Same category of idea as genre pages ("Japanese films playing
+in Vancouver"), and the volume distribution has the same shape genre's did
+(see SEO-4/`docs/specs/related-films.md`'s Jaccard-similarity story): the
+most common values are too common to be a distinctive hub page, and most
+other values are too thin to justify one at all. By language: English 76
+(too broad), French 19, Japanese 11, Spanish 11, German 10 (viable), then
+a long tail of 1-4 each (too thin). By country: United States 44 (too
+broad), France 32, United Kingdom 19, Canada 17, Germany 15, Japan 13
+(viable), then Belgium 9 and below (too thin). A handful of hub pages for
+the mid-volume values is viable; one page per *every* distinct value is
+not.
 
-**Approach:** Revisit after the tag work (SEO-7) ships and after data
-quality for `country` and `language` improves.
+**Approach:** Same pattern as SEO-13's Top Rated hub: one static list of
+which country/language values get a page (the mid-volume ones identified
+above, re-checked at build time rather than assumed from this snapshot),
+each rendered with the existing `PosterGrid`/`PosterCarousel` +
+`ItemListStructuredData` components, filtering `fetchScreenings`'s result
+set by the matching `country`/`language` token. Needs its own design pass
+on: whether country and language are one hub type or two, the URL
+structure per value, and how a value earns a page (a fixed threshold
+re-checked periodically, vs. a hardcoded list) — not yet decided, write a
+spec before building, matching this project's own convention.
 
-**Priority:** Low.
+**Priority:** Medium (up from Low) — the data-quality blocker this was
+waiting on is resolved; what's left is a scope/design decision, not a data
+problem.
 
 ---
 
@@ -626,3 +680,112 @@ interest.
 watchlist activity for a ranking to be meaningful.
 
 **Priority:** Blocked. Depends on user growth, not on engineering work.
+
+## Performance
+
+Scope: `frontend/` and `backend/`. Items here are about load time, request
+volume, and query cost — noticed while building the homepage's Film view
+(a film-grouped card grid alternative to the existing screening-row Table
+view), not SEO or feature gaps.
+
+### Done
+
+#### Stop fetching Film view's filter facets on every homepage load
+
+Shipped in `frontend/components/screenings/ScreeningsPageClient.tsx`.
+
+- `apiScreeningFacets()` (powers the Film view filter panel's cinema/genre/
+  language checkboxes with counts) was fetched unconditionally on mount,
+  regardless of which view was active — so every Table view visitor (the
+  default, still the more common path) paid for a request they never used.
+- Gated the fetch behind `isFilmView`, fetched once on first switch to Film
+  view rather than on every toggle back and forth (checked against
+  `facets !== EMPTY_FACETS` so it does not re-fire on a second switch).
+- Verified live: a fresh Table view load makes zero requests to
+  `/api/screenings/facets`; switching to Film view makes exactly one;
+  switching back and forth again makes no additional request.
+
+#### Add `loading="lazy"` to multi-poster grids
+
+Shipped in `frontend/components/screenings/FilmListView.tsx` and
+`frontend/components/whats-on/FilmPosterCard.tsx` (the latter shared by
+the Top Rated hub page's carousel and grid).
+
+- Film view's card grid renders up to 20 posters per page; without
+  `loading="lazy"`, the browser starts downloading all of them immediately
+  on page load regardless of whether they are in view.
+- Deliberately **not** applied to `frontend/components/films/FilmHeader.tsx`
+  (the film detail page's single large hero poster) — that image is
+  typically the page's LCP (Largest Contentful Paint) candidate, and
+  lazy-loading an LCP image delays the exact thing you want to load fastest.
+  Lazy-loading only helps images that are plausibly off-screen on load,
+  which a single above-the-fold hero image is not.
+
+### Still deferred
+
+---
+
+#### PERF-1. Code-split the Table view / Film view components
+
+**Problem:** `frontend/components/screenings/ScreeningsPageClient.tsx`
+statically imports both Film view's components (`FilmListView`,
+`ScreeningsFilterPanel`) and Table view's (`Filters`, `ResultsTable`) at
+the top of the file, so the client JS bundle ships both views' code to
+every visitor regardless of which one is active.
+
+**Impact:** Minor. Each component is at most a few hundred lines, so the
+actual byte savings from splitting them apart are likely small — this is
+a "do it if convenient" item, not a response to a measured problem.
+
+**Approach:** Wrap the inactive view's components in `next/dynamic`
+(keeping server rendering on, so the active view is still present in the
+initial HTML) so only the active view's component code ships to the
+client.
+
+**Priority:** Low.
+
+---
+
+#### PERF-2. Push `fetchFilms`'s pagination into SQL
+
+**Problem:** `backend/src/models/screenings.js`'s `fetchFilms` (powers
+`GET /api/films`, the Film view's data source) fetches every distinct
+`film_id` matching the current filters via `prisma.screening.groupBy`,
+then slices that array in JS for the requested page — rather than passing
+`skip`/`take` directly to `groupBy` and getting the total count via a
+dedicated `COUNT(DISTINCT film_id)` query.
+
+**Impact:** None today. The `groupBy` result is one small row (a film_id
+plus a timestamp) per distinct film, and the catalog is currently ~200-300
+active films — slicing that in JS is negligible. This only matters if the
+catalog grows by an order of magnitude or more; the current approach is
+not a measured bottleneck, just not the version that scales furthest.
+
+**Approach:** Pass `skip`/`take` to the `groupBy` call directly. Get
+`total` from a `COUNT(DISTINCT film_id)` query (raw SQL — Prisma's query
+builder has no first-class "count distinct groups" call) instead of
+`grouped.length`.
+
+**Priority:** Low. Revisit only if the catalog's scale changes
+meaningfully.
+
+---
+
+#### PERF-3. `getScreeningFacets` re-scans the whole catalog on every call
+
+**Problem:** `backend/src/models/screenings.js`'s `getScreeningFacets`
+(powers the Film view filter panel's counts) fetches every active,
+upcoming screening row — with nested film and cinema fields, not just
+distinct keys — and groups them in JS on every call. The frontend wraps
+it with an hourly `revalidate`, but the backend function itself has no
+caching and re-scans on every request that misses that cache.
+
+**Impact:** None today at ~200-300 rows — same scaling caveat as PERF-2,
+but the heavier of the two "fetch broadly, aggregate in JS" patterns in
+this codebase, since it pulls full rows rather than just distinct keys.
+
+**Approach:** If the catalog grows meaningfully, move the aggregation
+into SQL (`GROUP BY` with `COUNT`) or cache the result server-side for a
+short TTL instead of recomputing on every request.
+
+**Priority:** Low. Same trigger condition as PERF-2.

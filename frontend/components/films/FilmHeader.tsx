@@ -8,6 +8,7 @@ import {
   parseImdbRating,
 } from '@/app/lib/displayText';
 import { formatGenre } from '@/app/lib/formatGenre';
+import { RatedBadge } from '@/components/ui';
 
 type Props = {
   film: Pick<
@@ -16,6 +17,7 @@ type Props = {
     | 'year'
     | 'country'
     | 'genre'
+    | 'rated'
     | 'imdb_rating'
     | 'imdb_votes'
     | 'rt_rating_pct'
@@ -37,6 +39,7 @@ export default function FilmHeader({ film, nextScreening }: Props) {
     year,
     country,
     genre,
+    rated,
     imdb_rating,
     imdb_votes,
     rt_rating_pct,
@@ -91,14 +94,16 @@ export default function FilmHeader({ film, nextScreening }: Props) {
             {title}
           </h1>
 
-          {/* All facts as one consistent row of pills */}
-          {pills.length > 0 && (
+          {/* All facts as one consistent row of pills, plus the rating card
+           * (a distinct shape/style on purpose — see RatedBadge) */}
+          {(pills.length > 0 || rated) && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {pills.map((p, i) => (
                 <span key={`${p}-${i}`} className={pillClass}>
                   {p}
                 </span>
               ))}
+              <RatedBadge rated={rated} />
             </div>
           )}
 

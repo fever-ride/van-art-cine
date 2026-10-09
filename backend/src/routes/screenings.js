@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { listHandler, bulkHandler } from '../controllers/screeningsController.js';
+import { listHandler, bulkHandler, facetsHandler } from '../controllers/screeningsController.js';
 import { listScreeningsValidator, bulkScreeningsValidator } from '../validators/screeningsValidators.js';
 import { handleValidationErrors } from '../utils/validators.js';
 
@@ -11,6 +11,7 @@ router.get(
   handleValidationErrors,
   listHandler,
 );
+router.get('/facets', facetsHandler);
 router.post(
   '/bulk',
   bulkScreeningsValidator,

@@ -5,7 +5,7 @@ import type { Film } from '@/app/lib/films';
 import { isMissingText } from '@/app/lib/typeGuards';
 
 type Props = {
-  film: Pick<Film, 'language' | 'rated' | 'description'> & {
+  film: Pick<Film, 'language' | 'description'> & {
     writers: Film['writers'];
     cast: Film['cast'];
   };
@@ -42,7 +42,6 @@ export default function FilmMeta({ film }: Props) {
   const hasAnyDetail =
     !!description ||
     langs.length > 0 ||
-    (!isMissingText(film.rated) && !!film.rated) ||
     writers.length > 0 ||
     topCast.length > 0;
 
@@ -70,7 +69,6 @@ export default function FilmMeta({ film }: Props) {
 
         {/* Details */}
         {(langs.length > 0 ||
-          (!isMissingText(film.rated) && !!film.rated) ||
           writers.length > 0 ||
           topCast.length > 0) && (
           <div className="space-y-4 text-sm pt-3">
@@ -78,13 +76,6 @@ export default function FilmMeta({ film }: Props) {
               <div className="flex gap-4">
                 <span className="font-semibold text-primary w-20">Language</span>
                 <span className="text-primary">{langs.join(', ')}</span>
-              </div>
-            )}
-
-            {!isMissingText(film.rated) && film.rated && (
-              <div className="flex gap-4">
-                <span className="font-semibold text-primary w-20">Rated</span>
-                <span className="text-primary">{film.rated}</span>
               </div>
             )}
 
