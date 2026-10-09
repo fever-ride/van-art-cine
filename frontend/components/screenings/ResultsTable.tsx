@@ -8,15 +8,10 @@ import {
   formatScreeningTime,
   formatScreeningDateTime,
 } from '@/app/lib/formatDate';
-import {
-  cleanDisplayText,
-  formatPeopleLine,
-  isValidRtRating,
-  parseImdbRating,
-} from '@/app/lib/displayText';
+import { cleanDisplayText, formatPeopleLine } from '@/app/lib/displayText';
 import { formatGenre } from '@/app/lib/formatGenre';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
-import { RatedBadge } from '@/components/ui';
+import { RatedBadge, ImdbBadge, RtBadge } from '@/components/ui';
 
 type Props = {
   readonly items: Screening[];
@@ -61,7 +56,6 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
           const genres = formatGenre(s.genre ?? maybeWithGenres(s).genres);
           const directors = formatPeopleLine(s.directors);
           const description = cleanDisplayText(s.description);
-          const imdbRating = parseImdbRating(s.imdb_rating);
 
           return (
             <Fragment key={s.id}>
@@ -197,24 +191,8 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                           {/* RIGHT: ratings + links */}
                           <div className="grid gap-3 md:justify-end">
                             <div className="flex flex-wrap items-center gap-2">
-                              {/* IMDb rating (handles string/number/empty) */}
-                              {imdbRating != null && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-surface px-3 py-1 text-xs font-semibold text-primary ring-1 ring-border">
-                                  IMDb · {imdbRating.toFixed(1)}
-                                  {s.imdb_votes ? (
-                                    <span className="pl-0.5 text-muted">
-                                      ({s.imdb_votes})
-                                    </span>
-                                  ) : null}
-                                </span>
-                              )}
-
-                              {isValidRtRating(s.rt_rating_pct) && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-surface px-3 py-1 text-xs font-semibold text-primary ring-1 ring-border">
-                                  Rotten Tomatoes · {s.rt_rating_pct}%
-                                </span>
-                              )}
-
+                              <ImdbBadge rating={s.imdb_rating} votes={s.imdb_votes} />
+                              <RtBadge pct={s.rt_rating_pct} />
                               <RatedBadge rated={s.rated} />
                             </div>
 

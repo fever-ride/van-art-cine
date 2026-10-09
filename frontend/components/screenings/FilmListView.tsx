@@ -6,7 +6,7 @@ import type { FilmListItem } from '@/app/lib/screenings';
 import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
 import { formatGenre } from '@/app/lib/formatGenre';
 import { parseImdbRating, isValidRtRating } from '@/app/lib/displayText';
-import { RatedBadge } from '@/components/ui';
+import { RatedBadge, ImdbBadge, RtBadge } from '@/components/ui';
 
 const archivo = Archivo({ subsets: ['latin'], weight: ['500', '700'], display: 'swap' });
 const hanken = Hanken_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600'], display: 'swap' });
@@ -101,22 +101,8 @@ export default function FilmListView({ films }: { films: FilmListItem[] }) {
 
               {hasRatings && (
                 <div className="mt-1.5 flex flex-wrap items-center gap-2.5">
-                  {imdbRating != null && (
-                    <span className="flex items-center gap-1">
-                      <span className="rounded-[3px] bg-[#F5C518] px-1 py-0.5 text-[9px] font-extrabold leading-none text-black">
-                        IMDb
-                      </span>
-                      <span className="text-[11px] font-semibold text-primary">{imdbRating.toFixed(1)}</span>
-                    </span>
-                  )}
-                  {isValidRtRating(film.rt_rating_pct) && (
-                    <span className="flex items-center gap-1">
-                      <span className="rounded-full bg-[#FA320A] px-1.5 py-0.5 text-[9px] font-extrabold leading-none text-white">
-                        RT
-                      </span>
-                      <span className="text-[11px] font-semibold text-primary">{film.rt_rating_pct}%</span>
-                    </span>
-                  )}
+                  <ImdbBadge rating={imdbRating} />
+                  <RtBadge pct={film.rt_rating_pct} />
                 </div>
               )}
 
