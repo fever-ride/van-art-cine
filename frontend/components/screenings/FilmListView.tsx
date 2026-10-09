@@ -33,7 +33,7 @@ const MAX_VISIBLE_SHOWTIMES = 3;
  * separately, unrelated to SEO). */
 export default function FilmListView({ films }: { films: FilmListItem[] }) {
   if (films.length === 0) {
-    return <p className="px-1 py-8 text-sm text-muted">No screenings found.</p>;
+    return <p className="px-1 py-8 text-sm text-muted">No films found.</p>;
   }
 
   return (

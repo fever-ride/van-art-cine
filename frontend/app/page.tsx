@@ -104,6 +104,16 @@ function shouldNoindex(ui: UIState): boolean {
   if (ui.q) return true;
   if (ui.mode === 'single' && ui.date) return true;
   if (ui.mode === 'range' && (ui.from || ui.to)) return true;
+  // Film view is the same "now playing" catalog as the default Table view,
+  // just regrouped by film instead of by row — a display preference, not a
+  // separate thing worth its own search result. Nothing links to or lists
+  // `?view=film` today (the toggle is a <button>, not an <a href>, and
+  // `app/sitemap.ts` doesn't enumerate it), so this is pre-emptive: it
+  // keeps a future change (e.g. a crawlable toggle link) from creating a
+  // near-duplicate indexed page that shares the default view's title and
+  // description. Revisit if Film view ever becomes its own route with its
+  // own metadata, worth ranking on its own.
+  if (ui.view === 'film') return true;
   return false;
 }
 
@@ -137,9 +147,12 @@ export async function generateMetadata({
   const pageSuffix = page > 1 ? ` — page ${page}` : '';
 
   if (!filterDescriptor && !pageSuffix) {
-    // Plain default view: the root layout's static title/description
-    // already describe this page well: nothing to add.
-    return {};
+    // Plain default view (or Film view with no other filters, which doesn't
+    // get its own title/description — see shouldNoindex): the root layout's
+    // static title/description already describe this page well, but still
+    // check shouldNoindex, or `?view=film` alone would skip the robots
+    // override entirely by returning here before it's ever consulted below.
+    return shouldNoindex(ui) ? { robots: { index: false, follow: true } } : {};
   }
 
   const title = filterDescriptor

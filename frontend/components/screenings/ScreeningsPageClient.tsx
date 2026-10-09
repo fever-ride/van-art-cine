@@ -231,7 +231,7 @@ export default function ScreeningsPageClient({
             isFilmView ? 'bg-surface text-primary shadow-sm' : 'text-muted'
           }`}
         >
-          Film view
+          Movies
         </button>
         <button
           type="button"
@@ -240,7 +240,7 @@ export default function ScreeningsPageClient({
             !isFilmView ? 'bg-surface text-primary shadow-sm' : 'text-muted'
           }`}
         >
-          Table view
+          Showtimes
         </button>
       </div>
 
