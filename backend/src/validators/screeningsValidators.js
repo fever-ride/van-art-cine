@@ -21,6 +21,20 @@ export const listScreeningsValidator = [
     .optional()
     .isString()
     .withMessage('language must be a comma-separated string'),
+  query('era')
+    .optional()
+    .isString()
+    .withMessage('era must be a comma-separated string'),
+  query('min_imdb')
+    .optional()
+    .isFloat({ min: 0, max: 10 })
+    .withMessage('min_imdb must be 0–10')
+    .toFloat(),
+  query('min_rt')
+    .optional()
+    .isInt({ min: 0, max: 100 })
+    .withMessage('min_rt must be 0–100')
+    .toInt(),
   query('sort')
     .optional()
     .isIn(ALLOWED_SORTS)

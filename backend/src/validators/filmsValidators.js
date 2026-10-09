@@ -23,6 +23,20 @@ export const listFilmsValidator = [
     .optional()
     .isString()
     .withMessage('language must be a comma-separated string'),
+  query('era')
+    .optional()
+    .isString()
+    .withMessage('era must be a comma-separated string'),
+  query('min_imdb')
+    .optional()
+    .isFloat({ min: 0, max: 10 })
+    .withMessage('min_imdb must be 0–10')
+    .toFloat(),
+  query('min_rt')
+    .optional()
+    .isInt({ min: 0, max: 100 })
+    .withMessage('min_rt must be 0–100')
+    .toInt(),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('limit must be 1–100').toInt(),
   query('offset').optional().isInt({ min: 0 }).withMessage('offset must be ≥ 0').toInt(),
 ];

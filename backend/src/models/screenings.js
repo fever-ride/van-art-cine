@@ -1,6 +1,8 @@
 import { prisma } from '../lib/prismaClient.js';
 import { localDayToUtcRange, localRangeToUtc } from '../utils/time.js';
 import { SCREENING_SELECT, flattenScreeningRow } from './screeningSelect.js';
+import { YEAR_ERAS, eraYearCondition, eraForYear } from '../utils/yearEras.js';
+import { IMDB_RATING_THRESHOLDS, RT_RATING_THRESHOLDS } from '../utils/ratingThresholds.js';
 
 /**
  * Screening list queries for the public API.
@@ -26,6 +28,9 @@ import { SCREENING_SELECT, flattenScreeningRow } from './screeningSelect.js';
  * @param {string} [opts.q]            Substring match on film.normalized_title (already lowercased by controller)
  * @param {string[]} [opts.genres]     Restrict to films whose genre field contains any of these tokens (OR)
  * @param {string[]} [opts.languages]  Restrict to films whose language field contains any of these tokens (OR)
+ * @param {string[]} [opts.eras]       Restrict to films whose year falls in any of these era buckets (OR) — see `yearEras.js`
+ * @param {number} [opts.minImdbRating]  Restrict to films with imdb_rating >= this
+ * @param {number} [opts.minRtRating]    Restrict to films with rt_rating_pct >= this
  * @param {string} [opts.tz]           IANA zone for date/range → UTC (default America/Vancouver)
  * @returns {object} Prisma `where` for `screening`
  */
@@ -37,6 +42,9 @@ function buildScreeningWhere(opts = {}) {
     q,
     genres,
     languages,
+    eras,
+    minImdbRating,
+    minRtRating,
     tz = 'America/Vancouver',
   } = opts;
 
@@ -85,6 +93,28 @@ function buildScreeningWhere(opts = {}) {
       OR: languages.map((l) => ({ film: { language: { contains: l, mode: 'insensitive' } } })),
     });
   }
+  // Era buckets (see yearEras.js) behave exactly like genre/language — a
+  // real, discrete, data-driven value a reader multi-selects, OR'd
+  // together — the only difference is the value is derived from a numeric
+  // `year` range instead of read directly off a text field.
+  if (eras?.length > 0) {
+    const yearConditions = eras
+      .map((key) => eraYearCondition(key))
+      .filter(Boolean)
+      .map((yearCond) => ({ film: { year: yearCond } }));
+    if (yearConditions.length > 0) facetConditions.push({ OR: yearConditions });
+  }
+
+  // q/minImdbRating/minRtRating all constrain fields on the same nested
+  // `film` relation — merged into one `film` object rather than three
+  // separate `{ film: {...} }` spreads, which would silently overwrite
+  // each other the same way two same-named `OR` keys would (see the
+  // facetConditions note above).
+  const filmConditions = {
+    ...(q ? { normalized_title: { contains: q } } : {}),
+    ...(Number.isFinite(minImdbRating) ? { imdb_rating: { gte: minImdbRating } } : {}),
+    ...(Number.isFinite(minRtRating) ? { rt_rating_pct: { gte: minRtRating } } : {}),
+  };
 
   return {
     is_active: true,
@@ -93,9 +123,7 @@ function buildScreeningWhere(opts = {}) {
       ? { cinema_id: { in: cinemaIds.map(Number) } }
       : {}),
     ...(Number.isFinite(filmId) ? { film_id: Number(filmId) } : {}),
-    ...(q
-      ? { film: { normalized_title: { contains: q } } }
-      : {}),
+    ...(Object.keys(filmConditions).length > 0 ? { film: filmConditions } : {}),
     ...(facetConditions.length > 0 ? { AND: facetConditions } : {}),
   };
 }
@@ -112,6 +140,9 @@ function buildScreeningWhere(opts = {}) {
  * @param {string} [opts.q]            Substring match on film.normalized_title (already lowercased by controller)
  * @param {string[]} [opts.genres]     Restrict to films whose genre field contains any of these tokens (OR)
  * @param {string[]} [opts.languages]  Restrict to films whose language field contains any of these tokens (OR)
+ * @param {string[]} [opts.eras]       Restrict to films whose year falls in any of these era buckets (OR)
+ * @param {number} [opts.minImdbRating]  Restrict to films with imdb_rating >= this
+ * @param {number} [opts.minRtRating]    Restrict to films with rt_rating_pct >= this
  * @param {string} [opts.sort]         time | title | imdb | rt | votes | year
  * @param {string} [opts.order]        ASC | DESC
  * @param {number} [opts.limit]
@@ -129,6 +160,9 @@ export async function fetchScreenings(opts = {}) {
     q,
     genres,
     languages,
+    eras,
+    minImdbRating,
+    minRtRating,
     sort = 'time',
     order = 'ASC',
     limit = 50,
@@ -137,7 +171,9 @@ export async function fetchScreenings(opts = {}) {
   } = opts;
 
   const safeOrder = (String(order).toLowerCase() === 'desc') ? 'desc' : 'asc';
-  const where = buildScreeningWhere({ date, from, to, cinemaIds, filmId, q, genres, languages, tz });
+  const where = buildScreeningWhere({
+    date, from, to, cinemaIds, filmId, q, genres, languages, eras, minImdbRating, minRtRating, tz,
+  });
 
   let orderBy;
   const sortKey = String(sort);
@@ -227,12 +263,17 @@ export async function fetchFilms(opts = {}) {
     q,
     genres,
     languages,
+    eras,
+    minImdbRating,
+    minRtRating,
     limit = 20,
     offset = 0,
     tz = 'America/Vancouver',
   } = opts;
 
-  const where = buildScreeningWhere({ date, from, to, cinemaIds, q, genres, languages, tz });
+  const where = buildScreeningWhere({
+    date, from, to, cinemaIds, q, genres, languages, eras, minImdbRating, minRtRating, tz,
+  });
 
   const grouped = await prisma.screening.groupBy({
     by: ['film_id'],
@@ -410,14 +451,17 @@ export async function getScreeningFacets() {
     select: {
       film_id: true,
       cinema: { select: { id: true, name: true } },
-      film: { select: { genre: true, language: true } },
+      film: { select: { genre: true, language: true, year: true, imdb_rating: true, rt_rating_pct: true } },
     },
   });
 
   const cinemas = new Map(); // cinema_id -> { id, name, filmIds: Set }
   const genres = new Map(); // token -> Set<film_id>
   const languages = new Map(); // token -> Set<film_id>
+  const eras = new Map(); // era key -> Set<film_id>
   const seenFilmsForTokens = new Set();
+  const imdbRatingByFilm = new Map(); // film_id -> imdb_rating, for the Rating thresholds below
+  const rtRatingByFilm = new Map(); // film_id -> rt_rating_pct
 
   for (const row of rows) {
     const filmId = row.film_id;
@@ -431,8 +475,9 @@ export async function getScreeningFacets() {
       entry.filmIds.add(filmId);
     }
 
-    // Genre/language are per-film, not per-screening — only count each
-    // film once regardless of how many screenings/cinemas it has here.
+    // Genre/language/era/rating are per-film, not per-screening — only
+    // count each film once regardless of how many screenings/cinemas it
+    // has here.
     if (!seenFilmsForTokens.has(filmId)) {
       seenFilmsForTokens.add(filmId);
       for (const g of splitDisplayTokens(row.film?.genre)) {
@@ -443,6 +488,13 @@ export async function getScreeningFacets() {
         if (!languages.has(l)) languages.set(l, new Set());
         languages.get(l).add(filmId);
       }
+      const era = eraForYear(row.film?.year);
+      if (era) {
+        if (!eras.has(era)) eras.set(era, new Set());
+        eras.get(era).add(filmId);
+      }
+      if (row.film?.imdb_rating != null) imdbRatingByFilm.set(filmId, row.film.imdb_rating);
+      if (row.film?.rt_rating_pct != null) rtRatingByFilm.set(filmId, row.film.rt_rating_pct);
     }
   }
 
@@ -455,9 +507,35 @@ export async function getScreeningFacets() {
     .map((c) => ({ id: c.id, name: c.name, count: c.filmIds.size }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 
+  // Era buckets keep YEAR_ERAS's own chronological order (newest first)
+  // rather than being sorted by count like genre/language — "which decade"
+  // reads better in time order than ranked by catalog size.
+  const eraList = YEAR_ERAS.map((e) => ({
+    key: e.key,
+    label: e.label,
+    count: eras.get(e.key)?.size ?? 0,
+  }));
+
+  const countAtOrAbove = (ratingsByFilm, threshold) => {
+    let n = 0;
+    for (const value of ratingsByFilm.values()) if (value >= threshold) n++;
+    return n;
+  };
+
   return {
     cinemas: cinemaList,
     genres: toSortedList(genres),
     languages: toSortedList(languages),
+    eras: eraList,
+    ratings: {
+      imdb: IMDB_RATING_THRESHOLDS.map((threshold) => ({
+        threshold,
+        count: countAtOrAbove(imdbRatingByFilm, threshold),
+      })),
+      rt: RT_RATING_THRESHOLDS.map((threshold) => ({
+        threshold,
+        count: countAtOrAbove(rtRatingByFilm, threshold),
+      })),
+    },
   };
 }

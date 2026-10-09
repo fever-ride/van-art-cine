@@ -38,14 +38,20 @@ export async function listHandler(req, res, next) {
 
     const genres    = splitCsvParam(req.query.genre);
     const languages = splitCsvParam(req.query.language);
+    const eras      = splitCsvParam(req.query.era);
     const q       = (req.query.q || '').toString().trim().toLowerCase();
     const limit   = req.query.limit  ?? 20;
     const offset  = req.query.offset ?? 0;
+    // express-validator's `.toFloat()`/`.toInt()` don't mutate `req.query`
+    // in place in this version — convert explicitly, same reasoning as
+    // screeningsController.js's listHandler.
+    const minImdbRating = req.query.min_imdb != null ? Number(req.query.min_imdb) : null;
+    const minRtRating   = req.query.min_rt   != null ? Number(req.query.min_rt)   : null;
 
     const { items, total } = await fetchFilms({
       date, from, to,
       cinemaIds,
-      q, genres, languages, limit, offset,
+      q, genres, languages, eras, minImdbRating, minRtRating, limit, offset,
       tz: DEFAULT_TZ,
     });
 

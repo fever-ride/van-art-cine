@@ -61,6 +61,9 @@ export interface ScreeningsQuery {
   q?: string;
   genre?: string[];
   language?: string[];
+  era?: string[];
+  min_imdb?: number;
+  min_rt?: number;
   sort?: SortKey;
   order?: Order;
   limit?: number;
@@ -113,10 +116,26 @@ export interface ScreeningFacetValue {
   count: number;
 }
 
+export interface EraFacetValue {
+  key: string;
+  label: string;
+  count: number;
+}
+
+export interface RatingThresholdValue {
+  threshold: number;
+  count: number;
+}
+
 export interface ScreeningFacets {
   cinemas: Array<{ id: number; name: string; count: number }>;
   genres: ScreeningFacetValue[];
   languages: ScreeningFacetValue[];
+  eras: EraFacetValue[];
+  ratings: {
+    imdb: RatingThresholdValue[];
+    rt: RatingThresholdValue[];
+  };
 }
 
 export function buildSearchParams(params: ScreeningsQuery = {}): URLSearchParams {
@@ -133,7 +152,7 @@ export function buildSearchParams(params: ScreeningsQuery = {}): URLSearchParams
       return;
     }
 
-    if ((k === 'genre' || k === 'language') && Array.isArray(v)) {
+    if ((k === 'genre' || k === 'language' || k === 'era') && Array.isArray(v)) {
       if (v.length > 0) sp.set(k, v.join(','));
       return;
     }
@@ -221,6 +240,6 @@ export const getScreeningFacets = cache(async (): Promise<ScreeningFacets> => {
  * runs from the browser, not during server rendering. */
 export async function apiScreeningFacets(): Promise<ScreeningFacets> {
   const res = await fetch('/api/screenings/facets', { credentials: 'include' });
-  if (!res.ok) return { cinemas: [], genres: [], languages: [] };
+  if (!res.ok) return { cinemas: [], genres: [], languages: [], eras: [], ratings: { imdb: [], rt: [] } };
   return res.json() as Promise<ScreeningFacets>;
 }

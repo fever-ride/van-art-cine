@@ -35,6 +35,13 @@ export type UIState = {
   cinemaIds: string[];
   genreValues: string[];
   languageValues: string[];
+  eraValues: string[];
+  /** Minimum IMDb/RT rating, as a string (consistent with filmId/date's own
+   * "empty string means unset" convention) rather than `number | null` —
+   * this is form-control state, converted to a real number only when
+   * building the backend query (see `buildScreeningsQuery`). */
+  minImdb: string;
+  minRt: string;
   filmId: string;
   sort: SortKey;
   order: Order;
@@ -54,6 +61,9 @@ export const defaultUI: UIState = {
   cinemaIds: [],
   genreValues: [],
   languageValues: [],
+  eraValues: [],
+  minImdb: '',
+  minRt: '',
   filmId: '',
   sort: 'time',
   order: 'asc',
@@ -117,6 +127,11 @@ export function parseUIStateFromSearchParams(
     ? languageParam.split(',').map((s) => s.trim()).filter(Boolean)
     : base.languageValues;
 
+  const eraParam = searchParams.get('era');
+  const eraValues = eraParam
+    ? eraParam.split(',').map((s) => s.trim()).filter(Boolean)
+    : base.eraValues;
+
   const sortParam = searchParams.get('sort');
   const sort = sortParam && isSortKey(sortParam) ? sortParam : base.sort;
 
@@ -135,6 +150,9 @@ export function parseUIStateFromSearchParams(
     cinemaIds,
     genreValues,
     languageValues,
+    eraValues,
+    minImdb: searchParams.get('min_imdb') ?? base.minImdb,
+    minRt: searchParams.get('min_rt') ?? base.minRt,
     filmId: searchParams.get('film_id') ?? base.filmId,
     sort,
     order,
@@ -150,6 +168,9 @@ export function serializeUIStateToSearchParams(ui: UIState): URLSearchParams {
   if (ui.cinemaIds.length > 0) params.set('cinema_ids', ui.cinemaIds.join(','));
   if (ui.genreValues.length > 0) params.set('genre', ui.genreValues.join(','));
   if (ui.languageValues.length > 0) params.set('language', ui.languageValues.join(','));
+  if (ui.eraValues.length > 0) params.set('era', ui.eraValues.join(','));
+  if (ui.minImdb && ui.minImdb !== defaultUI.minImdb) params.set('min_imdb', ui.minImdb);
+  if (ui.minRt && ui.minRt !== defaultUI.minRt) params.set('min_rt', ui.minRt);
   if (ui.filmId && ui.filmId !== defaultUI.filmId) params.set('film_id', ui.filmId);
   if (ui.view !== defaultUI.view) params.set('view', ui.view);
 
@@ -200,6 +221,9 @@ export function buildScreeningsQuery(
     cinema_ids: ui.cinemaIds.length > 0 ? ui.cinemaIds.map(Number) : undefined,
     genre: ui.genreValues.length > 0 ? ui.genreValues : undefined,
     language: ui.languageValues.length > 0 ? ui.languageValues : undefined,
+    era: ui.eraValues.length > 0 ? ui.eraValues : undefined,
+    min_imdb: numOrUndefined(ui.minImdb),
+    min_rt: numOrUndefined(ui.minRt),
     film_id: ui.filmId ? numOrUndefined(ui.filmId) : undefined,
     sort: ui.sort,
     order: ui.order,

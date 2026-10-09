@@ -631,3 +631,155 @@ Deleted `app/films/[id]/loading.tsx`. The route's existing explicit `<Suspense f
 curl -I http://localhost:<port>/films/999999999   # expect 404, not 200
 curl -I http://localhost:<port>/films/<real-id>    # expect 200, unaffected
 ```
+
+## New rating-threshold filters matched the whole catalog — `express-validator@7`'s sanitizers don't mutate `req.query`
+
+A backend story: a brand-new filter silently did nothing, and tracing why surfaced a second, unrelated filter that had silently done nothing since before this feature existed.
+
+### Symptom
+
+Added `min_imdb`/`min_rt` query params to `GET /api/films` and `GET /api/screenings`, each validated with `query('min_imdb').isFloat({min:0,max:10}).toFloat()` (and `.toInt()` for `min_rt`). `curl "http://localhost:4000/api/films?min_imdb=8&limit=100"` returned `total: 177` — the full unfiltered catalog — when the real answer (independently confirmed via a standalone Prisma script against the live data) was `13`.
+
+### Investigation
+
+- Confirmed the real distribution first (not guessing): a direct Prisma query counting films at each threshold gave `>=8: 13`, `>=7.5: 36`, `>=7: 46` — so the filter had a known-correct target to check against.
+- The `where` clause looked right by inspection. Isolated the sanitizer itself with a minimal standalone Express app (no other app code involved): one route, one `query(...).toFloat()` validator, logging `req.query.min_imdb` and its `typeof` inside the handler. Result: `{ value: '8', type: 'string' }` — the sanitizer had **not** mutated `req.query` in place.
+- Checked `node_modules/express-validator/package.json`: `7.2.1`. This version's sanitizers (`.toInt()`/`.toFloat()`/etc.) do not write back into `req.query`/`req.body` the way earlier versions did — the sanitized value only comes back via `matchedData(req)`, not by reading the original request object afterward.
+
+### Cause
+
+Every existing numeric query param in this codebase (`film_id`, `limit`, `offset`) was already reading `req.query.X` as a plain string and relying on a downstream `Number(X)` call (e.g. `take: Number(limit)` in the Prisma call) to coerce it — a defensive habit that happened to paper over this exact sanitizer behavior without anyone noticing. The new `min_imdb`/`min_rt` code broke that habit: it read `req.query.min_imdb` and passed it straight to `buildScreeningWhere`, which gates on `Number.isFinite(minImdbRating)` — a check that is `false` for the string `'8'`, so the condition was silently never added to the `where` clause.
+
+### Fix
+
+Convert explicitly in the controller, matching the pattern `cinema_ids` parsing already used (`.split(',').map(id => Number(id.trim()))`):
+
+```js
+const minImdbRating = req.query.min_imdb != null ? Number(req.query.min_imdb) : null;
+```
+
+### Bonus findings (surfaced while fixing, not the original bug)
+
+Grepping for the same `Number.isFinite(req.query.X)`-style gate on an unconverted value turned up `screeningsController.js`'s `film_id` handling — `const filmId = req.query.film_id ?? null;` — with the exact same flaw. `curl "http://localhost:4000/api/screenings?film_id=1727"` (a film with exactly one real screening) returned `total: 279`, the entire unfiltered count: **this filter had never worked**, on a parameter that predates this session's work entirely. Fixed the same way, re-verified: `total: 1`.
+
+### Prevention / lessons
+
+1. **Don't trust `express-validator@7`'s `.toInt()`/`.toFloat()` to mutate `req.query` in place.** A validator chain that includes a sanitizer only guarantees the value *passed validation*; it does not guarantee `req.query.field` is now that sanitized type. Either call `matchedData(req)` to get the coerced values, or (matching this codebase's existing convention) just convert explicitly with `Number(...)` wherever the raw query value is first read.
+2. **"The validator accepted it" and "the filter works" are two different claims — test both.** The request never 400'd, so nothing *looked* wrong; the bug was only visible by checking the actual result count against an independently-known-correct number.
+3. **A bug-fix detour is a good moment to grep for the same shape elsewhere.** The `film_id` bug had no connection to the feature being built — it was found only because fixing `min_imdb` left behind a recognizable pattern (`Number.isFinite` gating a raw `req.query` value) worth searching for.
+
+### Quick verify
+
+```bash
+curl -s "http://localhost:4000/api/films?min_imdb=8&limit=100" | python3 -c "import sys,json; print(json.load(sys.stdin)['total'])"   # expect 13
+curl -s "http://localhost:4000/api/screenings?film_id=<a-real-film-id>" | python3 -c "import sys,json; print(json.load(sys.stdin)['total'])"   # expect 1
+```
+
+## Combining independent query filters silently dropped earlier ones — same-key object spreads overwrite, they don't merge
+
+A recurring JavaScript gotcha, caught twice in the same file on the same feature area: once before it ever shipped, once while adding a later filter on top of it.
+
+### Symptom
+
+First occurrence: building `genre`/`language` OR-filters for `fetchScreenings`, an early draft spread two conditional fragments into one `where` object:
+
+```js
+const where = {
+  ...(genres?.length ? { OR: genres.map(...) } : {}),
+  ...(languages?.length ? { OR: languages.map(...) } : {}),
+};
+```
+
+Checking both a genre and a language at once silently applied only the language condition — the second `OR` key overwrote the first.
+
+Second occurrence, months later, adding `min_imdb`/`min_rt`/`q` to the same `where`-builder: three independent conditions each wrote `{ film: { ... } }`:
+
+```js
+return {
+  ...(q ? { film: { normalized_title: { contains: q } } } : {}),
+  ...(Number.isFinite(minImdbRating) ? { film: { imdb_rating: { gte: minImdbRating } } } : {}),
+  ...(Number.isFinite(minRtRating) ? { film: { rt_rating_pct: { gte: minRtRating } } } : {}),
+};
+```
+
+`curl ".../api/films?era=pre-1990&min_imdb=7"` returned the same `total` as `era=pre-1990` alone — the `min_imdb` condition was being silently discarded.
+
+### Cause
+
+Object spread (`{ ...a, ...b }`) is a shallow merge keyed by property name, not a deep/semantic merge. When `a` and `b` both define the same key (`OR`, `film`, or any other), the one spread later simply replaces the earlier one in the result — no error, no warning, and nothing about the code *looks* wrong, because each individual conditional fragment is correct in isolation. The bug only manifests when two or more of the conditions happen to be active at the same time, which a test exercising filters one at a time will never catch.
+
+### Fix
+
+Collect every condition touching the same key into one explicit object first, then spread that once:
+
+```js
+const facetConditions = [];
+if (genres?.length) facetConditions.push({ OR: genres.map(...) });
+if (languages?.length) facetConditions.push({ OR: languages.map(...) });
+// ...
+const filmConditions = {
+  ...(q ? { normalized_title: { contains: q } } : {}),
+  ...(Number.isFinite(minImdbRating) ? { imdb_rating: { gte: minImdbRating } } : {}),
+  ...(Number.isFinite(minRtRating) ? { rt_rating_pct: { gte: minRtRating } } : {}),
+};
+return {
+  ...(Object.keys(filmConditions).length ? { film: filmConditions } : {}),
+  ...(facetConditions.length ? { AND: facetConditions } : {}),
+};
+```
+
+### Prevention / lessons
+
+1. **Before adding a new conditional fragment to an object built by spreading, check whether any existing fragment already claims the same top-level key.** If so, merge into one fragment instead of adding a second `...(cond ? { sameKey: {...} } : {})` — TypeScript will not catch this, since each individual spread is a structurally valid partial object.
+2. **Test the combined case, not just each filter alone.** Both occurrences of this bug passed every single-filter test; only a request exercising two filters that share a key (`era` + `min_imdb`, both under `film`) revealed it. `backend/tests/models/screenings.test.js` now has an explicit regression test for this (`'merges q, minImdbRating, and minRtRating into one film condition instead of overwriting each other'`).
+3. **This is a two-time offender in the exact same function (`buildScreeningWhere`)** — worth a second look any time a new filter is added there: does it touch `film`, or any other key an existing condition already sets?
+
+## Film view's row-based pagination split a single film's showtimes across multiple pages
+
+A correctness bug a user caught by just asking "wait, doesn't that mean a film shows up twice?" — confirmed with real data before any code was written, fixed by changing what pagination *counts*, not by patching symptoms.
+
+### Symptom
+
+The homepage's Film view groups flat screening rows into one card per film (`groupScreeningsByFilm`), but was paginated using the existing `GET /api/screenings` endpoint — paginated by **screening row**, 20 per page. A film with showtimes at minute 19 of page 1 and minute 2 of page 2 would have its showtimes split: an incomplete card on page 1, a second incomplete card for the *same film* on page 2.
+
+### Investigation
+
+Verified with real data before designing a fix: fetched 200 screening rows via `curl` and grouped them by `film_id` in a Python script, checking whether each film's rows all fell within one 20-row page window. **50 of 136 distinct films in the sample had rows spanning more than one page boundary** — not a rare edge case, roughly a third of the catalog.
+
+### Cause
+
+The display unit (one card per film) and the pagination unit (one row per screening) didn't match. Grouping flat rows into entities happened *after* the page of rows was already fetched, so pagination had no way to know "keep this film's rows together" — a classic case of inheriting a pagination scheme from the data's storage shape instead of its display shape.
+
+### Fix
+
+Built a new `GET /api/films` endpoint (`backend/src/models/screenings.js`'s `fetchFilms`) paginated by **distinct film count**, not screening count:
+
+1. `prisma.screening.groupBy({ by: ['film_id'], where, _min: { start_at_utc: true } })` to get every matching film's id and soonest showtime, then slice *that* list for the page (cheap at this catalog's size — one small row per film, not per screening).
+2. Batch-fetch every screening for just this page's film ids via the same shared `SCREENING_SELECT`/`flattenScreeningRow` module `fetchScreenings` already used (not a loop of per-film queries — would have been real N+1).
+3. Group the flat rows into one entry per film, in the order step 1 decided.
+
+Verified by walking all 10 pages of the real catalog (192 films) via a script and collecting every `film_id` seen: zero duplicates, and the collected count matched the endpoint's own reported `total` exactly.
+
+### Prevention / lessons
+
+1. **When a UI groups flat rows into entities for display, the pagination unit must be re-derived to match the grouped shape — it cannot be inherited from the ungrouped data source.** "Paginate by row, group after fetching" only works if a group never crosses a page boundary, which generally can't be guaranteed.
+2. **Verify a suspected pagination bug against real data before designing the fix.** The actual split rate (37%) was far higher than a quick guess would suggest, which was useful both for prioritizing the fix and for sanity-checking the fix afterward (walking every page and expecting zero duplicates is a meaningful test precisely because the bug was common, not rare).
+3. **A sharp question from someone just using the feature ("wouldn't that duplicate films across pages?") found this before any user-facing metric did.** Worth treating "does pagination match what's actually being displayed" as a standing question whenever a list view's grouping logic changes, not just something to notice by accident.
+
+### Quick verify
+
+```bash
+python3 -c "
+import urllib.request, json
+seen = {}
+page, limit = 0, 20
+while True:
+    data = json.loads(urllib.request.urlopen(f'http://localhost:4000/api/films?limit={limit}&offset={page*limit}').read())
+    if not data['items']: break
+    for it in data['items']:
+        assert it['film_id'] not in seen, f'duplicate film {it[\"film_id\"]} on page {page}'
+        seen[it['film_id']] = page
+    page += 1
+print('distinct films seen:', len(seen), '| reported total:', data['total'])
+"
+```

@@ -196,7 +196,10 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                               <RatedBadge rated={s.rated} />
                             </div>
 
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {/* Primary: the actual ticket/showtime link for
+                               * this screening — the one action this row
+                               * exists to drive. Unchanged from before. */}
                               {s.source_url && (
                                 <a
                                   href={s.source_url}
@@ -207,14 +210,24 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   View on cinema site
                                 </a>
                               )}
+                              {/* Secondary: general background on the film,
+                               * not specific to this screening — same compact
+                               * size as the primary button, but outlined
+                               * instead of filled, with the same IMDb mark
+                               * FilmHeader's own "View Profile" button uses
+                               * (text says "Profile," not "IMDb" again, so
+                               * the badge isn't repeating itself). */}
                               {s.imdb_url && (
                                 <a
                                   href={s.imdb_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center rounded-btn bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
+                                  className="inline-flex items-center gap-1.5 rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-surface-hover"
                                 >
-                                  View on IMDb
+                                  <span className="rounded-[3px] bg-[#F5C518] px-1.5 py-0.5 text-[10px] font-extrabold leading-none text-black">
+                                    IMDb
+                                  </span>
+                                  Profile
                                 </a>
                               )}
                             </div>

@@ -35,19 +35,29 @@ export async function listHandler(req, res, next) {
 
     const genres    = splitCsvParam(req.query.genre);
     const languages = splitCsvParam(req.query.language);
+    const eras      = splitCsvParam(req.query.era);
 
-    const filmId  = req.query.film_id ?? null;
-    const q       = (req.query.q || '').toString().trim().toLowerCase();
-    const limit   = req.query.limit  ?? 50;
-    const offset  = req.query.offset ?? 0;
-    const sort    = req.query.sort   || 'time';
-    const order   = req.query.order  || 'asc';
+    // Same express-validator sanitizer caveat as min_imdb/min_rt below —
+    // req.query.film_id is still a string here despite the validator's
+    // `.toInt()`, which made this filter a silent no-op (buildScreeningWhere's
+    // `Number.isFinite(filmId)` gate always failed on a string).
+    const filmId        = req.query.film_id != null ? Number(req.query.film_id) : null;
+    const q             = (req.query.q || '').toString().trim().toLowerCase();
+    const limit         = req.query.limit  ?? 50;
+    const offset        = req.query.offset ?? 0;
+    const sort          = req.query.sort   || 'time';
+    const order         = req.query.order  || 'asc';
+    // express-validator's `.toFloat()`/`.toInt()` don't mutate `req.query`
+    // in place in this version — convert explicitly, same as `cinemaIds`
+    // above and `limit`/`offset` downstream in fetchScreenings.
+    const minImdbRating = req.query.min_imdb != null ? Number(req.query.min_imdb) : null;
+    const minRtRating   = req.query.min_rt   != null ? Number(req.query.min_rt)   : null;
 
     const { items, total } = await fetchScreenings({
       date, from, to,
       cinemaIds,
       filmId,
-      q, genres, languages, sort, order, limit, offset,
+      q, genres, languages, eras, minImdbRating, minRtRating, sort, order, limit, offset,
       tz: DEFAULT_TZ,
     });
 

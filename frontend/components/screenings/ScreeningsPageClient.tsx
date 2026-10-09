@@ -12,7 +12,13 @@ import Pagination from '@/components/screenings/Pagination';
 import FilmListView from '@/components/screenings/FilmListView';
 import ScreeningsFilterPanel from '@/components/screenings/ScreeningsFilterPanel';
 
-const EMPTY_FACETS: ScreeningFacets = { cinemas: [], genres: [], languages: [] };
+const EMPTY_FACETS: ScreeningFacets = {
+  cinemas: [],
+  genres: [],
+  languages: [],
+  eras: [],
+  ratings: { imdb: [], rt: [] },
+};
 
 /** Matches `scroll-mt-28` on #screenings-results */
 const TABLE_SCROLL_MARGIN = 112;
@@ -249,7 +255,12 @@ export default function ScreeningsPageClient({
 
       {isFilmView ? (
         <div>
-          <ScreeningsFilterPanel ui={screeningsUI.ui} setUI={screeningsUI.setUI} facets={facets} />
+          <ScreeningsFilterPanel
+            ui={screeningsUI.ui}
+            setUI={screeningsUI.setUI}
+            facets={facets}
+            pending={screeningsUI.isPending}
+          />
           {initialError && <p className="mt-3 text-sm text-muted">Error: {initialError}</p>}
           <div id="screenings-results" className="scroll-mt-28" style={{ scrollMarginTop: '7rem' }}>
             <FilmListView films={initialFilmItems} />

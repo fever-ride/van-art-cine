@@ -26,7 +26,7 @@ const { prisma } = await import('../../src/lib/prismaClient.js');
 const { localDayToUtcRange, localRangeToUtc } = await import('../../src/utils/time.js');
 
 // Import the module under test after mocks are registered.
-const { fetchScreenings, findByIds, fetchFilms } = await import('../../src/models/screenings.js');
+const { fetchScreenings, findByIds, fetchFilms, getScreeningFacets } = await import('../../src/models/screenings.js');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -488,5 +488,125 @@ describe('fetchFilms', () => {
       { OR: [{ film: { genre: { contains: 'Drama', mode: 'insensitive' } } }] },
       { OR: [{ film: { language: { contains: 'French', mode: 'insensitive' } } }] },
     ]);
+  });
+
+  test('applies era buckets as an OR\'d film.year range, AND\'d against other facets', async () => {
+    prisma.screening.groupBy.mockResolvedValue([]);
+
+    await fetchFilms({ eras: ['2020s', 'pre-1990'] });
+
+    const where = prisma.screening.groupBy.mock.calls[0][0].where;
+    expect(where.AND).toEqual([
+      {
+        OR: [
+          { film: { year: { gte: 2020 } } },
+          { film: { year: { lte: 1989 } } },
+        ],
+      },
+    ]);
+  });
+
+  test('ignores an unrecognized era key instead of throwing', async () => {
+    prisma.screening.groupBy.mockResolvedValue([]);
+
+    await fetchFilms({ eras: ['not-a-real-era'] });
+
+    const where = prisma.screening.groupBy.mock.calls[0][0].where;
+    expect(where.AND).toBeUndefined();
+  });
+
+  test('merges q, minImdbRating, and minRtRating into one film condition instead of overwriting each other', async () => {
+    prisma.screening.groupBy.mockResolvedValue([]);
+
+    await fetchFilms({ q: 'wicker', minImdbRating: 7, minRtRating: 80 });
+
+    const where = prisma.screening.groupBy.mock.calls[0][0].where;
+    expect(where.film).toEqual({
+      normalized_title: { contains: 'wicker' },
+      imdb_rating: { gte: 7 },
+      rt_rating_pct: { gte: 80 },
+    });
+  });
+});
+
+describe('getScreeningFacets', () => {
+  test('computes cinema/genre/language/era/rating counts, deduped per film', async () => {
+    const now = new Date('2025-06-01T00:00:00.000Z');
+    jest.useFakeTimers();
+    jest.setSystemTime(now);
+
+    prisma.screening.findMany.mockResolvedValue([
+      // Two screenings of the same film at the same cinema — counted once.
+      {
+        film_id: 1,
+        cinema: { id: 10, name: 'Rio Theatre' },
+        film: { genre: 'Drama, Thriller', language: 'English', year: 2026, imdb_rating: 8.2, rt_rating_pct: 95 },
+      },
+      {
+        film_id: 1,
+        cinema: { id: 10, name: 'Rio Theatre' },
+        film: { genre: 'Drama, Thriller', language: 'English', year: 2026, imdb_rating: 8.2, rt_rating_pct: 95 },
+      },
+      // A second, older film at a different cinema.
+      {
+        film_id: 2,
+        cinema: { id: 11, name: 'The Cinematheque' },
+        film: { genre: 'Drama', language: 'French', year: 1965, imdb_rating: 7.0, rt_rating_pct: null },
+      },
+    ]);
+
+    const facets = await getScreeningFacets();
+
+    expect(facets.cinemas).toEqual([
+      { id: 10, name: 'Rio Theatre', count: 1 },
+      { id: 11, name: 'The Cinematheque', count: 1 },
+    ]);
+    expect(facets.genres).toEqual([
+      { name: 'Drama', count: 2 },
+      { name: 'Thriller', count: 1 },
+    ]);
+    expect(facets.languages).toEqual(
+      expect.arrayContaining([
+        { name: 'English', count: 1 },
+        { name: 'French', count: 1 },
+      ])
+    );
+
+    // Era buckets stay in YEAR_ERAS's own chronological order, not sorted
+    // by count, and every bucket is present even at count 0.
+    expect(facets.eras).toEqual([
+      { key: '2020s', label: '2020s', count: 1 },
+      { key: '2010s', label: '2010s', count: 0 },
+      { key: '2000s', label: '2000s', count: 0 },
+      { key: '1990s', label: '1990s', count: 0 },
+      { key: 'pre-1990', label: 'Before 1990', count: 1 },
+    ]);
+
+    expect(facets.ratings).toEqual({
+      imdb: [
+        { threshold: 8, count: 1 },
+        { threshold: 7.5, count: 1 },
+        { threshold: 7, count: 2 },
+      ],
+      rt: [
+        { threshold: 90, count: 1 },
+        { threshold: 80, count: 1 },
+        { threshold: 70, count: 1 },
+      ],
+    });
+
+    jest.useRealTimers();
+  });
+
+  test('drops films with a null year/rating from era/rating counts instead of miscounting them', async () => {
+    prisma.screening.findMany.mockResolvedValue([
+      { film_id: 1, cinema: null, film: { genre: null, language: null, year: null, imdb_rating: null, rt_rating_pct: null } },
+    ]);
+
+    const facets = await getScreeningFacets();
+
+    expect(facets.eras.every((e) => e.count === 0)).toBe(true);
+    expect(facets.ratings.imdb.every((r) => r.count === 0)).toBe(true);
+    expect(facets.ratings.rt.every((r) => r.count === 0)).toBe(true);
   });
 });
