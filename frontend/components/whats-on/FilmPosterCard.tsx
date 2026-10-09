@@ -27,6 +27,7 @@ export default function FilmPosterCard({ screening }: { screening: Screening }) 
         <img
           src={poster}
           alt={`${screening.title} poster`}
+          loading="lazy"
           className="aspect-[2/3] w-full object-cover transition-transform group-hover:scale-[1.03]"
         />
         <div className="absolute right-2 top-2 flex flex-col items-end gap-1">

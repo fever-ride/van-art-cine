@@ -200,11 +200,14 @@ export default function ScreeningsPageClient({
     };
   }, []);
 
-  // Facet counts for the Film view's filter panel. Only meaningful once
-  // the reader switches to Film view, but cheap/static enough (hourly
-  // revalidated on the backend) to just fetch unconditionally, the same
-  // way cinemaOptions above does for Table view's own Filters sidebar.
+  // Facet counts for the Film view's filter panel. Gated on isFilmView (and
+  // on not already having fetched) rather than firing unconditionally on
+  // mount: a Table view visitor — still the default, more common path —
+  // never touches this panel, so fetching it for them was a wasted request
+  // on every single homepage load. Fetched once on first switch to Film
+  // view, not re-fetched on every toggle back and forth.
   useEffect(() => {
+    if (!isFilmView || facets !== EMPTY_FACETS) return;
     let cancelled = false;
 
     (async () => {
@@ -219,7 +222,7 @@ export default function ScreeningsPageClient({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isFilmView, facets]);
 
   return (
     <div className="[overflow-anchor:none]">

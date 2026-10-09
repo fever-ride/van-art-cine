@@ -268,6 +268,7 @@ export async function fetchFilms(opts = {}) {
         language: row.language,
         year: row.year,
         description: row.description,
+        rated: row.rated,
         imdb_rating: row.imdb_rating,
         rt_rating_pct: row.rt_rating_pct,
         imdb_votes: row.imdb_votes,

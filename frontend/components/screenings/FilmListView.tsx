@@ -6,6 +6,7 @@ import type { FilmListItem } from '@/app/lib/screenings';
 import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
 import { formatGenre } from '@/app/lib/formatGenre';
 import { parseImdbRating, isValidRtRating } from '@/app/lib/displayText';
+import { RatedBadge } from '@/components/ui';
 
 const archivo = Archivo({ subsets: ['latin'], weight: ['500', '700'], display: 'swap' });
 const hanken = Hanken_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600'], display: 'swap' });
@@ -66,6 +67,7 @@ export default function FilmListView({ films }: { films: FilmListItem[] }) {
               <img
                 src={film.poster_url?.trim() ? film.poster_url : FALLBACK_POSTER}
                 alt={`${film.title} poster`}
+                loading="lazy"
                 className="h-[155px] w-[110px] rounded-md object-cover"
               />
             </Link>
@@ -94,6 +96,7 @@ export default function FilmListView({ films }: { films: FilmListItem[] }) {
                     New
                   </span>
                 )}
+                <RatedBadge rated={film.rated} />
               </div>
 
               {hasRatings && (

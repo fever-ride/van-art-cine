@@ -91,6 +91,7 @@ export interface FilmListItem {
   language: string | null;
   year: number | null;
   description: string | null;
+  rated: string | null;
   imdb_rating: number | null;
   rt_rating_pct: number | null;
   imdb_votes: number | null;

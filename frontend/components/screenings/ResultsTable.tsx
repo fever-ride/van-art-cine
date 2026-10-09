@@ -16,6 +16,7 @@ import {
 } from '@/app/lib/displayText';
 import { formatGenre } from '@/app/lib/formatGenre';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
+import { RatedBadge } from '@/components/ui';
 
 type Props = {
   readonly items: Screening[];
@@ -213,6 +214,8 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   Rotten Tomatoes · {s.rt_rating_pct}%
                                 </span>
                               )}
+
+                              <RatedBadge rated={s.rated} />
                             </div>
 
                             <div className="flex flex-wrap gap-2">
