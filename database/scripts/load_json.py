@@ -418,13 +418,28 @@ def parse_dt_viff(date_str: str, time_str: str, year_hint: int | None) -> dateti
 
 def parse_dt_rio(date_str: str, time_str: str, year_hint: int | None) -> datetime:
     """
-    Rio examples (date_str):
-      - 'Friday January 3'
-      - 'Sunday March 15'
+    Rio's scraper now reads `wp-json/barker/v1/listings`, Rio's own public
+    API, instead of rendering the calendar page and scraping the DOM (see
+    rio_scraper.py) — that API returns a full, unambiguous ISO 8601
+    timestamp with its own UTC offset per showtime, passed straight through
+    here as `date_str`. No year-guessing needed: `infer_show_year_from_month`
+    existed specifically because the old scraped text ('Friday January 3')
+    never included a year at all, which this source no longer has to guess.
 
-    We use year_hint as the base year and adjust with infer_show_year_from_month.
+    `time_str` is unused by this path (kept only so load_source's "missing
+    date/time" guard, shared by all three sources, still sees a non-empty
+    value) — Rio's scraper still fills it with a human-readable fallback.
+
+    Falls back to the legacy 'Friday January 3' + '7:00pm' text parsing
+    (with month-based year inference) only if `date_str` isn't a parseable
+    ISO datetime, so an old raw JSON snapshot can still be re-loaded.
     """
-    # Rio times often look like '7:00pm' (no space before am/pm).
+    try:
+        return dtparser.isoparse(date_str)
+    except (ValueError, TypeError):
+        pass
+
+    # Legacy fallback — pre-API-migration raw JSON.
     t = normalize_ampm(time_str).replace(" ", "")
 
     base_year = year_hint if year_hint is not None else datetime.now(

@@ -41,7 +41,14 @@ expression, a disabled workflow, or a billing issue. That failure mode
 produces no email at all.
 
 **Impact:** The pipeline could silently stop updating the site for days
-before anyone notices.
+before anyone notices. **Narrower than originally scoped**: GitHub already
+sends a warning email before auto-disabling a scheduled workflow for 60
+days of repo inactivity (confirmed firsthand — this has actually happened
+on this repo), which was the most likely of the causes listed above for a
+project under active development. The remaining uncovered causes (a bad
+cron expression, someone manually disabling the workflow, a billing issue)
+are real but lower-probability for a personal project with no billing
+complexity.
 
 **Approach:**
 - Create a healthchecks.io check with a 2 day period and about 12 hours of
@@ -56,7 +63,8 @@ before anyone notices.
   expressions.
 - The free tier is enough for this project's scale.
 
-**Priority:** Low.
+**Priority:** Low, and arguably skippable now — the main risk this existed
+for is already covered by GitHub's own inactivity warning.
 
 ---
 
@@ -179,17 +187,46 @@ and The Room record likely needs manual repair. A separate case involving
 Backrooms is likely a valid single film normalization where presentation
 details were lost, not a bad merge.
 
-**Approach:** Before accepting a scraped IMDb ID, detect likely multi work
-or program titles, such as double or triple features, an "A + B" pattern,
-collections, or a film paired with a live show. As a check, compare the
-scraped title against the canonical title that TMDB or IMDb returns for
-that ID. If the ID only explains part of the event title, leave the ID
-unset rather than merge incorrectly. Edition or presentation suffixes such
-as "Restoration," "Final Screening," or "Everything Must Go Edition" should
-be treated differently, since they usually still refer to a single
-underlying film.
+Checked how often this actually happens before deciding what to build:
+scanned every distinct Rio title ever scraped (469 across all saved raw
+JSON snapshots) for multi-work-looking patterns ("&", "+", "/", "double
+feature", "presents"). 41 matched, but nearly all were false positives —
+burlesque/variety shows, anniversary screenings, a title with two people's
+names joined by "&" — ordinary single-event titles that happen to contain
+those characters. Only one title both looked multi-work and had a scraped
+`imdb_url` attached, and it's the same incident already described above
+(in the current data that specific title no longer even has an `imdb_url`
+captured). Likely a one-off so far, not a recurring pattern — lowering
+priority accordingly, but still worth a cheap, well-targeted fix given how
+quietly a bad merge like this corrupts data.
 
-**Priority:** High. This has already caused one incorrect merge.
+**Approach (revised):** The original idea here — reverse-look-up the
+canonical title TMDB/IMDb returns for the scraped ID and compare it against
+the scraped title — was dropped as not worth building: it needs an extra
+API call per film and is itself a fuzzy text comparison prone to its own
+false positives/negatives (subtitles, punctuation, translated titles).
+Regex/keyword detection on the scraped title (e.g. for "&"/"presents") was
+also tried against the real data above and rejected — the false-positive
+rate made it useless.
+
+Better fit: `load_json.py` already calls `ai_cleaning.py`'s
+`ai_clean_title_and_tags` on every single scraped title before this would
+ever run, to normalize it and extract screening tags — this is a judgment
+call about what a title *means*, which is exactly what that existing AI
+call is already doing, not a new API call. Extend its JSON schema with one
+more field, e.g. `is_multi_work: boolean` (true when the title describes
+more than one distinct film shown together — a double/triple feature, or a
+film paired with a separate live show referencing another title — false
+for a single film with an edition/Q&A/anniversary modifier). In
+`load_json.py`, skip seeding `film.imdb_id` from a scraped `imdb_url` when
+`is_multi_work` is true for that title, so the event just falls back to
+the normal fuzzy title+year OMDb match instead of risking a wrong exact-ID
+merge.
+
+**Priority:** Medium (down from High) — still worth doing because a bad
+merge like this corrupts data silently with nothing to catch it after the
+fact, but the measured real-world frequency (one known occurrence across
+469 titles) means it isn't urgent.
 
 ---
 
@@ -221,6 +258,63 @@ the trouble.
 
 **Priority:** Deferred. Revisit once there's appetite to weigh the ~50%
 coverage ceiling against the effort.
+
+---
+
+#### DP-10. Unify scraper logging with the rest of the pipeline, and correlate logs to a specific CI run
+
+**Problem:** Two incompatible logging conventions exist in the same overall
+pipeline. `database/scripts/` uses a real shared logger
+(`log_setup.py`) with levels used meaningfully (checked: 81 `log.info`, 32
+`log.warning`, 23 `log.error`, 4 `log.exception` calls across the codebase
+— not a "dump everything at INFO" anti-pattern). `scrapers/` (`rio_scraper.py`,
+`viff_scraper.py`, `cine_scraper.py`) instead uses bare `print()` with no
+severity levels at all, including today's new "extraction rate looks
+broken" warnings (see the Performance section's rio_scraper.py rewrite) —
+those only ever reach a plain stdout line, never a structured log record.
+
+Separately, `database/scripts/log_setup.py` names log files by calendar
+date only (`pipeline_2026-07-31.log`), with nothing tying a file (or a
+line within it) to the specific GitHub Actions run that produced it. The
+pipeline has genuinely run more than once on the same calendar day before
+(three manual runs on 2026-07-31 while debugging the Rio selector
+breakage) — on a day like that, isolating one specific run's log lines
+means eyeballing timestamps, not querying anything. `.github/workflows/pipeline.yml`
+already generates `github.run_id` for artifact naming
+(`pipeline-logs-${{ github.run_id }}`); nothing threads that same value
+into the log content itself.
+
+**Impact:** Neither gap is about scale — unlike structured (JSON) logs,
+rotation, or a remote aggregation platform (already tracked in DP-4,
+correctly deferred until the log volume justifies it), these two are just
+inconsistency and a missing identifier, both cheap to close. Leaving them
+means scraper failures debug differently than enrichment-step failures
+(grep output vs. read a leveled log), and a multi-run day's logs can't be
+cleanly split by run.
+
+**Approach:**
+- Give `scrapers/` its own small equivalent of `log_setup.py` (a cross-directory
+  import from `database/scripts/` isn't clean — `scrapers/` and
+  `database/scripts/` are separate Python environments with their own
+  `requirements.txt`), and replace every `print()` in the three scrapers
+  with `log.info`/`log.warning`/`log.error` as appropriate. The
+  `extraction_health.py` check's warning should become a `log.warning`
+  call, not a bare `print()`.
+- Thread `github.run_id` (available as an env var the workflow can export,
+  e.g. `GITHUB_RUN_ID`) into every log line — simplest approach is
+  including it in the log format string so every record carries it, rather
+  than a separate per-run file naming scheme (which would fight the
+  existing "one file per day" layout `log_setup.py` already explains the
+  reasoning for).
+- Once both are in place, DP-4 (log aggregation) becomes meaningfully
+  easier to pick up later: structured, run-correlated input is what an
+  aggregation platform actually wants, rather than today's plain-text
+  per-day files.
+
+**Priority:** Low-Medium. Nothing is broken by either gap today, but both
+are inexpensive relative to how often "which run was this" and "why did
+this scraper fail" come up during debugging — a natural next step after
+this session's work, not new infrastructure.
 
 ## Frontend Architecture
 

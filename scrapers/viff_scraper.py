@@ -6,6 +6,8 @@ import os
 from datetime import datetime
 from playwright.sync_api import sync_playwright, TimeoutError
 
+from extraction_health import check_extraction_health
+
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
@@ -236,12 +238,15 @@ def scrape_viff_details(events_data):
 
 
 def scrape_viff_complete():
+    """Returns (events, quality_ok) -- see rio_scraper.py's own docstring
+    on scrape_rio_complete for why a quality problem doesn't discard the
+    (still real, just degraded) data."""
     try:
         events = scrape_viff_listings()
 
         if not events:
             print("No events found in Phase 1. Stopping.")
-            return []
+            return [], False
 
         complete_events = scrape_viff_details(events)
 
@@ -274,19 +279,27 @@ def scrape_viff_complete():
         print(f"Total showtimes: {total_showtimes}")
         print(f"Saved to: {output_path}")
 
-        return complete_events
+        # See extraction_health.py: catches a silent detail-page selector
+        # break (like the one rio_scraper.py had for ~2 months) by exiting
+        # non-zero instead of just printing a warning no one reads.
+        ok, rate, message = check_extraction_health(complete_events, "director")
+        if not ok:
+            print(f"\n⚠️  WARNING: {message}")
+
+        return complete_events, ok
 
     except KeyboardInterrupt:
         print("\nScraping interrupted by user. Check data folder for partial results.")
-        return []
+        return [], False
     except Exception as e:
         print(f"\nUnexpected error: {e}")
-        return []
+        return [], False
 
 
 if __name__ == "__main__":
-    # Empty/failed result must exit non-zero so the caller (run_all_scrapers.py,
-    # then the GitHub Actions job) can actually detect it -- previously this
-    # always exited 0, so a silent 0-event scrape looked identical to success.
-    result = scrape_viff_complete()
-    sys.exit(0 if result else 1)
+    # Non-zero exit on either an empty result or a suspiciously-low
+    # extraction rate (see extraction_health.py) -- previously this only
+    # caught "zero events," so a scrape with silently-broken detail
+    # extraction looked identical to a fully healthy run.
+    events, quality_ok = scrape_viff_complete()
+    sys.exit(0 if (events and quality_ok) else 1)
