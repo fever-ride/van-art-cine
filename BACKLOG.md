@@ -179,17 +179,46 @@ and The Room record likely needs manual repair. A separate case involving
 Backrooms is likely a valid single film normalization where presentation
 details were lost, not a bad merge.
 
-**Approach:** Before accepting a scraped IMDb ID, detect likely multi work
-or program titles, such as double or triple features, an "A + B" pattern,
-collections, or a film paired with a live show. As a check, compare the
-scraped title against the canonical title that TMDB or IMDb returns for
-that ID. If the ID only explains part of the event title, leave the ID
-unset rather than merge incorrectly. Edition or presentation suffixes such
-as "Restoration," "Final Screening," or "Everything Must Go Edition" should
-be treated differently, since they usually still refer to a single
-underlying film.
+Checked how often this actually happens before deciding what to build:
+scanned every distinct Rio title ever scraped (469 across all saved raw
+JSON snapshots) for multi-work-looking patterns ("&", "+", "/", "double
+feature", "presents"). 41 matched, but nearly all were false positives —
+burlesque/variety shows, anniversary screenings, a title with two people's
+names joined by "&" — ordinary single-event titles that happen to contain
+those characters. Only one title both looked multi-work and had a scraped
+`imdb_url` attached, and it's the same incident already described above
+(in the current data that specific title no longer even has an `imdb_url`
+captured). Likely a one-off so far, not a recurring pattern — lowering
+priority accordingly, but still worth a cheap, well-targeted fix given how
+quietly a bad merge like this corrupts data.
 
-**Priority:** High. This has already caused one incorrect merge.
+**Approach (revised):** The original idea here — reverse-look-up the
+canonical title TMDB/IMDb returns for the scraped ID and compare it against
+the scraped title — was dropped as not worth building: it needs an extra
+API call per film and is itself a fuzzy text comparison prone to its own
+false positives/negatives (subtitles, punctuation, translated titles).
+Regex/keyword detection on the scraped title (e.g. for "&"/"presents") was
+also tried against the real data above and rejected — the false-positive
+rate made it useless.
+
+Better fit: `load_json.py` already calls `ai_cleaning.py`'s
+`ai_clean_title_and_tags` on every single scraped title before this would
+ever run, to normalize it and extract screening tags — this is a judgment
+call about what a title *means*, which is exactly what that existing AI
+call is already doing, not a new API call. Extend its JSON schema with one
+more field, e.g. `is_multi_work: boolean` (true when the title describes
+more than one distinct film shown together — a double/triple feature, or a
+film paired with a separate live show referencing another title — false
+for a single film with an edition/Q&A/anniversary modifier). In
+`load_json.py`, skip seeding `film.imdb_id` from a scraped `imdb_url` when
+`is_multi_work` is true for that title, so the event just falls back to
+the normal fuzzy title+year OMDb match instead of risking a wrong exact-ID
+merge.
+
+**Priority:** Medium (down from High) — still worth doing because a bad
+merge like this corrupts data silently with nothing to catch it after the
+fact, but the measured real-world frequency (one known occurrence across
+469 titles) means it isn't urgent.
 
 ---
 
