@@ -230,34 +230,57 @@ fact, but the measured real-world frequency (one known occurrence across
 
 ---
 
-#### DP-9. Parse `film.awards` into structured counts
+#### DP-9. Surface specific, named award highlights (e.g. "Won the Palme
+d'Or"), not just win/nomination counts
 
-**Problem:** `film.awards` is OMDb's own free-text summary (e.g.
-"Nominated for 1 Oscar. 5 wins & 2 nominations total", "6 nominations"),
-not a structured field — not currently surfaced anywhere in the frontend.
+**Problem:** The original version of this idea was to regex-parse
+`film.awards` (OMDb's free-text summary, e.g. "Nominated for 1 Oscar. 5
+wins & 2 nominations total") into structured win/nomination counts. That
+was prototyped and validated against all 737 real non-null/non-"N/A"
+`awards` strings in the DB with zero parse failures — technically it
+works. But raw counts like "15 wins" or "nominated for 1 BAFTA" aren't
+meaningful to a user browsing the site: they don't know what a BAFTA is,
+and a bare count carries no sense of prestige or category. What's
+actually wanted is a human-meaningful highlight — e.g. "Won the Palme
+d'Or at Cannes" or "Won Best Picture" — the kind of thing that would
+actually make someone pick a film. The regex approach is abandoned for
+this reason, not for a parsing-difficulty reason.
 
-**Impact:** Checked the real data before writing this up: of 1470 films,
-396 have `awards` as `null` and 339 are the literal string `"N/A"` — call
-it exactly half the catalog with no awards content at all, mostly the
-international festival titles OMDb's English-language-award-focused data
-doesn't cover. No parsing step can recover award data OMDb never
-collected, which caps how much value this feature could ever deliver —
-worth weighing before investing effort, since even a perfect parser only
-has something to show for roughly the other half.
+**Impact:** The information a highlight like this needs (which specific
+award, which category) does **not exist** in `film.awards` at all — OMDb's
+field is only an aggregate summary (org name + counts), never category­
+level detail. So this can't be extracted by parsing or re-reading existing
+data with an LLM; it requires actually researching each film (AI world
+knowledge and/or live web search) to find a real, specific, named award.
+That makes this a different and larger kind of feature than "parse a
+field we already have" — closer to a new enrichment pipeline with its own
+accuracy/verification requirements. Still bounded by the same ~50%
+coverage ceiling as before (films with no awards content are a dead end
+either way), but now also bounded by whatever fraction of *those* actually
+have a famous/nameable award to surface.
 
-**Approach:** For the half that does have text, the field follows a small
-number of recurring templates ("Won N Oscar(s)", "Nominated for N
-Oscar(s)", "N win(s) & M nomination(s) total", "N nomination(s)" alone,
-"N win(s)" alone) — a regex parser should cover the large majority of
-cases. Prefer that over an LLM/AI pipeline step: the field isn't actually
-free-form enough to need one, and a regex gives deterministic, auditable
-output instead of occasionally-wrong structured data for what is
-fundamentally a template-matching problem. Reserve an LLM pass only for
-whatever long tail a regex can't parse, if that tail turns out to be worth
-the trouble.
+**Approach:** Not yet designed — open questions to resolve before
+building anything:
+- **Data source for ground truth.** A raw LLM web-search-and-answer
+  per film risks hallucinating specific award/category claims, especially
+  for lesser-known or recent titles — and a confidently wrong "Won Best
+  Picture" badge is worse than no badge. A more structured source (e.g.
+  Wikipedia's film infobox, which lists named awards/categories as
+  structured data) may be safer to build on than freeform AI web search;
+  needs real investigation before picking an approach, not an assumption.
+- **Verification before display.** Whatever source is used, need some
+  way to avoid shipping a wrong factual claim as a "highlight," since
+  this is presented to users as fact, not a model guess.
+- **Cost/when it runs.** Per-film research (whether LLM+search or a
+  scrape) is heavier than a regex pass — needs a plan for one-off backfill
+  vs. ongoing (new films added by the scrapers going forward), and some
+  sense of per-film cost at ~1477+ films.
+- **Display format** — still fully open (badge vs. detail-page text vs.
+  something else), same as before.
 
-**Priority:** Deferred. Revisit once there's appetite to weigh the ~50%
-coverage ceiling against the effort.
+**Priority:** Deferred — bigger and riskier than originally scoped, worth
+a real design pass (starting with the data-source question) before any
+implementation.
 
 ---
 
