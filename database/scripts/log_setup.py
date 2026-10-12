@@ -78,7 +78,14 @@ def _configure_root() -> None:
     try:
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         log_file = LOG_DIR / f"pipeline_{datetime.now():%Y-%m-%d}.log"
-        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        # delay=True: don't open/create the file until the first record is
+        # actually emitted. Every pipeline script does `log = get_logger(...)`
+        # at module level, so without this, merely importing one for a quick
+        # one-off check (python -c "from load_json import ...", or run_all.py
+        # importing a step module it then skips) creates an empty log file —
+        # confirmed by finding three genuinely-empty pipeline_*.log files on
+        # disk from exactly that.
+        file_handler = logging.FileHandler(log_file, encoding="utf-8", delay=True)
         file_handler.setFormatter(formatter)
         root.addHandler(file_handler)
     except OSError as e:
