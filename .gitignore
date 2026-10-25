@@ -32,6 +32,11 @@ database/logs/
 # Local Claude Code dev-server launch config
 .claude/launch.json
 
+# Local Claude Code permission settings (personal, and has held a raw DB
+# credential in a recorded command before) and ephemeral worktree state
+.claude/settings.local.json
+.claude/worktrees/
+
 # Ignore everything inside data
 data/*
 
