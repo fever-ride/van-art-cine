@@ -225,6 +225,73 @@ def scrape_viff_details(events_data):
                 except Exception as e:
                     print(f"        ⚠ Error extracting year: {e}")
 
+                # Extract the full showtime calendar. The listing page card
+                # (Phase 1) only ever shows the first few `.c-event-instance`
+                # elements before a "View N more dates" link -- that link
+                # just navigates here, it doesn't expand in place -- so for
+                # any event with more than a handful of dates, Phase 1's
+                # showtimes are silently truncated. This page has the
+                # complete calendar, grouped by date under
+                # `.c-event-instance__date-group`.
+                try:
+                    old_count = len(event.get("showtimes", []))
+                    date_groups = page.query_selector_all(
+                        ".c-event-instance__date-group")
+                    full_showtimes = []
+
+                    for group in date_groups:
+                        date_heading_el = group.query_selector(
+                            ".c-col-subtitle")
+                        date_text = (date_heading_el.inner_text().strip()
+                                     if date_heading_el else None)
+
+                        normalized_date = date_text
+                        if date_text:
+                            # e.g. 'Friday October 30' -> 'Fri Oct 30',
+                            # matching the listing page's date format (and
+                            # what parse_dt_viff in load_json.py expects).
+                            # Plain string slicing, not strptime/strftime:
+                            # strptime needs a year, and the default year it
+                            # fills in almost never has the same weekday for
+                            # that month/day as the real one -- so
+                            # re-deriving "Fri" from a recomputed date
+                            # silently produces the wrong weekday. Slicing
+                            # the words VIFF already gave us avoids that.
+                            parts = date_text.split()
+                            if len(parts) == 3 and parts[2].isdigit():
+                                weekday, month, day = parts
+                                normalized_date = f"{weekday[:3]} {month[:3]} {int(day):02d}"
+
+                        for inst in group.query_selector_all(".c-event-instance"):
+                            time_el = inst.query_selector(
+                                ".c-event-instance__time")
+                            venue_el = inst.query_selector(
+                                ".c-event-instance__venue-info")
+
+                            showtime = {}
+                            if normalized_date:
+                                showtime["date"] = normalized_date
+                            if time_el:
+                                time_text = time_el.inner_text().strip()
+                                if time_text:
+                                    showtime["time"] = time_text
+                            if venue_el:
+                                venue_text = venue_el.inner_text().strip()
+                                if venue_text:
+                                    showtime["venue"] = venue_text
+
+                            if showtime:
+                                full_showtimes.append(showtime)
+
+                    if full_showtimes:
+                        event["showtimes"] = full_showtimes
+                        print(
+                            f"        ✓ Found {len(full_showtimes)} showtimes "
+                            f"(listing page had {old_count})")
+
+                except Exception as e:
+                    print(f"        ⚠ Error extracting full showtime calendar: {e}")
+
             except Exception as e:
                 print(
                     f"        ✗ Error getting details for {event['title']}: {e}")
