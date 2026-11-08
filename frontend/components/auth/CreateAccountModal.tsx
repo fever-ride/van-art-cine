@@ -61,12 +61,12 @@ export default function CreateAccountModal({ isOpen, onClose, onSuccess }: Props
       />
 
       {/* Centered Modal */}
-      <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none">
-        <div className="relative w-full max-w-md rounded-card border border-border bg-[#1a1a1a] p-8 shadow-2xl animate-slide-down pointer-events-auto">
+      <div className="fixed inset-0 z-[101] flex items-start justify-center overflow-y-auto p-4 pt-16 pointer-events-none sm:items-center sm:pt-4">
+        <div className="relative w-full max-w-md rounded-card border border-border bg-hero-bg p-8 shadow-2xl animate-slide-down pointer-events-auto">
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute right-4 top-4 text-gray-400 hover:text-white transition-colors"
+            className="absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center text-white/55 hover:text-white transition-colors"
             aria-label="Close"
           >
             <svg
@@ -95,7 +95,7 @@ export default function CreateAccountModal({ isOpen, onClose, onSuccess }: Props
 
             {/* Email field */}
             <div>
-              <label htmlFor="modal-email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="modal-email" className="block text-sm font-medium text-white/70 mb-2">
                 Email
               </label>
               <Input
@@ -106,14 +106,14 @@ export default function CreateAccountModal({ isOpen, onClose, onSuccess }: Props
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 autoComplete="email"
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
               />
             </div>
 
             {/* Name field */}
             <div>
-              <label htmlFor="modal-name" className="block text-sm font-medium text-gray-300 mb-2">
-                Name <span className="text-gray-400 font-normal">(optional)</span>
+              <label htmlFor="modal-name" className="block text-sm font-medium text-white/70 mb-2">
+                Name <span className="text-white/55 font-normal">(optional)</span>
               </label>
               <Input
                 id="modal-name"
@@ -121,13 +121,13 @@ export default function CreateAccountModal({ isOpen, onClose, onSuccess }: Props
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
               />
             </div>
 
             {/* Password field */}
             <div>
-              <label htmlFor="modal-password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="modal-password" className="block text-sm font-medium text-white/70 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -139,17 +139,17 @@ export default function CreateAccountModal({ isOpen, onClose, onSuccess }: Props
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   autoComplete="new-password"
-                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 pr-20"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40 pr-20"
                 />
                 <button
                   type="button"
                   onClick={() => setReveal((v) => !v)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-300 hover:text-white transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-white/70 hover:text-white transition-colors"
                 >
                   {reveal ? 'Hide' : 'Show'}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-400">Use at least 8 characters.</p>
+              <p className="mt-1 text-xs text-white/55">Use at least 8 characters.</p>
             </div>
 
             {/* Submit button */}

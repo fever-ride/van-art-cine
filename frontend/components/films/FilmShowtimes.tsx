@@ -82,7 +82,7 @@ export default function FilmShowtimes({ upcoming, filmTitle }: Props) {
                     href={s.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center rounded-btn bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
+                    className="inline-flex items-center rounded-btn bg-accent px-3 py-1.5 text-xs font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
                   >
                     Get tickets
                   </a>

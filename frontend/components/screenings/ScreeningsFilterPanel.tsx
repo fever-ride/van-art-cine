@@ -2,27 +2,20 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Archivo, Hanken_Grotesk } from 'next/font/google';
 import type { UIState, SetUI } from '@/lib/hooks/useScreeningsUI';
 import type { ScreeningFacets, ScreeningFacetValue, RatingThresholdValue } from '@/app/lib/screenings';
-import { Input } from '@/components/ui';
 
-const archivo = Archivo({ subsets: ['latin'], weight: ['700'], display: 'swap' });
-const hanken = Hanken_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600'], display: 'swap' });
 
 const VISIBLE_COUNT = 5;
-const SEARCH_DEBOUNCE_MS = 350;
 
 type Props = {
   ui: UIState;
   setUI: SetUI;
   facets: ScreeningFacets;
-  /** True while a setUI-triggered navigation is in flight, so the search
-   * box can show it's working — same reasoning as Table view's `Filters`. */
-  pending?: boolean;
 };
 
-/** Search box + facet filter panel for the Film view, modeled on a
+/** Facet filter panel for the Film view (search lives in the shared
+ * `SearchBar` above both views), modeled on a
  * festival site's own filter UI (see chat history for the reference) — a
  * Filter toggle revealing checkbox columns, each value's count shown in
  * parens, with a "see more" to reveal the long tail. Table view keeps its
@@ -40,64 +33,19 @@ type Props = {
  * etc.) for a filter panel too long to push inline. Both paths render the
  * same `FilterGroupsGrid`, so the two never drift into two different sets
  * of filters.
- *
- * The search box mirrors `Filters.tsx`'s own debounced-search pattern
- * (350ms debounce, `replace: true` so rapid typing doesn't flood browser
- * history) rather than sharing code with it — the two sit in different
- * layouts (a sidebar card vs. a bar above a card grid) and `Filters` ties
- * its debounce to an `onBeforeCommit` scroll-position fix (see
- * TROUBLESHOOTING.md) that Film view's grid doesn't need. */
-export default function ScreeningsFilterPanel({ ui, setUI, facets, pending }: Props) {
+ */
+export default function ScreeningsFilterPanel({ ui, setUI, facets }: Props) {
   const [open, setOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
-  const [localQ, setLocalQ] = useState(ui.q);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    setLocalQ(ui.q);
-  }, [ui.q]);
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
-
-  const handleSearchChange = (value: string) => {
-    setLocalQ(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setUI({ q: value }, { replace: true });
-    }, SEARCH_DEBOUNCE_MS);
-  };
-
   return (
-    <div className={`${hanken.className} mb-6`}>
-      <div className="relative mb-3 max-w-sm">
-        <Input
-          type="text"
-          inputMode="search"
-          placeholder="Enter a film title…"
-          value={localQ}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="rounded-btn py-2.5 pr-8"
-        />
-        {pending && (
-          <span
-            aria-hidden="true"
-            className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2
-                       animate-spin rounded-full border-2 border-border border-t-accent"
-          />
-        )}
-      </div>
-
+    <div className="mb-6">
       {/* Desktop: unchanged inline expand. */}
       <div className="hidden sm:block">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="inline-flex items-center gap-2 rounded-btn border border-primary bg-surface px-3.5 py-2 text-sm font-semibold text-primary"
+          className="inline-flex min-h-11 items-center gap-2 rounded-btn border border-primary bg-surface px-4 text-sm font-semibold text-primary"
         >
           Filter
         </button>
@@ -115,7 +63,7 @@ export default function ScreeningsFilterPanel({ ui, setUI, facets, pending }: Pr
         <button
           type="button"
           onClick={() => setMobileSheetOpen(true)}
-          className="inline-flex items-center gap-2 rounded-btn border border-primary bg-surface px-3.5 py-2 text-sm font-semibold text-primary"
+          className="inline-flex min-h-11 items-center gap-2 rounded-btn border border-primary bg-surface px-4 text-sm font-semibold text-primary"
         >
           Filter
         </button>
@@ -233,12 +181,18 @@ function FilterGroupsGrid({
  * affordance, not a deferred-apply one: every tap inside already commits
  * immediately via `setUI` (same as the desktop panel), so "Show results"
  * just closes the sheet to reveal the (already updated) grid behind it. */
-function MobileFilterSheet({
+export function MobileFilterSheet({
   onClose,
   children,
+  title = 'Filter',
+  footer,
 }: {
   onClose: () => void;
   children: React.ReactNode;
+  title?: string;
+  /** Replaces the default "Show results" footer; pass null for none (when
+   * the content brings its own Apply/Reset). */
+  footer?: React.ReactNode | null;
 }) {
   const [mounted, setMounted] = useState(false);
 
@@ -266,18 +220,18 @@ function MobileFilterSheet({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Filter"
-        className={`${hanken.className} fixed inset-x-0 bottom-0 z-[101] flex max-h-[85vh] flex-col rounded-t-card bg-surface animate-slide-up`}
+        aria-label={title}
+        className="fixed inset-x-0 bottom-0 z-[101] flex max-h-[85vh] flex-col rounded-t-card bg-surface animate-slide-up"
       >
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
-          <h2 className={`${archivo.className} text-sm font-bold uppercase tracking-wide text-primary`}>
-            Filter
+          <h2 className="font-display text-sm font-bold uppercase tracking-wide text-primary">
+            {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="grid h-8 w-8 place-items-center rounded-control text-muted hover:bg-surface-subtle hover:text-primary"
+            className="-mr-2 grid h-11 w-11 place-items-center rounded-control text-muted hover:bg-surface-subtle hover:text-primary"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -287,15 +241,19 @@ function MobileFilterSheet({
 
         <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
 
-        <div className="shrink-0 border-t border-border p-4">
+        {footer === undefined ? (
+          <div className="shrink-0 border-t border-border p-4">
           <button
             type="button"
             onClick={onClose}
-            className="w-full rounded-btn bg-accent px-4 py-3 text-sm font-semibold text-white hover:bg-accent-hover"
+            className="w-full rounded-btn bg-accent px-4 py-3 text-sm font-semibold text-accent-ink hover:bg-accent-hover"
           >
             Show results
           </button>
-        </div>
+          </div>
+        ) : footer !== null ? (
+          <div className="shrink-0 border-t border-border p-4">{footer}</div>
+        ) : null}
       </div>
     </>,
     document.body
@@ -360,7 +318,7 @@ function FacetColumn({
 
   return (
     <div>
-      <h3 className={`${archivo.className} mb-3 text-[11px] uppercase tracking-wide text-muted`}>
+      <h3 className="font-display mb-3 text-[11px] uppercase tracking-wide text-muted">
         {title}
       </h3>
       {/* Once expanded, a long tail (language in particular can run past 30
@@ -381,7 +339,7 @@ function FacetColumn({
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="text-xs font-semibold text-accent underline"
+          className="text-xs font-semibold text-accent-strong underline"
         >
           See more ({hiddenCount} more)
         </button>
@@ -420,7 +378,7 @@ function ThresholdPicker({
             onClick={() => onChange(selected ? '' : thresholdValue)}
             className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
               selected
-                ? 'border-accent bg-accent text-white'
+                ? 'border-accent bg-accent text-accent-ink'
                 : 'border-border text-primary hover:bg-surface-subtle'
             }`}
           >
@@ -453,7 +411,7 @@ function RatingFilterColumn({
 }) {
   return (
     <div>
-      <h3 className={`${archivo.className} mb-3 text-[11px] uppercase tracking-wide text-muted`}>
+      <h3 className="font-display mb-3 text-[11px] uppercase tracking-wide text-muted">
         Rating
       </h3>
       <div className="mb-3">

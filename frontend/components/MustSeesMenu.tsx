@@ -1,19 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Noto_Sans } from 'next/font/google';
 import { NavigationMenu } from '@base-ui/react/navigation-menu';
 
-// Same instantiation NavBar.tsx uses for its own header text (this
-// project's convention: each component that needs it re-declares this
-// rather than importing a shared font module). Needed again here
-// specifically because NavigationMenu.Portal renders into document.body —
-// outside NavBar's <header className={noto.className}> wrapper — so the
-// popup does not inherit that font class the way DOM-nested content would
-// and falls back to globals.css's plain `body { font-family: Arial, ... }`
-// without this. Confirmed via getComputedStyle before and after this fix,
-// not assumed.
-const noto = Noto_Sans({ subsets: ['latin'], weight: ['400', '600', '700'] });
+// Fonts come from the root layout (next/font variables on <html>), so this
+// portal-rendered popup inherits them even though it mounts in document.body.
 
 /** Add more `/whats-on/*` hub pages here as they ship. */
 const ENTRIES = [{ href: '/whats-on/top-rated', label: 'Top Rated' }];
@@ -23,7 +14,7 @@ const ENTRIES = [{ href: '/whats-on/top-rated', label: 'Top Rated' }];
 // Watchlist"/"About" and should look identical to them, not have its own
 // rounded corners.
 const pill =
-  'whitespace-nowrap px-3 py-1.5 text-sm font-medium text-muted hover:bg-primary hover:text-white transition-colors';
+  'inline-flex min-h-10 items-center whitespace-nowrap px-3 text-sm font-medium text-muted hover:bg-primary hover:text-white transition-colors';
 
 /**
  * NavBar entry point into the hub pages under `/whats-on/` — labelled
@@ -83,7 +74,7 @@ export default function MustSeesMenu() {
       <NavigationMenu.Portal>
         <NavigationMenu.Positioner
           sideOffset={4}
-          className={`${noto.className} z-50 outline-none`}
+          className="z-50 outline-none"
         >
           {/* Same popover treatment as ScreeningDateInput.tsx's date
            * picker — the other small anchored popover in this codebase —

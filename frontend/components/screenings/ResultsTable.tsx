@@ -68,7 +68,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                     onClick={() => toggle(s.id)}
                     aria-expanded={isOpen}
                     aria-controls={`row-details-${s.id}`}
-                    className="grid h-7 w-7 place-items-center rounded-control border border-border bg-surface transition hover:bg-surface-subtle"
+                    className="grid h-10 w-10 place-items-center rounded-control border border-border bg-surface transition hover:bg-surface-subtle"
                     title={isOpen ? 'Hide details' : 'Show details'}
                   >
                     <svg
@@ -205,7 +205,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   href={s.source_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center rounded-btn bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
+                                  className="inline-flex items-center rounded-btn bg-accent px-3 py-1.5 text-xs font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
                                 >
                                   View on cinema site
                                 </a>
@@ -224,7 +224,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1.5 rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-surface-hover"
                                 >
-                                  <span className="rounded-[3px] bg-[#F5C518] px-1.5 py-0.5 text-[10px] font-extrabold leading-none text-black">
+                                  <span className="rounded-[3px] bg-imdb px-1.5 py-0.5 text-[10px] font-extrabold leading-none text-black">
                                     IMDb
                                   </span>
                                   Profile

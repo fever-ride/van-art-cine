@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { UIState, SetUI } from '@/lib/hooks/useScreeningsUI';
 import { todayYmdInDisplayTimezone } from '@/app/lib/formatDate';
 import ScreeningDateInput from '@/components/screenings/ScreeningDateInput';
-import { Card, Input, Button } from '@/components/ui';
+import { Card, Button } from '@/components/ui';
 
 type CinemaOption = { id: number; name: string };
 
@@ -13,11 +13,14 @@ type Props = {
   setUI: SetUI;
   onBeforeCommit: () => void;
   loading?: boolean;
-  /** True while a setUI-triggered navigation (search, Apply, Reset) is in
-   * flight, so the search box and Apply button can show it's working
-   * instead of appearing to just ignore input. */
+  /** True while a setUI-triggered navigation (Apply, Reset) is in flight,
+   * so the Apply button can show it's working. */
   pending?: boolean;
   cinemaOptions?: CinemaOption[];
+  /** Called after Apply or Reset commits (e.g. to close the mobile sheet). */
+  onCommitted?: () => void;
+  /** Render without the Card chrome (inside the mobile sheet). */
+  bare?: boolean;
 };
 
 export default function Filters({
@@ -27,47 +30,25 @@ export default function Filters({
   loading,
   pending,
   cinemaOptions = [],
+  onCommitted,
+  bare = false,
 }: Props) {
-  const [localUI, setLocalUI] = useState<Omit<UIState, 'q'>>({
-    cinemaIds: ui.cinemaIds,
-    genreValues: ui.genreValues,
-    languageValues: ui.languageValues,
-    eraValues: ui.eraValues,
-    minImdb: ui.minImdb,
-    minRt: ui.minRt,
-    filmId: ui.filmId,
-    date: ui.date,
-    from: ui.from,
-    to: ui.to,
-    sort: ui.sort,
-    order: ui.order,
-    mode: ui.mode,
-    limit: ui.limit,
-    view: ui.view,
-  });
+  // Draft of the sidebar's filters, committed to the URL only on Apply.
+  // It is re-synced from the URL only when the sidebar's own fields change
+  // *by value* (Apply, browser back/forward) — not on every render, and not
+  // when only the search term `q` changes. `ui` is re-parsed from the URL on
+  // every render (new object identity each time), so depending on `[ui]`
+  // wiped unapplied edits whenever the parent re-rendered, e.g. after a
+  // search commit. See TROUBLESHOOTING.md → "Unapplied filter edits vanish".
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { q: _q, ...uiFilters } = ui;
+  const filtersKey = JSON.stringify(uiFilters);
+  const [localUI, setLocalUI] = useState<Omit<UIState, 'q'>>(uiFilters);
 
   useEffect(() => {
-    setLocalUI({
-      cinemaIds: ui.cinemaIds,
-      genreValues: ui.genreValues,
-      languageValues: ui.languageValues,
-      eraValues: ui.eraValues,
-      minImdb: ui.minImdb,
-      minRt: ui.minRt,
-      filmId: ui.filmId,
-      date: ui.date,
-      from: ui.from,
-      to: ui.to,
-      sort: ui.sort,
-      order: ui.order,
-      mode: ui.mode,
-      limit: ui.limit,
-      view: ui.view,
-    });
-  }, [ui]);
+    setLocalUI(JSON.parse(filtersKey));
+  }, [filtersKey]);
 
-  const [localQ, setLocalQ] = useState(ui.q);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Detect whether the cinema checklist actually overflows its box, so we
   // can hint "scroll for more" instead of a hardcoded item-count guess —
@@ -90,39 +71,14 @@ export default function Filters({
     return () => resizeObserver.disconnect();
   }, [cinemaOptions]);
 
-  const handleSearchChange = (value: string) => {
-    setLocalQ(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      // onBeforeCommit captures the current row height before the result
-      // count can shrink out from under a scrolled-down reader — see
-      // TROUBLESHOOTING.md "Homepage scroll jumps" Act 3/4: without it, a
-      // search that collapses the table strands scrollY past the new
-      // (shorter) page and the browser clamps it to the footer.
-      onBeforeCommit();
-      // replace: true — this fires automatically as the user pauses typing,
-      // not from a discrete action, so it shouldn't add a history entry
-      // the user then has to back through one keystroke-group at a time.
-      setUI({ q: value }, { replace: true });
-    }, 350);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    setLocalQ(ui.q);
-  }, [ui.q]);
-
+  // Search is committed separately (SearchBar); Apply/Reset only touch the
+  // sidebar's own fields, so they leave the current search term alone.
   const commitApply = () => {
-    setUI({ ...localUI, q: localQ });
+    setUI({ ...localUI });
+    onCommitted?.();
   };
 
   const commitReset = () => {
-    setLocalQ('');
     setLocalUI({
       cinemaIds: [],
       genreValues: [],
@@ -141,7 +97,6 @@ export default function Filters({
       view: ui.view,
     });
     setUI({
-      q: '',
       cinemaIds: [],
       genreValues: [],
       languageValues: [],
@@ -157,6 +112,7 @@ export default function Filters({
       mode: 'single',
       limit: ui.limit,
     });
+    onCommitted?.();
   };
 
   const todayMin = todayYmdInDisplayTimezone();
@@ -169,28 +125,7 @@ export default function Filters({
     'focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20';
 
   return (
-    <Card className="space-y-4 p-4">
-      <label className="flex flex-col gap-1">
-        <span className={labelCls}>Search</span>
-        <div className="relative">
-          <Input
-            type="text"
-            inputMode="search"
-            placeholder="Enter a film title…"
-            value={localQ}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="rounded-btn py-2.5 pr-8"
-          />
-          {pending && (
-            <span
-              aria-hidden="true"
-              className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2
-                         animate-spin rounded-full border-2 border-border border-t-accent"
-            />
-          )}
-        </div>
-      </label>
-
+    <Card className={bare ? 'space-y-4 border-0 p-0 shadow-none' : 'space-y-4 p-4'}>
       {/* Cinemas */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
@@ -200,7 +135,7 @@ export default function Filters({
               type="button"
               variant="ghost"
               size="sm"
-              className="text-xs font-semibold text-accent hover:underline"
+              className="text-xs font-semibold text-accent-strong hover:underline"
               onClick={() => setLocalUI({ ...localUI, cinemaIds: [] })}
             >
               Clear ({localUI.cinemaIds.length})
@@ -211,7 +146,7 @@ export default function Filters({
           <div
             ref={cinemaListRef}
             className="
-              max-h-[min(24vh,165px)]   /* compact so Apply/Reset stay visible without extra scrolling */
+              max-h-[min(40vh,280px)] lg:max-h-[min(24vh,165px)]   /* compact so Apply/Reset stay visible without extra scrolling */
               overflow-y-auto overscroll-contain
               rounded-btn border-[1.5px] border-border bg-surface
               p-3 pr-2                   /* give room so scrollbar doesn't cover text */
@@ -224,11 +159,11 @@ export default function Filters({
             return (
               <label
                 key={c.id}
-                className="flex items-center gap-2 rounded px-1 py-2 hover:bg-surface-subtle cursor-pointer transition-colors"
+                className="flex min-h-11 items-center gap-3 rounded px-1 hover:bg-surface-subtle cursor-pointer transition-colors lg:min-h-9"
               >
                 <input
                   type="checkbox"
-                  className="h-3.5 w-3.5 rounded-control border border-border text-accent focus:ring-1 focus:ring-accent/20"
+                  className="h-4 w-4 shrink-0 rounded-control border border-border accent-[var(--accent-strong)] focus:ring-1 focus:ring-accent/20"
                   checked={checked}
                   onChange={(e) => {
                     if (e.target.checked) {
@@ -297,7 +232,7 @@ export default function Filters({
       {/* Date / Range */}
       <div className="space-y-2">
         <div className="flex items-center gap-4">
-          <label className="inline-flex items-center gap-2 text-sm text-primary">
+          <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm text-primary lg:min-h-9">
             <input
               type="radio"
               name="mode"
@@ -308,7 +243,7 @@ export default function Filters({
             />
             Single date
           </label>
-          <label className="inline-flex items-center gap-2 text-sm text-primary">
+          <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm text-primary lg:min-h-9">
             <input
               type="radio"
               name="mode"

@@ -5,7 +5,6 @@
 
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { Noto_Sans } from 'next/font/google';
 import {
   getScreeningsServerSide,
   getFilmsServerSide,
@@ -25,10 +24,6 @@ import ScreeningsPageClient from '@/components/screenings/ScreeningsPageClient';
 
 const SITE_URL = 'https://www.cinephilesvan.com';
 
-const noto = Noto_Sans({
-  subsets: ['latin'],
-  display: 'swap',
-});
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
 
@@ -284,25 +279,25 @@ export default async function Home({
   const page = pageNumberFrom(resolvedSearchParams);
 
   return (
-    <main className={`${noto.className}`}>
+    <main>
       <CanonicalLink ui={ui} page={page} />
       <section className="bg-hero-bg text-white mb-12">
         <div className="mx-auto max-w-[1400px] px-4 py-16 md:py-20">
-          <h1 className="text-4xl font-bold leading-tight md:text-5xl lg:text-6xl mb-4">
+          <h1 className="mb-4 text-[clamp(36px,6.1vw,72px)] font-bold uppercase leading-[0.95] tracking-[-0.03em]">
             Vancouver&apos;s indie
             <br />
             screenings,
             <br />
             all in one place.
           </h1>
-          <p className="text-lg text-gray-300 max-w-2xl">
+          <p className="text-lg text-white/70 max-w-2xl">
             Discover independent films, art-house cinema, and festival screenings across the city&apos;s best theaters.
           </p>
         </div>
       </section>
 
       <div className="mx-auto max-w-[1400px] px-4">
-        <h2 className="mb-6 text-2xl font-bold text-primary">Now Playing</h2>
+        <h2 className="mb-6 border-b border-rule pb-3 text-2xl font-bold uppercase text-primary md:text-3xl">Now Playing</h2>
 
         <Suspense fallback={<ScreeningsPageSkeleton />}>
           <ScreeningsPageContent searchParams={resolvedSearchParams} />

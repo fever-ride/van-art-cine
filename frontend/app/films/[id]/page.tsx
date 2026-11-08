@@ -11,12 +11,7 @@ import FilmMeta from '@/components/films/FilmMeta';
 import FilmShowtimes from '@/components/films/FilmShowtimes';
 import PosterCarousel from '@/components/whats-on/PosterCarousel';
 
-import { Noto_Sans } from 'next/font/google';
 
-const noto = Noto_Sans({
-  subsets: ['latin'],
-  display: 'swap',
-});
 
 /**
  * Generates per-film metadata for SEO and social sharing.
@@ -332,7 +327,7 @@ export default async function FilmPage({
   }
 
   return (
-    <main className={`${noto.className} mx-auto max-w-7xl px-4 py-8`}>
+    <main className="mx-auto max-w-7xl px-4 py-8">
       <Suspense fallback={<FilmPageSkeleton />}>
         <FilmContent id={film_id} />
       </Suspense>

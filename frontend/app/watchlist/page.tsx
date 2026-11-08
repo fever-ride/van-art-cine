@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Noto_Sans } from 'next/font/google';
 import { apiListWatchlist } from '@/app/lib/watchlist';
 import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
@@ -11,10 +10,6 @@ import { isErrorLike } from '@/app/lib/typeGuards';
 import { Card } from '@/components/ui';
 
 // Global font for this page
-const noto = Noto_Sans({
-  subsets: ['latin'],
-  display: 'swap',
-});
 
 // Shape of the /api/screenings/bulk response items (only fields we use)
 type BulkScreening = {
@@ -204,7 +199,7 @@ export default function WatchlistPage() {
   const rowsToShow = includePast ? items : items.filter((r) => r.status === 'upcoming');
 
   return (
-    <main className={`${noto.className} mx-auto max-w-7xl px-4 py-8`}>
+    <main className="mx-auto max-w-7xl px-4 py-8">
       {/* Header row */}
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-[22px] font-semibold text-primary">
@@ -315,7 +310,7 @@ export default function WatchlistPage() {
                             href={r.source_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface-hover"
+                            className="inline-flex items-center rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent-strong transition-colors hover:bg-surface-hover"
                           >
                             Get tickets
                           </a>
@@ -410,7 +405,7 @@ export default function WatchlistPage() {
                         href={r.source_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-surface-hover"
+                        className="inline-flex items-center rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent-strong transition-colors hover:bg-surface-hover"
                       >
                         Get tickets
                       </a>
