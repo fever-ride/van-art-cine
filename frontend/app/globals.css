@@ -2,9 +2,9 @@
 
 /*
  * Design tokens — editorial, high-contrast style (see docs/design-refs/).
- * Ink on white, hairline rules, small radii, one salmon accent.
+ * Ink on white, hairline rules, small radii, one apricot accent.
  * Accent is a FILL colour: text on it uses --accent-ink; accent-coloured
- * text on white uses --accent-strong (salmon itself is too light for text).
+ * text on white uses --accent-strong (apricot itself is too light for text).
  * Dark mode is deferred (docs/frontend-redesign-plan.md); when added,
  * redefine these under prefers-color-scheme / [data-theme="dark"].
  */
@@ -12,10 +12,10 @@
   /* Core */
   --primary: #111111;        /* ink */
   --background: #FFFFFF;
-  --accent: #E98F76;         /* salmon */
-  --accent-hover: #E27B5F;
+  --accent: #F2A65A;         /* apricot (kept distinct from Claude clay #D97757) */
+  --accent-hover: #EC9440;
   --accent-ink: #1A1A1A;     /* text on accent fills */
-  --accent-strong: #A8452B;  /* accent-coloured text/links on white */
+  --accent-strong: #94500F;  /* accent-coloured text/links on white */
   --highlight: #F2DCB0;
   --footer-bg: #FFFFFF;
   --hero-bg: #101010;
