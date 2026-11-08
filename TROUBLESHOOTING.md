@@ -783,3 +783,90 @@ while True:
 print('distinct films seen:', len(seen), '| reported total:', data['total'])
 "
 ```
+
+## Showtimes off by one hour after BC's permanent Pacific Time (Nov 2026)
+
+### Symptom
+
+Found on 2026-11-08 while checking the homepage in a browser:
+
+- React hydration error in `ResultsTable`. The server rendered `12:30 PM` but the
+  client rendered `1:30 PM` for the same screening.
+- On the page, the time first appeared as 12:30, then switched to 1:30 once JS
+  hydrated.
+- Cross-check against the source:
+  - DB: *The Mad Dog of Europe* at `start_at_utc = 2026-11-08T20:30:00Z`.
+  - viff.org: "Sunday November 08, 1:30 pm".
+  - So the **data was correct**, the **browser was correct**, and the **server
+    render was wrong**.
+
+### Cause
+
+British Columbia moved to **permanent UTC-7** from 2026-11-01 02:00 PDT.
+- It no longer "falls back" to PST (UTC-8).
+- IANA tzdata **2026c** encodes this: `zdump -v America/Vancouver` shows
+  `Nov 1 09:00 UT → MST gmtoff=-25200`.
+
+The zone name `America/Vancouver` is still right. What differs is each runtime's
+*copy* of the tzdata rules for it:
+
+| Runtime | tzdata | Vancouver on 2026-11-08 |
+|---|---|---|
+| macOS system / Chrome 152 | 2026c+ | UTC-7 ✅ |
+| Node 24.11 (bundled ICU 77.1) — Next SSR + backend | 2025b | UTC-8 ❌ |
+| Anaconda Python 3.11 `zoneinfo` (local dev) | old | UTC-8 ❌ |
+
+Our code always displays Vancouver time, never the visitor's zone. But it asked
+the runtime *what offset Vancouver is*. Any runtime with stale tzdata answered
+UTC-8.
+
+Impact if left alone:
+- SSR HTML (crawlers, first paint, no-JS) shows times one hour early.
+- Visitors on devices with stale tzdata (older iOS/Android/browsers) see wrong
+  times permanently. Nothing on the client corrects them.
+- Backend day filters (`date`, `from`/`to` → UTC range) are shifted by an hour.
+  Late-night screenings land on the wrong day.
+- Any pipeline run on a stale-tzdata host stores showtimes one hour late.
+  - Current data was correct because the pipeline host had fresh tzdata.
+  - Rio passes explicit ISO offsets, so it is not affected.
+
+Unrelated bug found at the same time: `formatLocal()` in
+`frontend/app/lib/watchlist.ts` formatted in the *visitor's* zone. It was
+unused, and has been deleted.
+
+### Fix
+
+Stop trusting runtime tzdata for Vancouver. Pin the rule in our own code, once
+per language:
+- Instants **before** `2026-11-01T09:00Z` → `America/Vancouver`. All tzdata
+  versions agree on history.
+- Instants **from then on** → fixed UTC-7. In Intl this is `Etc/GMT+7`; the
+  POSIX sign is inverted.
+
+| Layer | File |
+|---|---|
+| Frontend display | `frontend/app/lib/formatDate.ts` (`displayTimeZoneFor`), constants in `frontend/app/lib/constants.ts` |
+| Backend day → UTC range | `backend/src/utils/time.js` (`localMidnightToUtc`) |
+| Pipeline local → UTC | `database/scripts/vancouver_time.py`, used by `load_json.py` |
+
+Tests that pass regardless of the host's tzdata:
+- `frontend/tests/lib/formatDate.test.ts`
+- `backend/tests/utils/time.test.js`
+- The VIFF case (`20:30Z → 1:30 PM`) is the regression check. It fails on the
+  old code under Node 24.11.
+
+Existing DB rows did not need migration. They were already stored with UTC-7.
+
+### Prevention / lessons
+
+- "Looks right in my browser" proves nothing about timezones. The browser may
+  just have newer tzdata than the server. Compare against the **source site**,
+  and check SSR output (view-source or `curl`) as well as the hydrated page.
+- A hydration mismatch on a time string is a timezone red flag. Do not suppress it.
+- Never pass `America/Vancouver` straight to `Intl`, `date-fns-tz` or `zoneinfo`
+  for screening times. Go through the helpers above.
+- **If BC changes its clock rules again**, update the cutoff constant and offset
+  in all three helpers (search for `PERMANENT_UTC7`), then add a test case for
+  the new transition.
+- Upgrading Node/Python helps but is not enough. We cannot control visitors'
+  device tzdata.

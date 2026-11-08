@@ -22,8 +22,8 @@ import os
 import re
 import sys
 import hashlib
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta, timezone
+from vancouver_time import to_utc_naive, vancouver_now
 from aliases import resolve_cinema_alias
 
 from dateutil import parser as dtparser
@@ -50,8 +50,8 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 DATA_DIR = os.path.join(PROJECT_ROOT, "data", "latest")
 # DATA_DIR = os.path.join(PROJECT_ROOT, "data", "test")
 
-LOCAL_TZ = ZoneInfo("America/Vancouver")
-UTC = ZoneInfo("UTC")
+# Vancouver time is handled by vancouver_time.py (pins BC's permanent UTC-7;
+# do not use ZoneInfo("America/Vancouver") directly — host tzdata may be stale).
 
 
 # =========================
@@ -111,7 +111,7 @@ def infer_show_year_from_month(date_str: str, base_year: int) -> int:
         # If parsing fails, just fall back to base_year.
         return base_year
 
-    now = datetime.now(LOCAL_TZ)
+    now = vancouver_now()
     current_month = now.month
 
     year = base_year
@@ -143,10 +143,8 @@ def parse_year(s: str | int | None) -> int | None:
 
 
 def to_utc(local_dt: datetime) -> datetime:
-    """Convert localized datetime -> naive UTC (DATETIME in DB)."""
-    if local_dt.tzinfo is None:
-        local_dt = local_dt.replace(tzinfo=LOCAL_TZ)
-    return local_dt.astimezone(UTC).replace(tzinfo=None)
+    """Convert Vancouver local datetime -> naive UTC (DATETIME in DB)."""
+    return to_utc_naive(local_dt)
 
 
 def guess_end(start_utc: datetime, runtime_min: int | None) -> datetime:
@@ -392,14 +390,13 @@ def parse_dt_viff(date_str: str, time_str: str, year_hint: int | None) -> dateti
       - 'Fri Nov 08'
       - 'Thu Jan 02'
 
-    year_hint comes from the caller (typically current year in LOCAL_TZ),
+    year_hint comes from the caller (typically current year in Vancouver),
     but we adjust it for cross-year schedules using infer_show_year_from_month.
     """
     t = normalize_ampm(time_str)
 
     # Fall back to current local year if no hint is given.
-    base_year = year_hint if year_hint is not None else datetime.now(
-        LOCAL_TZ).year
+    base_year = year_hint if year_hint is not None else vancouver_now().year
     year_for_show = infer_show_year_from_month(date_str, base_year)
 
     try:
@@ -442,8 +439,7 @@ def parse_dt_rio(date_str: str, time_str: str, year_hint: int | None) -> datetim
     # Legacy fallback — pre-API-migration raw JSON.
     t = normalize_ampm(time_str).replace(" ", "")
 
-    base_year = year_hint if year_hint is not None else datetime.now(
-        LOCAL_TZ).year
+    base_year = year_hint if year_hint is not None else vancouver_now().year
     year_for_show = infer_show_year_from_month(date_str, base_year)
 
     try:
@@ -487,7 +483,7 @@ def load_source(
         (default_cid, source_name, json.dumps(rows, ensure_ascii=False)),
     )
 
-    loaded_at_utc = datetime.now(UTC).replace(tzinfo=None)
+    loaded_at_utc = datetime.now(timezone.utc).replace(tzinfo=None)
 
     # Clear staging for this source
     cur.execute("DELETE FROM stg_screening WHERE source = %s", (source_name,))
@@ -628,7 +624,7 @@ def load_viff(cur, path):
         "VIFF Centre",
         "https://viff.org",
         parse_dt_viff,
-        datetime.now(LOCAL_TZ).year,
+        vancouver_now().year,
     )
 
 
@@ -640,7 +636,7 @@ def load_rio(cur, path):
         "Rio Theatre",
         "https://riotheatre.ca",
         parse_dt_rio,
-        datetime.now(LOCAL_TZ).year,
+        vancouver_now().year,
     )
 
 

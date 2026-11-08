@@ -79,7 +79,7 @@ Decisions: accent = salmon `#e98f76`; light theme only for now (dark mode deferr
 - [ ] Expose header height as a `--header-h` CSS variable. Replace `scroll-mt-28`, `md:top-30` and `7rem` with it.
 - [ ] Use relative or responsive poster sizes (`FilmListView.tsx:71`, `FilmHeader.tsx:86`). Reduce padding (`px-6`) on mobile.
 - [ ] Verify at 375 / 768 / 1280 widths: no sideways scrolling. (Observed: at 1024px `scrollWidth` is 1040 — likely the nav `-mx-4` row.)
-- [ ] Pre-existing hydration mismatch in `ResultsTable` showtimes (server renders a different time than the client, e.g. 12:30 vs 1:30 PM) — format times in a fixed `America/Vancouver` zone on both sides.
+- [x] Showtime hydration mismatch (12:30 vs 1:30 PM) — root cause was BC's permanent UTC-7 + stale tzdata in Node; fixed in all layers. See TROUBLESHOOTING.md → "Showtimes off by one hour".
 
 ## Phase 3 — Cards and View Redesign
 

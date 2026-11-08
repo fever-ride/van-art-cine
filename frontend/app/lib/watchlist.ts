@@ -142,13 +142,6 @@ export function groupByFilm(items: WatchlistItem[]): Record<number, WatchlistIte
   }, {});
 }
 
-/** Format a UTC ISO string as local time with reasonable defaults. */
-export function formatLocal(dtUtcISO: string, opts: Intl.DateTimeFormatOptions = {}) {
-  const d = new Date(dtUtcISO);
-  const base: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' };
-  return new Intl.DateTimeFormat(undefined, { ...base, ...opts }).format(d);
-}
-
 /** Import a batch of screeningIds into the authenticated user's watchlist. */
 export async function apiImportWatchlist(
   screeningIds: number[]
