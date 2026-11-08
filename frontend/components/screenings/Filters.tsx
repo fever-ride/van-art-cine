@@ -28,43 +28,21 @@ export default function Filters({
   pending,
   cinemaOptions = [],
 }: Props) {
-  const [localUI, setLocalUI] = useState<Omit<UIState, 'q'>>({
-    cinemaIds: ui.cinemaIds,
-    genreValues: ui.genreValues,
-    languageValues: ui.languageValues,
-    eraValues: ui.eraValues,
-    minImdb: ui.minImdb,
-    minRt: ui.minRt,
-    filmId: ui.filmId,
-    date: ui.date,
-    from: ui.from,
-    to: ui.to,
-    sort: ui.sort,
-    order: ui.order,
-    mode: ui.mode,
-    limit: ui.limit,
-    view: ui.view,
-  });
+  // Draft of the sidebar's filters, committed to the URL only on Apply.
+  // It is re-synced from the URL only when the sidebar's own fields change
+  // *by value* (Apply, browser back/forward) — not on every render, and not
+  // when only the search term `q` changes. `ui` is re-parsed from the URL on
+  // every render (new object identity each time), so depending on `[ui]`
+  // wiped unapplied edits whenever the parent re-rendered, e.g. after a
+  // search commit. See TROUBLESHOOTING.md → "Unapplied filter edits vanish".
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { q: _q, ...uiFilters } = ui;
+  const filtersKey = JSON.stringify(uiFilters);
+  const [localUI, setLocalUI] = useState<Omit<UIState, 'q'>>(uiFilters);
 
   useEffect(() => {
-    setLocalUI({
-      cinemaIds: ui.cinemaIds,
-      genreValues: ui.genreValues,
-      languageValues: ui.languageValues,
-      eraValues: ui.eraValues,
-      minImdb: ui.minImdb,
-      minRt: ui.minRt,
-      filmId: ui.filmId,
-      date: ui.date,
-      from: ui.from,
-      to: ui.to,
-      sort: ui.sort,
-      order: ui.order,
-      mode: ui.mode,
-      limit: ui.limit,
-      view: ui.view,
-    });
-  }, [ui]);
+    setLocalUI(JSON.parse(filtersKey));
+  }, [filtersKey]);
 
   const [localQ, setLocalQ] = useState(ui.q);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);

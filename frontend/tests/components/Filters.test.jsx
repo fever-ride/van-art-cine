@@ -305,4 +305,39 @@ describe('Filters component', () => {
     expect(resetButton).toBeDisabled();
     expect(applyButton).toBeDisabled();
   });
+
+  describe('unapplied draft survives re-renders', () => {
+    const cinemas = [
+      { id: 1, name: 'Rio Theatre' },
+      { id: 2, name: 'VIFF Centre' },
+    ];
+    const tickRio = () => fireEvent.click(screen.getByLabelText(/Rio Theatre/));
+    const rioBox = () => screen.getByLabelText(/Rio Theatre/);
+
+    test('re-render with an equal (new-identity) ui keeps the draft', () => {
+      const props = { setUI: jest.fn(), onBeforeCommit: jest.fn(), cinemaOptions: cinemas };
+      const { rerender } = render(<Filters ui={makeUI()} {...props} />);
+      tickRio();
+      expect(rioBox()).toBeChecked();
+      rerender(<Filters ui={makeUI()} {...props} />);
+      expect(rioBox()).toBeChecked();
+    });
+
+    test('a search-only URL change (q) keeps the draft', () => {
+      const props = { setUI: jest.fn(), onBeforeCommit: jest.fn(), cinemaOptions: cinemas };
+      const { rerender } = render(<Filters ui={makeUI()} {...props} />);
+      tickRio();
+      rerender(<Filters ui={makeUI({ q: 'the' })} {...props} />);
+      expect(rioBox()).toBeChecked();
+    });
+
+    test('a real filter change from the URL (Apply / back) re-syncs the draft', () => {
+      const props = { setUI: jest.fn(), onBeforeCommit: jest.fn(), cinemaOptions: cinemas };
+      const { rerender } = render(<Filters ui={makeUI()} {...props} />);
+      tickRio();
+      rerender(<Filters ui={makeUI({ cinemaIds: ['2'] })} {...props} />);
+      expect(rioBox()).not.toBeChecked();
+      expect(screen.getByLabelText(/VIFF Centre/)).toBeChecked();
+    });
+  });
 });

@@ -74,6 +74,7 @@ Decisions: accent = apricot `#F2A65A` (salmon `#e98f76` was dropped — too clos
 
 - [ ] NavBar: consistent `px-4 md:px-6`. Remove the overflow caused by `-mx-4`. On narrow screens, collapse auth buttons into an icon or menu. Add an edge fade to the scrolling menu row so users can tell it scrolls.
 - [ ] SignInDropdown: on mobile, switch to a full-screen or bottom sheet that does not depend on a fixed `top`. Make it scrollable when the keyboard is open.
+- [ ] Split search out of the filter sidebar: one shared search bar above both views (instant search), sidebar keeps Apply-based filters only. Merge the duplicated 350ms debounce (`Filters.tsx`, `ScreeningsFilterPanel.tsx`).
 - [ ] Table-view filters: use the same mobile bottom sheet as film view (reuse `MobileFilterSheet`), with a sticky "Filters (n)" button.
 - [ ] Tap targets ≥ 44px: expand button, WatchlistButton, checkboxes/radios (enlarge the clickable area via the label), sheet close button.
 - [ ] Expose header height as a `--header-h` CSS variable. Replace `scroll-mt-28`, `md:top-30` and `7rem` with it.
@@ -122,7 +123,7 @@ Our state needs fall into three groups:
 
 ### Steps
 
-- [ ] 4.0 Fix the `Filters.tsx` `useEffect([ui])` bug (memoize `ui`, or compare by value) and merge the duplicated search debounce into one hook. **Independent of Redux; do first.**
+- [x] 4.0 Fix the `Filters.tsx` `useEffect([ui])` bug — now syncs by value on sidebar-owned fields only. See TROUBLESHOOTING.md → "Unapplied filter edits vanish". (Debounce merge moved to Phase 2 with the search-bar split.)
 - [ ] 4.1 Add `@reduxjs/toolkit` and `react-redux`. Create:
   - `lib/store/store.ts` (`makeStore`)
   - `lib/store/hooks.ts` (typed `useAppDispatch` / `useAppSelector`)

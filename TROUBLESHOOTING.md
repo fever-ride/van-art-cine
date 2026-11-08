@@ -870,3 +870,81 @@ Existing DB rows did not need migration. They were already stored with UTC-7.
   the new transition.
 - Upgrading Node/Python helps but is not enough. We cannot control visitors'
   device tzdata.
+
+## Unapplied filter edits vanish when you search (Showtimes sidebar)
+
+### Symptom
+
+Found on 2026-11-08. Reproduced in the browser:
+
+1. In the Showtimes view, tick two cinemas in the sidebar. Don't press Apply.
+2. Type `the` in the search box.
+3. About 0.35s later the search commits and the URL becomes `?q=the`. Both
+   ticks disappear: 2 checked → 0.
+
+No data is wrong, but the user's work is silently thrown away.
+
+### Cause
+
+`components/screenings/Filters.tsx` keeps a **draft** (`localUI`) of the
+sidebar filters. The draft is only written to the URL when the user presses
+Apply. A sync effect was meant to refresh the draft when the URL's filters
+really change, e.g. after Apply or browser back/forward:
+
+```ts
+useEffect(() => { setLocalUI({ ...ui }); }, [ui]);
+```
+
+React compares effect dependencies by **identity** (`Object.is`), not by
+content. But `useScreeningsUI` re-parses `ui` from the URL on **every
+render**:
+
+```ts
+const ui = parseUIStateFromSearchParams(searchParams);
+```
+
+So `ui` is a new object every time, even when its content is identical. The
+effect therefore ran after **every** parent re-render and overwrote the draft
+with the URL's (unticked) state.
+
+A search commit is the most common trigger, because it changes the URL and
+re-renders the page. Any other re-render does the same, for example cinemas
+or facets finishing loading.
+
+The search box being inside the sidebar is a UX issue. It is not the cause:
+moving the box elsewhere would still re-render the page and wipe the draft.
+
+### Fix
+
+Sync **by value**, and only on the fields the sidebar owns. The search term
+`q` is excluded:
+
+```ts
+const { q: _q, ...uiFilters } = ui;
+const filtersKey = JSON.stringify(uiFilters);   // content "fingerprint"
+useEffect(() => { setLocalUI(JSON.parse(filtersKey)); }, [filtersKey]);
+```
+
+| Situation | Sidebar fields changed? | Draft |
+|---|---|---|
+| Plain re-render | no | kept |
+| Search commits (`q` changes) | no | kept |
+| Apply | yes | re-synced (matches anyway) |
+| Browser back to different filters | yes | re-synced |
+
+Tests: `frontend/tests/components/Filters.test.jsx` → "unapplied draft
+survives re-renders". The tests cover a same-content re-render, a search-only
+change, and a real filter change. The first two fail on the old code.
+
+### Prevention / lessons
+
+- Objects derived on every render (parsed from the URL, built inline) must not
+  be used as `useEffect` / `useMemo` dependencies directly. Depend on a
+  primitive key (a serialized string, an id) or memoize the object at its
+  source.
+- When local "draft" state mirrors external state, sync only on the specific
+  external fields the draft owns. Otherwise unrelated updates clobber it.
+- Follow-up (frontend redesign Phase 2): move the search box out of the
+  sidebar into one shared search bar above both views. Merge the duplicated
+  350ms debounce in `Filters.tsx` and `ScreeningsFilterPanel.tsx` at the same
+  time.
