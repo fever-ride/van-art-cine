@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import type { UIState, SetUI } from '@/lib/hooks/useScreeningsUI';
+import type { UIState, SetFilters } from '@/lib/hooks/useScreeningsUI';
 import { todayYmdInDisplayTimezone } from '@/app/lib/formatDate';
 import ScreeningDateInput from '@/components/screenings/ScreeningDateInput';
 import { Card, Button } from '@/components/ui';
@@ -10,11 +10,11 @@ type CinemaOption = { id: number; name: string };
 
 type Props = {
   ui: UIState;
-  setUI: SetUI;
+  setFilters: SetFilters;
   onBeforeCommit: () => void;
   loading?: boolean;
-  /** True while a setUI-triggered navigation (Apply, Reset) is in flight,
-   * so the Apply button can show it's working. */
+  /** True while an Apply/Reset from the filters is navigating
+   * (`pending.filters` — its own transition, never search's). */
   pending?: boolean;
   cinemaOptions?: CinemaOption[];
   /** Called after Apply or Reset commits (e.g. to close the mobile sheet). */
@@ -25,7 +25,7 @@ type Props = {
 
 export default function Filters({
   ui,
-  setUI,
+  setFilters,
   onBeforeCommit,
   loading,
   pending,
@@ -71,10 +71,10 @@ export default function Filters({
     return () => resizeObserver.disconnect();
   }, [cinemaOptions]);
 
-  // Search is committed separately (SearchBar); Apply/Reset only touch the
-  // sidebar's own fields, so they leave the current search term alone.
+  // Search is committed separately (SearchBar → setSearch); setFilters can
+  // only write filter fields, so Apply/Reset never touch the search term.
   const commitApply = () => {
-    setUI({ ...localUI });
+    setFilters({ ...localUI });
     onCommitted?.();
   };
 
@@ -96,7 +96,7 @@ export default function Filters({
       limit: ui.limit,
       view: ui.view,
     });
-    setUI({
+    setFilters({
       cinemaIds: [],
       genreValues: [],
       languageValues: [],
@@ -306,7 +306,7 @@ export default function Filters({
           }}
           disabled={loading || pending}
         >
-          {loading || pending ? 'Applying…' : 'Apply'}
+          {pending ? 'Applying…' : 'Apply'}
         </Button>
       </div>
     </Card>

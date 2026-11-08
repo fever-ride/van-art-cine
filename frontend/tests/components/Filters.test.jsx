@@ -35,13 +35,13 @@ describe('Filters component', () => {
 
   test('renders basic controls (cinemas, sort, order, mode, buttons) and no search box', () => {
     const ui = makeUI();
-    const setUI = jest.fn();
+    const setFilters = jest.fn();
     const onBeforeCommit = jest.fn();
 
     render(
       <Filters
         ui={ui}
-        setUI={setUI}
+        setFilters={setFilters}
         onBeforeCommit={onBeforeCommit}
         cinemaOptions={[]}
       />
@@ -73,7 +73,7 @@ describe('Filters component', () => {
 
   test('selecting and clearing cinemas updates the summary text', () => {
     const ui = makeUI();
-    const setUI = jest.fn();
+    const setFilters = jest.fn();
     const onBeforeCommit = jest.fn();
 
     const cinemaOptions = [
@@ -84,7 +84,7 @@ describe('Filters component', () => {
     render(
       <Filters
         ui={ui}
-        setUI={setUI}
+        setFilters={setFilters}
         onBeforeCommit={onBeforeCommit}
         cinemaOptions={cinemaOptions}
       />
@@ -115,15 +115,15 @@ describe('Filters component', () => {
     ).toBeInTheDocument();
   });
 
-  test('Apply sends only the sidebar filters (never q) via setUI and calls onBeforeCommit', () => {
+  test('Apply sends only the sidebar filters (never q) via setFilters and calls onBeforeCommit', () => {
     const ui = makeUI({ q: 'hello' });
-    const setUI = jest.fn();
+    const setFilters = jest.fn();
     const onBeforeCommit = jest.fn();
 
     render(
       <Filters
         ui={ui}
-        setUI={setUI}
+        setFilters={setFilters}
         onBeforeCommit={onBeforeCommit}
         cinemaOptions={[]}
       />
@@ -139,18 +139,18 @@ describe('Filters component', () => {
     const applyButton = screen.getByRole('button', { name: 'Apply' });
     fireEvent.click(applyButton);
 
-    expect(setUI).toHaveBeenCalledTimes(1);
+    expect(setFilters).toHaveBeenCalledTimes(1);
     const { q, ...sidebarFields } = ui;
-    expect(setUI).toHaveBeenCalledWith({
+    expect(setFilters).toHaveBeenCalledWith({
       ...sidebarFields,
       sort: 'title',
       order: 'desc',
     });
-    expect(setUI.mock.calls[0][0]).not.toHaveProperty('q');
+    expect(setFilters.mock.calls[0][0]).not.toHaveProperty('q');
     expect(onBeforeCommit).toHaveBeenCalledTimes(1);
   });
 
-  test('Reset button resets filters to default values and calls setUI + onBeforeCommit', () => {
+  test('Reset button resets filters to default values and calls setFilters + onBeforeCommit', () => {
     const ui = makeUI({
       q: 'something',
       cinemaIds: ['1', '2'],
@@ -164,13 +164,13 @@ describe('Filters component', () => {
       limit: 99,
     });
 
-    const setUI = jest.fn();
+    const setFilters = jest.fn();
     const onBeforeCommit = jest.fn();
 
     render(
       <Filters
         ui={ui}
-        setUI={setUI}
+        setFilters={setFilters}
         onBeforeCommit={onBeforeCommit}
         cinemaOptions={[]}
       />
@@ -179,10 +179,10 @@ describe('Filters component', () => {
     const resetButton = screen.getByRole('button', { name: 'Reset' });
     fireEvent.click(resetButton);
 
-    expect(setUI).toHaveBeenCalledTimes(1);
+    expect(setFilters).toHaveBeenCalledTimes(1);
     // Reset clears the sidebar only; the search term is left alone.
-    expect(setUI.mock.calls[0][0]).not.toHaveProperty('q');
-    expect(setUI).toHaveBeenCalledWith({
+    expect(setFilters.mock.calls[0][0]).not.toHaveProperty('q');
+    expect(setFilters).toHaveBeenCalledWith({
       cinemaIds: [],
       genreValues: [],
       languageValues: [],
@@ -208,13 +208,13 @@ describe('Filters component', () => {
 
   test('renders custom date pickers instead of native date inputs', () => {
     const ui = makeUI({ mode: 'range', from: '2026-06-10', to: '2026-06-12' });
-    const setUI = jest.fn();
+    const setFilters = jest.fn();
     const onBeforeCommit = jest.fn();
 
     const { container } = render(
       <Filters
         ui={ui}
-        setUI={setUI}
+        setFilters={setFilters}
         onBeforeCommit={onBeforeCommit}
         cinemaOptions={[]}
       />
@@ -227,13 +227,13 @@ describe('Filters component', () => {
 
   test('switching between Single date and Date range toggles date inputs', () => {
     const ui = makeUI({ mode: 'single' });
-    const setUI = jest.fn();
+    const setFilters = jest.fn();
     const onBeforeCommit = jest.fn();
 
     const { container } = render(
       <Filters
         ui={ui}
-        setUI={setUI}
+        setFilters={setFilters}
         onBeforeCommit={onBeforeCommit}
         cinemaOptions={[]}
       />
@@ -255,15 +255,15 @@ describe('Filters component', () => {
     ).toBe(2);
   });
 
-  test('buttons are disabled and label changes when loading is true', () => {
+  test('buttons are disabled (label unchanged) while cinemas are loading', () => {
     const ui = makeUI();
-    const setUI = jest.fn();
+    const setFilters = jest.fn();
     const onBeforeCommit = jest.fn();
 
     render(
       <Filters
         ui={ui}
-        setUI={setUI}
+        setFilters={setFilters}
         onBeforeCommit={onBeforeCommit}
         cinemaOptions={[]}
         loading={true}
@@ -271,10 +271,18 @@ describe('Filters component', () => {
     );
 
     const resetButton = screen.getByRole('button', { name: 'Reset' });
-    const applyButton = screen.getByRole('button', { name: 'Applying…' });
+    const applyButton = screen.getByRole('button', { name: 'Apply' });
 
     expect(resetButton).toBeDisabled();
     expect(applyButton).toBeDisabled();
+  });
+
+  test('"Applying…" shows exactly while its own pending flag (pending.filters) is true', () => {
+    const base = { ui: makeUI(), setFilters: jest.fn(), onBeforeCommit: jest.fn(), cinemaOptions: [] };
+    const { rerender } = render(<Filters {...base} pending={false} />);
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled();
+    rerender(<Filters {...base} pending={true} />);
+    expect(screen.getByRole('button', { name: 'Applying…' })).toBeDisabled();
   });
 
   describe('unapplied draft survives re-renders', () => {
@@ -286,7 +294,7 @@ describe('Filters component', () => {
     const rioBox = () => screen.getByLabelText(/Rio Theatre/);
 
     test('re-render with an equal (new-identity) ui keeps the draft', () => {
-      const props = { setUI: jest.fn(), onBeforeCommit: jest.fn(), cinemaOptions: cinemas };
+      const props = { setFilters: jest.fn(), onBeforeCommit: jest.fn(), cinemaOptions: cinemas };
       const { rerender } = render(<Filters ui={makeUI()} {...props} />);
       tickRio();
       expect(rioBox()).toBeChecked();
@@ -295,7 +303,7 @@ describe('Filters component', () => {
     });
 
     test('a search-only URL change (q) keeps the draft', () => {
-      const props = { setUI: jest.fn(), onBeforeCommit: jest.fn(), cinemaOptions: cinemas };
+      const props = { setFilters: jest.fn(), onBeforeCommit: jest.fn(), cinemaOptions: cinemas };
       const { rerender } = render(<Filters ui={makeUI()} {...props} />);
       tickRio();
       rerender(<Filters ui={makeUI({ q: 'the' })} {...props} />);
@@ -303,7 +311,7 @@ describe('Filters component', () => {
     });
 
     test('a real filter change from the URL (Apply / back) re-syncs the draft', () => {
-      const props = { setUI: jest.fn(), onBeforeCommit: jest.fn(), cinemaOptions: cinemas };
+      const props = { setFilters: jest.fn(), onBeforeCommit: jest.fn(), cinemaOptions: cinemas };
       const { rerender } = render(<Filters ui={makeUI()} {...props} />);
       tickRio();
       rerender(<Filters ui={makeUI({ cinemaIds: ['2'] })} {...props} />);

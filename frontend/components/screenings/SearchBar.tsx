@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { SetUI } from '@/lib/hooks/useScreeningsUI';
+import type { SetSearch } from '@/lib/hooks/useScreeningsUI';
 import { Input } from '@/components/ui';
 
 export const SEARCH_DEBOUNCE_MS = 350;
@@ -9,8 +9,9 @@ export const SEARCH_DEBOUNCE_MS = 350;
 type Props = {
   /** Current committed search term (from the URL). */
   q: string;
-  setUI: SetUI;
-  /** True while a setUI-triggered navigation is in flight. */
+  setSearch: SetSearch;
+  /** True while a search this box committed is navigating
+   * (`pending.search` — its own transition, never the filters'). */
   pending?: boolean;
   /** Called right before the debounced search commits. Showtimes view uses
    * it to capture row height so a shrinking result set doesn't strand the
@@ -25,7 +26,7 @@ type Props = {
  * them. Keeping one implementation also replaced two copies of this
  * debounce. See TROUBLESHOOTING.md → "Unapplied filter edits vanish".
  */
-export default function SearchBar({ q, setUI, pending, onBeforeCommit }: Props) {
+export default function SearchBar({ q, setSearch, pending, onBeforeCommit }: Props) {
   const [localQ, setLocalQ] = useState(q);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -46,9 +47,7 @@ export default function SearchBar({ q, setUI, pending, onBeforeCommit }: Props) 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       onBeforeCommit?.();
-      // replace: true — fires as the user pauses typing, not a discrete
-      // action, so it shouldn't add a history entry per keystroke group.
-      setUI({ q: value }, { replace: true });
+      setSearch(value);
     }, SEARCH_DEBOUNCE_MS);
   };
 

@@ -26,55 +26,81 @@ describe('useScreeningsUI', () => {
     expect(result.current.ui.sort).toBe('title');
   });
 
-  test('setUI with a patch pushes a URL reflecting the merged state, not just the patch', () => {
+  describe('setFilters (filter sidebar / sheet / facets)', () => {
+    test('pushes a URL with the merged state, keeping the current search', () => {
+      mockSearchParams = new URLSearchParams('q=Ozu');
+      const { result } = renderHook(() => useScreeningsUI());
+      act(() => result.current.setFilters({ sort: 'title' }));
+
+      expect(push).toHaveBeenCalledTimes(1);
+      expect(push.mock.calls[0][0]).toContain('q=Ozu');
+      expect(push.mock.calls[0][0]).toContain('sort=title');
+      expect(push.mock.calls[0][1]).toEqual({ scroll: false });
+      expect(replace).not.toHaveBeenCalled();
+    });
+
+    test('function updater receives the current filter fields', () => {
+      mockSearchParams = new URLSearchParams('cinema_ids=1');
+      const { result } = renderHook(() => useScreeningsUI());
+      act(() => result.current.setFilters((prev) => ({ cinemaIds: [...prev.cinemaIds, '2'] })));
+      expect(decodeURIComponent(push.mock.calls[0][0])).toMatch(/cinema_ids=1,2|cinema_ids=1&cinema_ids=2/);
+    });
+
+    test('can never change q or view, even if passed at runtime', () => {
+      mockSearchParams = new URLSearchParams('q=Ozu&view=film');
+      const { result } = renderHook(() => useScreeningsUI());
+      act(() =>
+        // @ts-expect-error — q/view are not part of FiltersState
+        result.current.setFilters({ sort: 'title', q: 'HACK', view: 'table' })
+      );
+      const url = push.mock.calls[0][0] as string;
+      expect(url).toContain('q=Ozu');
+      expect(url).not.toContain('HACK');
+      expect(url).toContain('view=film');
+    });
+
+    test('drops any existing page param', () => {
+      mockSearchParams = new URLSearchParams('page=3');
+      const { result } = renderHook(() => useScreeningsUI());
+      act(() => result.current.setFilters({ sort: 'title' }));
+      expect(push.mock.calls[0][0]).not.toContain('page=');
+    });
+  });
+
+  describe('setSearch (search box)', () => {
+    test('replaces (no history entry) and changes only q', () => {
+      mockSearchParams = new URLSearchParams('sort=title&cinema_ids=1');
+      const { result } = renderHook(() => useScreeningsUI());
+      act(() => result.current.setSearch('Ozu'));
+
+      expect(replace).toHaveBeenCalledTimes(1);
+      expect(push).not.toHaveBeenCalled();
+      const url = replace.mock.calls[0][0] as string;
+      expect(url).toContain('q=Ozu');
+      expect(url).toContain('sort=title');
+      expect(url).toContain('cinema_ids=1');
+      expect(replace.mock.calls[0][1]).toEqual({ scroll: false });
+    });
+
+    test('clearing back to all defaults leaves just the pathname', () => {
+      mockSearchParams = new URLSearchParams('q=Ozu');
+      const { result } = renderHook(() => useScreeningsUI());
+      act(() => result.current.setSearch(''));
+      expect(replace).toHaveBeenCalledWith('/', { scroll: false });
+    });
+  });
+
+  test('setView pushes only the view change', () => {
     mockSearchParams = new URLSearchParams('q=Ozu');
     const { result } = renderHook(() => useScreeningsUI());
-
-    act(() => {
-      result.current.setUI({ sort: 'title' });
-    });
-
-    expect(push).toHaveBeenCalledTimes(1);
-    const pushedUrl = push.mock.calls[0][0];
-    expect(pushedUrl).toContain('q=Ozu');
-    expect(pushedUrl).toContain('sort=title');
+    act(() => result.current.setView('film'));
+    expect(push.mock.calls[0][0]).toContain('view=film');
+    expect(push.mock.calls[0][0]).toContain('q=Ozu');
   });
 
-  test('setUI with a function updater receives the current ui to update from', () => {
-    mockSearchParams = new URLSearchParams('cinema_ids=3');
+  test('pending flags are separate per owner and all false at rest', () => {
     const { result } = renderHook(() => useScreeningsUI());
-
-    act(() => {
-      result.current.setUI((prev) => ({
-        ...prev,
-        cinemaIds: [...prev.cinemaIds, '5'],
-      }));
-    });
-
-    expect(push).toHaveBeenCalledTimes(1);
-    expect(push.mock.calls[0][0]).toContain('cinema_ids=3%2C5');
-  });
-
-  test('setUI back to all default values pushes just the pathname, no query string', () => {
-    mockSearchParams = new URLSearchParams('q=Ozu');
-    const { result } = renderHook(() => useScreeningsUI());
-
-    act(() => {
-      result.current.setUI({ q: '' });
-    });
-
-    expect(push).toHaveBeenCalledWith('/', { scroll: false });
-  });
-
-  test('setUI drops any existing page param, resetting pagination on a filter change', () => {
-    mockSearchParams = new URLSearchParams('page=3');
-    const { result } = renderHook(() => useScreeningsUI());
-
-    act(() => {
-      result.current.setUI({ q: 'Ozu' });
-    });
-
-    expect(push.mock.calls[0][0]).not.toContain('page=');
+    expect(result.current.pending).toEqual({ search: false, filters: false, view: false, any: false });
   });
 
   test('defaultValues fill in fields the URL does not specify', () => {
@@ -91,40 +117,4 @@ describe('useScreeningsUI', () => {
     expect(result.current.ui.sort).toBe('imdb');
   });
 
-  test('setUI with { replace: true } uses router.replace instead of push', () => {
-    mockSearchParams = new URLSearchParams('');
-    const { result } = renderHook(() => useScreeningsUI());
-
-    act(() => {
-      result.current.setUI({ q: 'Ozu' }, { replace: true });
-    });
-
-    expect(replace).toHaveBeenCalledTimes(1);
-    expect(replace.mock.calls[0][0]).toContain('q=Ozu');
-    expect(replace.mock.calls[0][1]).toEqual({ scroll: false });
-    expect(push).not.toHaveBeenCalled();
-  });
-
-  test('setUI never lets the navigation scroll back to the top of the page', () => {
-    mockSearchParams = new URLSearchParams('');
-    const { result } = renderHook(() => useScreeningsUI());
-
-    act(() => {
-      result.current.setUI({ q: 'Ozu' });
-    });
-
-    expect(push.mock.calls[0][1]).toEqual({ scroll: false });
-  });
-
-  test('setUI without options still pushes, so it stays back-button-able', () => {
-    mockSearchParams = new URLSearchParams('');
-    const { result } = renderHook(() => useScreeningsUI());
-
-    act(() => {
-      result.current.setUI({ q: 'Ozu' });
-    });
-
-    expect(push).toHaveBeenCalledTimes(1);
-    expect(replace).not.toHaveBeenCalled();
-  });
 });

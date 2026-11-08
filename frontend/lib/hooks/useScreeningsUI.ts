@@ -21,90 +21,106 @@ import {
  *
  * `ui` is derived fresh from the current URL on every render, via
  * `parseUIStateFromSearchParams`, rather than owned as local component
- * state. `setUI` merges the given patch onto the current `ui` and
- * navigates to the resulting URL with `router.push`, rather than calling a
- * state setter.
+ * state. The URL is the one shared source of truth for the results.
  *
- * Callers such as `Filters.tsx` are unaffected: they still read `ui` and
- * call `setUI` exactly as before, unaware that a call now results in a
- * real navigation instead of a local state update.
+ * Writes are split by OWNER, each with its own React transition, so each
+ * control gets its own pending flag and can only write its own fields:
+ *
+ * - `setSearch(q)`  — the search box. Writes only `q`. `router.replace`
+ *   (fires as typing pauses; shouldn't add a history entry per keystroke).
+ * - `setFilters(p)` — filter sidebar / sheet / film-view facets. Writes
+ *   everything except `q` and `view`. `router.push` (Apply is a discrete,
+ *   back-button-able action).
+ * - `setView(v)`    — the Movies/Showtimes toggle. Writes only `view`.
+ *
+ * `pending.search` / `pending.filters` / `pending.view` are true only
+ * while THAT owner's navigation is in flight; `pending.any` is for page
+ * level concerns (e.g. holding layout height during any refetch).
+ * Note: React currently entangles transitions that overlap in time, so if
+ * two owners navigate at the same moment both may report pending until
+ * both settle — that is accurate (both are waiting), not cross-talk.
+ *
+ * Every write starts back at page 1 (drops `page`) and never scrolls to
+ * the top (`scroll: false`).
  */
 
 export type { Mode, UIState };
 
-export type SetUIOptions = {
-  /**
-   * Use `router.replace` instead of `router.push` for this update, so it
-   * does not add a browser history entry. For automatic follow-ups to
-   * typing (debounced search), not for a discrete user action like
-   * clicking Apply or Reset, which should stay push-and-back-button-able.
-   */
-  replace?: boolean;
+/** Fields owned by the filter UIs (everything but the search term and view). */
+export type FiltersState = Omit<UIState, 'q' | 'view'>;
+
+export type SetFilters = (
+  patch: Partial<FiltersState> | ((s: FiltersState) => Partial<FiltersState>)
+) => void;
+export type SetSearch = (q: string) => void;
+export type SetView = (view: UIState['view']) => void;
+
+export type ScreeningsPending = {
+  search: boolean;
+  filters: boolean;
+  view: boolean;
+  any: boolean;
 };
 
-/**
- * State updater function
- * Accepts either a partial state object or an updater function
- */
-export type SetUI = (
-  patch: Partial<UIState> | ((s: UIState) => UIState),
-  options?: SetUIOptions
-) => void;
+function filtersOf(ui: UIState): FiltersState {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { q, view, ...rest } = ui;
+  return rest;
+}
 
 /**
- * Hook for managing screenings page UI state
- *
  * @param defaultValues - Optional fallback values for fields the URL does
  * not specify, in place of the global default. A value the URL actually
  * specifies always wins over this.
- * @returns Object with current state, setter function, and `isPending`,
- * true while a `setUI`-triggered navigation is still in flight, for
- * callers that want to show a loading state during it.
- *
- * @example
- * ```tsx
- * const { ui, setUI } = useScreeningsUI({ mode: 'range' });
- *
- * // Update with object
- * setUI({ q: 'Parasite' });
- *
- * // Update with function
- * setUI(s => ({ ...s, limit: s.limit + 20 }));
- * ```
  */
 export function useScreeningsUI(defaultValues?: Partial<UIState>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const [searchPending, startSearch] = useTransition();
+  const [filtersPending, startFilters] = useTransition();
+  const [viewPending, startView] = useTransition();
 
   const ui = parseUIStateFromSearchParams(searchParams, defaultValues);
 
-  const setUI = useCallback<SetUI>(
-    (patch, options) => {
-      const next = typeof patch === 'function' ? patch(ui) : { ...ui, ...patch };
-      const params = serializeUIStateToSearchParams(next);
-      const qs = params.toString();
+  const navigate = useCallback(
+    (next: UIState, mode: 'push' | 'replace', start: (cb: () => void) => void) => {
+      const qs = serializeUIStateToSearchParams(next).toString();
       const url = qs ? `${pathname}?${qs}` : pathname;
-      // Deliberately does not preserve an existing `page` param: changing
-      // any filter starts back at page 1, since whatever page of the old
-      // result set the user was on may not correspond to anything in the
-      // new one.
-      // scroll: false — this is a filter/search update, not a fresh page
-      // visit. Without it, Next.js's default post-navigation scroll resets
-      // to the very top of the page (back past the hero banner) on every
-      // commit, the same jump goToPage in ScreeningsPageClient.tsx already
-      // opts out of for pagination.
-      startTransition(() => {
-        if (options?.replace) {
-          router.replace(url, { scroll: false });
-        } else {
-          router.push(url, { scroll: false });
-        }
+      start(() => {
+        router[mode](url, { scroll: false });
       });
     },
-    [ui, pathname, router]
+    [pathname, router]
   );
 
-  return { ui, setUI, isPending };
+  const setSearch = useCallback<SetSearch>(
+    (q) => navigate({ ...ui, q }, 'replace', startSearch),
+    [ui, navigate]
+  );
+
+  const setFilters = useCallback<SetFilters>(
+    (patch) => {
+      const resolved = typeof patch === 'function' ? patch(filtersOf(ui)) : patch;
+      // Runtime guard on top of the type: filters can never touch q / view.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { q, view, ...owned } = resolved as Partial<UIState>;
+      navigate({ ...ui, ...owned }, 'push', startFilters);
+    },
+    [ui, navigate]
+  );
+
+  const setView = useCallback<SetView>(
+    (view) => navigate({ ...ui, view }, 'push', startView),
+    [ui, navigate]
+  );
+
+  const pending: ScreeningsPending = {
+    search: searchPending,
+    filters: filtersPending,
+    view: viewPending,
+    any: searchPending || filtersPending || viewPending,
+  };
+
+  return { ui, setSearch, setFilters, setView, pending };
 }
