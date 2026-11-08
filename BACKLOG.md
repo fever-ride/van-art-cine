@@ -906,3 +906,46 @@ into SQL (`GROUP BY` with `COUNT`) or cache the result server-side for a
 short TTL instead of recomputing on every request.
 
 **Priority:** Low. Same trigger condition as PERF-2.
+
+---
+
+## Testing Gaps
+
+Places that are verified by hand today but have no automated test.
+
+### Still deferred
+
+---
+
+#### TEST-1. Add pytest coverage for the pipeline's Vancouver time conversion
+
+**Problem:**
+- `database/scripts/vancouver_time.py` pins Vancouver to UTC-7 from
+  2026-11-01. Python's own tzdata cannot be trusted for this; see
+  TROUBLESHOOTING.md → "Showtimes off by one hour".
+- `load_json.py` uses this helper to turn local showtimes into the UTC
+  values stored in the DB.
+- The helper was only checked by hand, with four one-off assertions:
+  - the VIFF case `2026-11-08 13:30 → 20:30Z`
+  - a winter 2027 date
+  - historical PST and PDT dates
+- `database/` has no test framework, so these checks do not run in CI.
+
+**Impact:**
+- If someone edits the helper, or switches back to
+  `ZoneInfo("America/Vancouver")`, every VIFF/Cinematheque showtime could be
+  stored one hour late, and nothing would catch it.
+- The frontend (`frontend/tests/lib/formatDate.test.ts`) and backend
+  (`backend/tests/utils/time.test.js`) equivalents are already tested.
+
+**Approach:**
+- Add pytest to `database/requirements.txt` and create `database/tests/`.
+- Cover `to_utc_naive`, `localize` and `vancouver_now` at these points:
+  - the VIFF regression
+  - the 2026-11-01 change day, including the 01:00–02:00 hour
+  - a winter 2027 date
+  - historical PST and PDT
+  - aware inputs passing through unchanged (the Rio ISO-offset path)
+- Run it as a step in `.github/workflows/pipeline.yml` before the scrapers.
+
+**Priority:** Medium. Low effort, and it guards data correctness.

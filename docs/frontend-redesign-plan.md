@@ -55,7 +55,7 @@ This plan has four phases. Phases 1–3 cover visuals and mobile. Phase 4 is the
 
 ## Phase 1 — Design Tokens, Fonts (light theme) ✅
 
-Decisions: accent = salmon `#e98f76`; light theme only for now (dark mode deferred, see below).
+Decisions: accent = apricot `#F2A65A` (salmon `#e98f76` was dropped — too close to Claude clay `#D97757`); light theme only for now (dark mode deferred, see below).
 
 - [x] Archivo (`wdth` axis) + Hanken Grotesk loaded once in `app/layout.tsx` via `next/font` (`--font-archivo` / `--font-hanken`); all per-module Noto/Archivo/Hanken loading removed; Arial override removed.
 - [x] Tokens rewritten in `globals.css` (ink on white, `--rule`, small radii 2–4px). New tokens: `accent-ink` (text on salmon fills), `accent-strong` (salmon-family text on white — salmon itself fails contrast as text), `rule`, `imdb`, `rt`.
@@ -152,6 +152,6 @@ Our state needs fall into three groups:
 
 ## Open Decisions
 
-- [x] Accent color — salmon
+- [x] Accent color — apricot `#F2A65A`
 - [ ] Whether Film view becomes the default homepage view
 - [ ] Dark mode: deferred; toggle vs. system-only still open
