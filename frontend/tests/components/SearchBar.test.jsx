@@ -1,40 +1,48 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import SearchBar, { SEARCH_DEBOUNCE_MS } from '@/components/screenings/SearchBar';
 
 describe('SearchBar', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  test('debounces typing into one setUI({ q }, { replace: true }), calling onBeforeCommit first', () => {
-    const setUI = jest.fn();
+  test('debounces typing into one setSearch(q), calling onBeforeCommit first', () => {
+    const setSearch = jest.fn();
     const onBeforeCommit = jest.fn();
-    render(<SearchBar q="" setUI={setUI} onBeforeCommit={onBeforeCommit} />);
+    render(<SearchBar q="" setSearch={setSearch} onBeforeCommit={onBeforeCommit} />);
 
     const input = screen.getByRole('searchbox', { name: 'Search films' });
     fireEvent.change(input, { target: { value: 'O' } });
     fireEvent.change(input, { target: { value: 'Ozu' } });
-    expect(setUI).not.toHaveBeenCalled();
+    expect(setSearch).not.toHaveBeenCalled();
 
     jest.advanceTimersByTime(SEARCH_DEBOUNCE_MS);
 
-    expect(setUI).toHaveBeenCalledTimes(1);
-    expect(setUI).toHaveBeenCalledWith({ q: 'Ozu' }, { replace: true });
+    expect(setSearch).toHaveBeenCalledTimes(1);
+    expect(setSearch).toHaveBeenCalledWith('Ozu');
     expect(onBeforeCommit).toHaveBeenCalledTimes(1);
-    expect(onBeforeCommit.mock.invocationCallOrder[0]).toBeLessThan(setUI.mock.invocationCallOrder[0]);
+    expect(onBeforeCommit.mock.invocationCallOrder[0]).toBeLessThan(setSearch.mock.invocationCallOrder[0]);
   });
 
   test('works without onBeforeCommit (Movies view)', () => {
-    const setUI = jest.fn();
-    render(<SearchBar q="" setUI={setUI} />);
+    const setSearch = jest.fn();
+    render(<SearchBar q="" setSearch={setSearch} />);
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Varda' } });
     jest.advanceTimersByTime(SEARCH_DEBOUNCE_MS);
-    expect(setUI).toHaveBeenCalledWith({ q: 'Varda' }, { replace: true });
+    expect(setSearch).toHaveBeenCalledWith('Varda');
   });
 
   test('follows external q changes (e.g. browser back)', () => {
-    const { rerender } = render(<SearchBar q="old" setUI={jest.fn()} />);
+    const { rerender } = render(<SearchBar q="old" setSearch={jest.fn()} />);
     expect(screen.getByRole('searchbox')).toHaveValue('old');
-    rerender(<SearchBar q="new" setUI={jest.fn()} />);
+    rerender(<SearchBar q="new" setSearch={jest.fn()} />);
     expect(screen.getByRole('searchbox')).toHaveValue('new');
+  });
+
+  test('spinner shows exactly while its own pending flag (pending.search) is true', () => {
+    const spinner = (c) => c.querySelector('.animate-spin');
+    const { container, rerender } = render(<SearchBar q="" setSearch={jest.fn()} pending={false} />);
+    expect(spinner(container)).toBeNull();
+    rerender(<SearchBar q="" setSearch={jest.fn()} pending={true} />);
+    expect(spinner(container)).not.toBeNull();
   });
 });

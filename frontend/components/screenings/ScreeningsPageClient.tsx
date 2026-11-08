@@ -49,7 +49,7 @@ type Props = {
  * `initialItems`/`initialError` come from the server rendered fetch in
  * `frontend/app/page.tsx`, for whatever filter and page combination the
  * current URL represents. This component renders them directly. It does
- * not run its own fetch: navigating to a new URL (from `setUI` or
+ * not run its own fetch: navigating to a new URL (from `setSearch`/`setFilters`/`setView` or
  * `goToPage` below) re-runs the Server Component, which sends this
  * component fresh props for the new URL, the same way any other Next.js
  * App Router navigation works. See docs/specs/url-driven-filters.md.
@@ -82,7 +82,7 @@ export default function ScreeningsPageClient({
   const items = initialItems;
   const activeTotal = isFilmView ? initialFilmTotal : initialTotal;
   const totalPages = Math.max(1, Math.ceil(activeTotal / screeningsUI.ui.limit));
-  const isPending = screeningsUI.isPending || paginationPending;
+  const isPending = screeningsUI.pending.any || paginationPending;
 
   const tableRef = useRef<HTMLDivElement>(null);
   const contentRowRef = useRef<HTMLDivElement>(null);
@@ -171,8 +171,8 @@ export default function ScreeningsPageClient({
   };
 
   // Runs once new items arrive for a page that had its row height captured
-  // by handleBeforeFilterCommit. Must wait for screeningsUI.isPending to
-  // clear: setRowMinHeight (normal priority) commits before the setUI
+  // by handleBeforeFilterCommit. Must wait for screeningsUI.pending.any to
+  // clear: setRowMinHeight (normal priority) commits before the setFilters/setSearch
   // navigation it precedes resolves (low priority, inside startTransition),
   // and rowMinHeight is itself a dependency here — without the isPending
   // guard, that first commit re-triggers this effect immediately and
@@ -180,11 +180,11 @@ export default function ScreeningsPageClient({
   // the new (possibly much shorter) result set has actually arrived.
   useLayoutEffect(() => {
     if (rowMinHeight === undefined) return;
-    if (screeningsUI.isPending) return;
+    if (screeningsUI.pending.any) return;
 
     setRowMinHeight(undefined);
     settleScrollAfterRefetch();
-  }, [items, page, rowMinHeight, screeningsUI.isPending]);
+  }, [items, page, rowMinHeight, screeningsUI.pending.any]);
 
   // Fetch all cinemas once. Ordering (pinned high-traffic venues first, then
   // alphabetical) and hiding cinemas with no upcoming screenings are both
@@ -253,14 +253,14 @@ export default function ScreeningsPageClient({
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <SearchBar
           q={ui.q}
-          setUI={screeningsUI.setUI}
-          pending={screeningsUI.isPending}
+          setSearch={screeningsUI.setSearch}
+          pending={screeningsUI.pending.search}
           onBeforeCommit={isFilmView ? undefined : handleBeforeFilterCommit}
         />
         <div className="inline-flex self-start rounded-btn bg-surface-subtle p-1 md:self-auto">
           <button
             type="button"
-            onClick={() => screeningsUI.setUI({ view: 'film' })}
+            onClick={() => screeningsUI.setView('film')}
             className={`min-h-10 rounded-control px-4 text-sm font-semibold transition-colors ${
               isFilmView ? 'bg-surface text-primary shadow-sm' : 'text-muted'
             }`}
@@ -269,7 +269,7 @@ export default function ScreeningsPageClient({
           </button>
           <button
             type="button"
-            onClick={() => screeningsUI.setUI({ view: 'table' })}
+            onClick={() => screeningsUI.setView('table')}
             className={`min-h-10 rounded-control px-4 text-sm font-semibold transition-colors ${
               !isFilmView ? 'bg-surface text-primary shadow-sm' : 'text-muted'
             }`}
@@ -283,7 +283,7 @@ export default function ScreeningsPageClient({
         <div>
           <ScreeningsFilterPanel
             ui={screeningsUI.ui}
-            setUI={screeningsUI.setUI}
+            setFilters={screeningsUI.setFilters}
             facets={facets}
           />
           {initialError && <p className="mt-3 text-sm text-muted">Error: {initialError}</p>}
@@ -325,11 +325,11 @@ export default function ScreeningsPageClient({
                 <Filters
                   bare
                   ui={screeningsUI.ui}
-                  setUI={screeningsUI.setUI}
+                  setFilters={screeningsUI.setFilters}
                   onBeforeCommit={handleBeforeFilterCommit}
                   onCommitted={() => setMobileFiltersOpen(false)}
                   loading={cinemaLoading}
-                  pending={screeningsUI.isPending}
+                  pending={screeningsUI.pending.filters}
                   cinemaOptions={cinemaOptions}
                 />
               </MobileFilterSheet>
@@ -342,10 +342,10 @@ export default function ScreeningsPageClient({
           >
             <Filters
               ui={screeningsUI.ui}
-              setUI={screeningsUI.setUI}
+              setFilters={screeningsUI.setFilters}
               onBeforeCommit={handleBeforeFilterCommit}
               loading={cinemaLoading}
-              pending={screeningsUI.isPending}
+              pending={screeningsUI.pending.filters}
               cinemaOptions={cinemaOptions}
             />
           </aside>

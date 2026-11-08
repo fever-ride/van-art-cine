@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { UIState, SetUI } from '@/lib/hooks/useScreeningsUI';
+import type { UIState, SetFilters } from '@/lib/hooks/useScreeningsUI';
 import type { ScreeningFacets, ScreeningFacetValue, RatingThresholdValue } from '@/app/lib/screenings';
 
 
@@ -10,7 +10,7 @@ const VISIBLE_COUNT = 5;
 
 type Props = {
   ui: UIState;
-  setUI: SetUI;
+  setFilters: SetFilters;
   facets: ScreeningFacets;
 };
 
@@ -34,7 +34,7 @@ type Props = {
  * same `FilterGroupsGrid`, so the two never drift into two different sets
  * of filters.
  */
-export default function ScreeningsFilterPanel({ ui, setUI, facets }: Props) {
+export default function ScreeningsFilterPanel({ ui, setFilters, facets }: Props) {
   const [open, setOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
@@ -52,7 +52,7 @@ export default function ScreeningsFilterPanel({ ui, setUI, facets }: Props) {
 
         {open && (
           <div className="grid grid-cols-1 gap-7 rounded-b-card border border-t-0 border-border p-5 sm:grid-cols-3">
-            <FilterGroupsGrid ui={ui} setUI={setUI} facets={facets} />
+            <FilterGroupsGrid ui={ui} setFilters={setFilters} facets={facets} />
           </div>
         )}
       </div>
@@ -70,7 +70,7 @@ export default function ScreeningsFilterPanel({ ui, setUI, facets }: Props) {
 
         {mobileSheetOpen && (
           <MobileFilterSheet onClose={() => setMobileSheetOpen(false)}>
-            <FilterGroupsGrid ui={ui} setUI={setUI} facets={facets} stacked />
+            <FilterGroupsGrid ui={ui} setFilters={setFilters} facets={facets} stacked />
           </MobileFilterSheet>
         )}
       </div>
@@ -85,12 +85,12 @@ export default function ScreeningsFilterPanel({ ui, setUI, facets }: Props) {
  * cram columns side by side at a width that forces label wrapping). */
 function FilterGroupsGrid({
   ui,
-  setUI,
+  setFilters,
   facets,
   stacked = false,
 }: {
   ui: UIState;
-  setUI: SetUI;
+  setFilters: SetFilters;
   facets: ScreeningFacets;
   stacked?: boolean;
 }) {
@@ -107,7 +107,7 @@ function FilterGroupsGrid({
           const next = checked
             ? [...ui.cinemaIds, idStr]
             : ui.cinemaIds.filter((v) => v !== idStr);
-          setUI({ cinemaIds: next });
+          setFilters({ cinemaIds: next });
         }}
         isSelected={(name) => {
           const id = facets.cinemas.find((c) => c.name === name)?.id;
@@ -122,7 +122,7 @@ function FilterGroupsGrid({
           const next = checked
             ? [...ui.genreValues, name]
             : ui.genreValues.filter((v) => v !== name);
-          setUI({ genreValues: next });
+          setFilters({ genreValues: next });
         }}
         isSelected={(name) => ui.genreValues.includes(name)}
       />
@@ -134,7 +134,7 @@ function FilterGroupsGrid({
           const next = checked
             ? [...ui.languageValues, name]
             : ui.languageValues.filter((v) => v !== name);
-          setUI({ languageValues: next });
+          setFilters({ languageValues: next });
         }}
         isSelected={(name) => ui.languageValues.includes(name)}
       />
@@ -154,7 +154,7 @@ function FilterGroupsGrid({
           const next = checked
             ? [...ui.eraValues, key]
             : ui.eraValues.filter((v) => v !== key);
-          setUI({ eraValues: next });
+          setFilters({ eraValues: next });
         }}
         isSelected={(name) => {
           const key = facets.eras.find((e) => e.label === name)?.key;
@@ -166,8 +166,8 @@ function FilterGroupsGrid({
         rtThresholds={facets.ratings.rt}
         minImdb={ui.minImdb}
         minRt={ui.minRt}
-        onImdbChange={(value) => setUI({ minImdb: value })}
-        onRtChange={(value) => setUI({ minRt: value })}
+        onImdbChange={(value) => setFilters({ minImdb: value })}
+        onRtChange={(value) => setFilters({ minRt: value })}
       />
     </div>
   );
@@ -179,7 +179,7 @@ function FilterGroupsGrid({
  * and gives the filter groups their own scroll area between a sticky
  * header and a sticky "Show results" footer — this is a view/dismiss
  * affordance, not a deferred-apply one: every tap inside already commits
- * immediately via `setUI` (same as the desktop panel), so "Show results"
+ * immediately via `setFilters` (same as the desktop panel), so "Show results"
  * just closes the sheet to reveal the (already updated) grid behind it. */
 export function MobileFilterSheet({
   onClose,
