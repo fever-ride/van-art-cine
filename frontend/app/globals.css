@@ -61,6 +61,12 @@
   --radius-btn: 4px;
   --radius-card: 4px;
   --radius-card-lg: 4px;
+
+  /* Sticky NavBar height. NavBar measures itself and overwrites this at
+   * runtime (it changes when the header wraps); this is the SSR fallback. */
+  --header-h: 6.25rem;
+  /* Where in-page jumps land: just below the sticky header. */
+  --scroll-offset: calc(var(--header-h) + 0.75rem);
 }
 
 @theme inline {

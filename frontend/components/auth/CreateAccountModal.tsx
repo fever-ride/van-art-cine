@@ -61,12 +61,12 @@ export default function CreateAccountModal({ isOpen, onClose, onSuccess }: Props
       />
 
       {/* Centered Modal */}
-      <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none">
+      <div className="fixed inset-0 z-[101] flex items-start justify-center overflow-y-auto p-4 pt-16 pointer-events-none sm:items-center sm:pt-4">
         <div className="relative w-full max-w-md rounded-card border border-border bg-hero-bg p-8 shadow-2xl animate-slide-down pointer-events-auto">
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute right-4 top-4 text-white/55 hover:text-white transition-colors"
+            className="absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center text-white/55 hover:text-white transition-colors"
             aria-label="Close"
           >
             <svg

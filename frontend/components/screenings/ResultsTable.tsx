@@ -68,7 +68,7 @@ export default function ResultsTable({ items, savedIds, onSavedChange }: Props) 
                     onClick={() => toggle(s.id)}
                     aria-expanded={isOpen}
                     aria-controls={`row-details-${s.id}`}
-                    className="grid h-7 w-7 place-items-center rounded-control border border-border bg-surface transition hover:bg-surface-subtle"
+                    className="grid h-10 w-10 place-items-center rounded-control border border-border bg-surface transition hover:bg-surface-subtle"
                     title={isOpen ? 'Hide details' : 'Show details'}
                   >
                     <svg

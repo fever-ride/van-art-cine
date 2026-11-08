@@ -33,7 +33,7 @@ describe('Filters component', () => {
     jest.clearAllMocks();
   });
 
-  test('renders basic controls (search, cinemas, sort, order, mode, buttons)', () => {
+  test('renders basic controls (cinemas, sort, order, mode, buttons) and no search box', () => {
     const ui = makeUI();
     const setUI = jest.fn();
     const onBeforeCommit = jest.fn();
@@ -47,10 +47,9 @@ describe('Filters component', () => {
       />
     );
 
-    // Search input
-    expect(
-      screen.getByPlaceholderText('Enter a film title…')
-    ).toBeInTheDocument();
+    // Search moved out to the shared SearchBar
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(screen.queryByText('Search')).not.toBeInTheDocument();
 
     // Cinemas label
     expect(screen.getByText('Cinemas')).toBeInTheDocument();
@@ -70,37 +69,6 @@ describe('Filters component', () => {
     expect(
       screen.getByRole('button', { name: 'Apply' })
     ).toBeInTheDocument();
-  });
-
-  test('updates search query via debounced setUI when typing, calling onBeforeCommit first so scroll/layout can be captured before the result count changes', () => {
-    jest.useFakeTimers();
-
-    const ui = makeUI({ q: '' });
-    const setUI = jest.fn();
-    const onBeforeCommit = jest.fn();
-
-    render(
-      <Filters
-        ui={ui}
-        setUI={setUI}
-        onBeforeCommit={onBeforeCommit}
-        cinemaOptions={[]}
-      />
-    );
-
-    const input = screen.getByPlaceholderText('Enter a film title…');
-
-    fireEvent.change(input, { target: { value: 'Ozu' } });
-
-    expect(setUI).not.toHaveBeenCalled();
-
-    jest.advanceTimersByTime(350);
-
-    expect(setUI).toHaveBeenCalledTimes(1);
-    expect(setUI).toHaveBeenCalledWith({ q: 'Ozu' }, { replace: true });
-    expect(onBeforeCommit).toHaveBeenCalledTimes(1);
-
-    jest.useRealTimers();
   });
 
   test('selecting and clearing cinemas updates the summary text', () => {
@@ -147,7 +115,7 @@ describe('Filters component', () => {
     ).toBeInTheDocument();
   });
 
-  test('Apply button sends local filters (except q) via setUI and calls onBeforeCommit', () => {
+  test('Apply sends only the sidebar filters (never q) via setUI and calls onBeforeCommit', () => {
     const ui = makeUI({ q: 'hello' });
     const setUI = jest.fn();
     const onBeforeCommit = jest.fn();
@@ -172,11 +140,13 @@ describe('Filters component', () => {
     fireEvent.click(applyButton);
 
     expect(setUI).toHaveBeenCalledTimes(1);
+    const { q, ...sidebarFields } = ui;
     expect(setUI).toHaveBeenCalledWith({
-      ...ui,
+      ...sidebarFields,
       sort: 'title',
       order: 'desc',
     });
+    expect(setUI.mock.calls[0][0]).not.toHaveProperty('q');
     expect(onBeforeCommit).toHaveBeenCalledTimes(1);
   });
 
@@ -210,8 +180,9 @@ describe('Filters component', () => {
     fireEvent.click(resetButton);
 
     expect(setUI).toHaveBeenCalledTimes(1);
+    // Reset clears the sidebar only; the search term is left alone.
+    expect(setUI.mock.calls[0][0]).not.toHaveProperty('q');
     expect(setUI).toHaveBeenCalledWith({
-      q: '',
       cinemaIds: [],
       genreValues: [],
       languageValues: [],

@@ -70,19 +70,24 @@ Decisions: accent = apricot `#F2A65A` (salmon `#e98f76` was dropped — too clos
 - Open question: follow system only, or also a manual toggle in the nav bar.
 - Prerequisite: remaining `text-white` / `bg-white/10` in the hero and auth panels should become tokens first.
 
-## Phase 2 — Mobile Fundamentals
+## Phase 2 — Mobile Fundamentals ✅
 
-- [ ] NavBar: consistent `px-4 md:px-6`. Remove the overflow caused by `-mx-4`. On narrow screens, collapse auth buttons into an icon or menu. Add an edge fade to the scrolling menu row so users can tell it scrolls.
-- [ ] SignInDropdown: on mobile, switch to a full-screen or bottom sheet that does not depend on a fixed `top`. Make it scrollable when the keyboard is open.
-- [ ] Split search out of the filter sidebar: one shared search bar above both views (instant search), sidebar keeps Apply-based filters only. Merge the duplicated 350ms debounce (`Filters.tsx`, `ScreeningsFilterPanel.tsx`).
-- [ ] Table-view filters: use the same mobile bottom sheet as film view (reuse `MobileFilterSheet`), with a sticky "Filters (n)" button.
-- [ ] Tap targets ≥ 44px: expand button, WatchlistButton, checkboxes/radios (enlarge the clickable area via the label), sheet close button.
-- [ ] Expose header height as a `--header-h` CSS variable. Replace `scroll-mt-28`, `md:top-30` and `7rem` with it.
-- [ ] Use relative or responsive poster sizes (`FilmListView.tsx:71`, `FilmHeader.tsx:86`). Reduce padding (`px-6`) on mobile.
-- [ ] Verify at 375 / 768 / 1280 widths: no sideways scrolling. (Observed: at 1024px `scrollWidth` is 1040 — likely the nav `-mx-4` row.)
+Verified at 375 / 768 / 1024 / 1280: `scrollWidth === innerWidth` (no sideways scroll) in both views.
+
+- [x] NavBar: `px-4 md:px-6`; removed the `-mx-4` row that widened the page by 16px; row 1 never wraps (tagline hidden and "Create account" → "Join" below `sm`); nav pills ≥40px tall.
+- [x] Sign-in panel: portaled to `<body>` (the header's `backdrop-filter` made it the containing block for `position: fixed`, which is why the panel used a magic `top-[140px]`); now a scrollable overlay. Close buttons 44px in both auth dialogs.
+- [x] Search split out of the filter UIs into one shared `SearchBar` above both views (instant, debounced). Sidebar/sheet filters are Apply-only and no longer touch `q`. The duplicated 350ms debounce is gone (`components/screenings/SearchBar.tsx`, tests in `tests/components/SearchBar.test.jsx`).
+- [x] Showtimes filters below `lg` (phones *and* tablets): "Filters (n)" button → bottom sheet (reuses `MobileFilterSheet`, now exported with an optional footer). Sheet closes on Apply/Reset. Sidebar only from `lg` (1024px) — at 768px it squeezed the table to ~430px.
+- [x] Results column `min-w-0` so the table scrolls inside its card instead of widening the page.
+- [x] Tap targets: cinema rows / radios ≥44px below `lg`, checkboxes 16px, Watchlist button ≥40px, view toggle ≥40px, film-view Filter button 44px, table expand button 40px.
+- [x] `--header-h` published by NavBar (ResizeObserver) + `--scroll-offset`; replaced `scroll-mt-28`, `7rem`, `md:top-30`, `7.5rem` and the JS `TABLE_SCROLL_MARGIN = 112`.
 - [x] Showtime hydration mismatch (12:30 vs 1:30 PM) — root cause was BC's permanent UTC-7 + stale tzdata in Node; fixed in all layers. See TROUBLESHOOTING.md → "Showtimes off by one hour".
+- [ ] Moved to Phase 3: fixed poster sizes (`FilmListView.tsx`, `FilmHeader.tsx`) and the table details panel padding — both components are redesigned there anyway.
 
 ## Phase 3 — Cards and View Redesign
+
+> **Scope decision (2026-11-08):** Film view's visuals stay as they are (it was built recently). Phase 3 focuses on **Showtimes**: mobile cards below `md`, restyled desktop table, the deferred poster/detail-panel sizing, and pixel font sizes → type scale. The Film-view items below are parked.
+
 
 - [ ] **Film view (decide whether it becomes the default):** follow the reference `.film` layout.
   - poster on the left, 2:3

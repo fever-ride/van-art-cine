@@ -14,7 +14,7 @@ const ENTRIES = [{ href: '/whats-on/top-rated', label: 'Top Rated' }];
 // Watchlist"/"About" and should look identical to them, not have its own
 // rounded corners.
 const pill =
-  'whitespace-nowrap px-3 py-1.5 text-sm font-medium text-muted hover:bg-primary hover:text-white transition-colors';
+  'inline-flex min-h-10 items-center whitespace-nowrap px-3 text-sm font-medium text-muted hover:bg-primary hover:text-white transition-colors';
 
 /**
  * NavBar entry point into the hub pages under `/whats-on/` — labelled

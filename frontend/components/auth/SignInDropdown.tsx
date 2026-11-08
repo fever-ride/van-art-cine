@@ -1,5 +1,6 @@
 'use client';
 
+import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import { apiLogin } from '@/app/lib/auth';
 import { isErrorLike } from '@/app/lib/typeGuards';
@@ -43,23 +44,26 @@ export default function SignInDropdown({ isOpen, onClose, onSuccess }: Props) {
 
   if (!isOpen) return null;
 
-  return (
+  // Portal to <body>: the sticky header uses backdrop-filter, which makes
+  // it the containing block for position:fixed descendants, so a fixed
+  // overlay rendered inside it would be clipped to the header.
+  return createPortal(
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-primary/60 backdrop-blur-sm z-40 transition-opacity"
+        className="fixed inset-0 z-[100] bg-primary/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Dropdown Form */}
-      <div className="fixed top-[140px] left-0 right-0 z-50 animate-slide-down">
-        <div className="mx-auto max-w-4xl px-4">
+      <div className="pointer-events-none fixed inset-0 z-[101] overflow-y-auto">
+        <div className="pointer-events-auto mx-auto mt-16 mb-8 max-w-4xl px-4 animate-slide-down sm:mt-24">
           <div className="relative rounded-card border border-border bg-hero-bg p-6 shadow-2xl">
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute right-4 top-4 text-white/55 hover:text-white transition-colors"
+              className="absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center text-white/55 hover:text-white transition-colors"
               aria-label="Close"
             >
               <svg
@@ -137,6 +141,7 @@ export default function SignInDropdown({ isOpen, onClose, onSuccess }: Props) {
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

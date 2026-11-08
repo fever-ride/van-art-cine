@@ -10,7 +10,8 @@ import Filters from '@/components/screenings/Filters';
 import ResultsTable from '@/components/screenings/ResultsTable';
 import Pagination from '@/components/screenings/Pagination';
 import FilmListView from '@/components/screenings/FilmListView';
-import ScreeningsFilterPanel from '@/components/screenings/ScreeningsFilterPanel';
+import ScreeningsFilterPanel, { MobileFilterSheet } from '@/components/screenings/ScreeningsFilterPanel';
+import SearchBar from '@/components/screenings/SearchBar';
 
 const EMPTY_FACETS: ScreeningFacets = {
   cinemas: [],
@@ -20,8 +21,12 @@ const EMPTY_FACETS: ScreeningFacets = {
   ratings: { imdb: [], rt: [] },
 };
 
-/** Matches `scroll-mt-28` on #screenings-results */
-const TABLE_SCROLL_MARGIN = 112;
+/** Reads #screenings-results' scroll-margin-top, i.e. `--scroll-offset`
+ * (sticky header height + a little air), so JS and CSS scroll targets agree. */
+function tableScrollMargin(el: Element | null): number {
+  if (!el) return 0;
+  return parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+}
 
 type Props = {
   initialItems: Screening[];
@@ -63,6 +68,7 @@ export default function ScreeningsPageClient({
   const router = useRouter();
   const pathname = usePathname();
   const [paginationPending, startPaginationTransition] = useTransition();
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const [cinemaOptions, setCinemaOptions] = useState<Cinema[]>([]);
   const [cinemaLoading, setCinemaLoading] = useState(false);
@@ -104,7 +110,7 @@ export default function ScreeningsPageClient({
     // Scrolled into the old table's lower rows — those rows are gone after refetch.
     if (scrollY > tableTop + newTableHeight) {
       window.scrollTo({
-        top: Math.min(Math.max(0, tableTop - TABLE_SCROLL_MARGIN), maxScroll),
+        top: Math.min(Math.max(0, tableTop - tableScrollMargin(tableRef.current)), maxScroll),
         left: 0,
         behavior: 'instant',
       });
@@ -230,27 +236,47 @@ export default function ScreeningsPageClient({
     };
   }, [isFilmView, facets]);
 
+  const { ui } = screeningsUI;
+  const activeFilterCount =
+    ui.cinemaIds.length +
+    ui.genreValues.length +
+    ui.languageValues.length +
+    ui.eraValues.length +
+    (ui.minImdb ? 1 : 0) +
+    (ui.minRt ? 1 : 0) +
+    (ui.date || ui.from || ui.to ? 1 : 0);
+
   return (
     <div className="[overflow-anchor:none]">
-      <div className="mb-4 inline-flex rounded-btn bg-surface-subtle p-1">
-        <button
-          type="button"
-          onClick={() => screeningsUI.setUI({ view: 'film' })}
-          className={`rounded-control px-4 py-1.5 text-sm font-semibold transition-colors ${
-            isFilmView ? 'bg-surface text-primary shadow-sm' : 'text-muted'
-          }`}
-        >
-          Movies
-        </button>
-        <button
-          type="button"
-          onClick={() => screeningsUI.setUI({ view: 'table' })}
-          className={`rounded-control px-4 py-1.5 text-sm font-semibold transition-colors ${
-            !isFilmView ? 'bg-surface text-primary shadow-sm' : 'text-muted'
-          }`}
-        >
-          Showtimes
-        </button>
+      {/* Search sits above both views and commits on its own (debounced);
+          the view-specific filters below are separate. */}
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <SearchBar
+          q={ui.q}
+          setUI={screeningsUI.setUI}
+          pending={screeningsUI.isPending}
+          onBeforeCommit={isFilmView ? undefined : handleBeforeFilterCommit}
+        />
+        <div className="inline-flex self-start rounded-btn bg-surface-subtle p-1 md:self-auto">
+          <button
+            type="button"
+            onClick={() => screeningsUI.setUI({ view: 'film' })}
+            className={`min-h-10 rounded-control px-4 text-sm font-semibold transition-colors ${
+              isFilmView ? 'bg-surface text-primary shadow-sm' : 'text-muted'
+            }`}
+          >
+            Movies
+          </button>
+          <button
+            type="button"
+            onClick={() => screeningsUI.setUI({ view: 'table' })}
+            className={`min-h-10 rounded-control px-4 text-sm font-semibold transition-colors ${
+              !isFilmView ? 'bg-surface text-primary shadow-sm' : 'text-muted'
+            }`}
+          >
+            Showtimes
+          </button>
+        </div>
       </div>
 
       {isFilmView ? (
@@ -259,10 +285,9 @@ export default function ScreeningsPageClient({
             ui={screeningsUI.ui}
             setUI={screeningsUI.setUI}
             facets={facets}
-            pending={screeningsUI.isPending}
           />
           {initialError && <p className="mt-3 text-sm text-muted">Error: {initialError}</p>}
-          <div id="screenings-results" className="scroll-mt-28" style={{ scrollMarginTop: '7rem' }}>
+          <div id="screenings-results" className="scroll-mt-(--scroll-offset)">
             <FilmListView films={initialFilmItems} />
           </div>
           <Pagination
@@ -277,12 +302,43 @@ export default function ScreeningsPageClient({
       ) : (
         <div
           ref={contentRowRef}
-          className="flex flex-col gap-4 md:flex-row [overflow-anchor:none]"
+          className="flex flex-col gap-4 lg:flex-row [overflow-anchor:none]"
           style={rowMinHeight ? { minHeight: rowMinHeight } : undefined}
         >
+          {/* Below lg (phones and tablets): filters open in a bottom sheet
+              instead of pushing the sidebar above, or squeezing it beside,
+              the results. */}
+          <div className="lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileFiltersOpen(true)}
+              className="inline-flex min-h-11 items-center gap-2 rounded-btn border border-primary bg-surface px-4 text-sm font-semibold text-primary"
+            >
+              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+            </button>
+            {mobileFiltersOpen && (
+              <MobileFilterSheet
+                title="Filters"
+                footer={null}
+                onClose={() => setMobileFiltersOpen(false)}
+              >
+                <Filters
+                  bare
+                  ui={screeningsUI.ui}
+                  setUI={screeningsUI.setUI}
+                  onBeforeCommit={handleBeforeFilterCommit}
+                  onCommitted={() => setMobileFiltersOpen(false)}
+                  loading={cinemaLoading}
+                  pending={screeningsUI.isPending}
+                  cinemaOptions={cinemaOptions}
+                />
+              </MobileFilterSheet>
+            )}
+          </div>
+
           <aside
-            className="self-start md:w-[275px] md:flex-shrink-0 md:sticky md:top-30
-                       md:max-h-[calc(100vh_-_7.5rem_-_1rem)] md:overflow-y-auto"
+            className="hidden self-start lg:block lg:w-[275px] lg:flex-shrink-0 lg:sticky lg:top-(--scroll-offset)
+                       lg:max-h-[calc(100vh_-_var(--scroll-offset)_-_1rem)] lg:overflow-y-auto"
           >
             <Filters
               ui={screeningsUI.ui}
@@ -294,15 +350,15 @@ export default function ScreeningsPageClient({
             />
           </aside>
 
-          <section className="flex-1 [overflow-anchor:none]">
+          <section className="min-w-0 flex-1 [overflow-anchor:none]">
             {initialError && (
               <p className="mt-3 text-sm text-muted">Error: {initialError}</p>
             )}
             <div
               ref={tableRef}
               id="screenings-results"
-              className="scroll-mt-28 overflow-x-auto rounded-card border border-border bg-surface"
-              style={{ scrollMarginTop: '7rem', overflowAnchor: 'none' }}
+              className="scroll-mt-(--scroll-offset) overflow-x-auto rounded-card border border-border bg-surface"
+              style={{ overflowAnchor: 'none' }}
             >
               {items.length > 0 ? (
                 <ResultsTable

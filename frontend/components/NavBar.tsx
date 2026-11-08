@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { apiLogout, apiMe } from '@/app/lib/auth';
 import { Button, getButtonClassName } from '@/components/ui';
@@ -16,6 +16,20 @@ export default function NavBar() {
   const [showSignIn, setShowSignIn] = useState(false);
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const pathname = usePathname();
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Publish the header's real height as --header-h so sticky offsets and
+  // scroll targets elsewhere (filters sidebar, results jump) never guess it.
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const publish = () =>
+      document.documentElement.style.setProperty('--header-h', `${el.offsetHeight}px`);
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const checkAuth = async () => {
     try {
@@ -37,15 +51,17 @@ export default function NavBar() {
 
   const isActive = (href: string) => pathname === href;
   const pill =
-    'whitespace-nowrap px-3 py-1.5 text-sm font-medium text-muted hover:bg-primary hover:text-white transition-colors';
+    'inline-flex min-h-10 items-center whitespace-nowrap px-3 text-sm font-medium text-muted hover:bg-primary hover:text-white transition-colors';
 
   return (
     <header
+      ref={headerRef}
       className="sticky top-0 z-50 border-b border-rule bg-surface backdrop-blur supports-[backdrop-filter]:bg-surface/85"
     >
-      <div className="mx-auto max-w-7xl">
-        {/* Row 1: Brand (left) + Auth (right) */}
-        <div className="flex flex-wrap items-center justify-between gap-4 py-1">
+      <div className="mx-auto max-w-7xl px-4 md:px-6">
+        {/* Row 1: Brand (left) + Auth (right). Never wraps: on phones the
+            tagline hides and "Create account" shortens to "Join". */}
+        <div className="flex items-center justify-between gap-3 py-2">
           {/* Brand block (logo + wordmark + tagline) */}
           <Link href="/" className="group flex min-w-0 items-center gap-3">
             <Image
@@ -53,21 +69,21 @@ export default function NavBar() {
               alt="The Cinephile’s Van logo"
               width={40}
               height={40}
-              className="shrink-0"
+              className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
               priority
             />
             <div className="min-w-0">
-              <div className="text-[20px] font-semibold leading-none tracking-tight text-primary">
+              <div className="truncate text-[17px] font-semibold leading-none tracking-tight text-primary sm:text-[20px]">
                 The Cinephile’s Van
               </div>
-              <div className="mt-1 text-[12px] leading-tight text-muted">
+              <div className="mt-1 hidden text-[12px] leading-tight text-muted sm:block">
                 Rolling through Vancouver’s film scene
               </div>
             </div>
           </Link>
 
           {/* Auth actions */}
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {!isAuthed ? (
               <>
                 <button
@@ -80,7 +96,8 @@ export default function NavBar() {
                   onClick={() => setShowCreateAccount(true)}
                   className={getButtonClassName({ variant: 'primary', size: 'sm' })}
                 >
-                  Create account
+                  <span className="sm:hidden">Join</span>
+                  <span className="hidden sm:inline">Create account</span>
                 </button>
               </>
             ) : (
@@ -106,8 +123,8 @@ export default function NavBar() {
         />
 
         {/* Row 2: Section menu */}
-        <div className="-mx-4 border-t border-border-light px-4">
-          <nav className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto">
+        <div className="border-t border-border-light">
+          <nav className="-ml-3 flex snap-x snap-mandatory items-center gap-1 overflow-x-auto [scrollbar-width:none] sm:gap-2">
             <MustSeesMenu />
 
             <Link
