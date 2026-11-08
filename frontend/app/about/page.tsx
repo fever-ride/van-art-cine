@@ -148,14 +148,14 @@ export default function AboutPage() {
               href="https://www.linkedin.com/in/wendi-zhong/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-accent hover:text-accent-hover underline"
+              className="text-accent-strong hover:text-primary underline"
             >
               Wendy Zhong
             </Link>
             {' '}• CS student seeking internships and part-time opportunities
           </p>
           <p className="mt-2">
-            <a href="mailto:wendyzhong08@outlook.com" className="text-accent hover:text-accent-hover underline">
+            <a href="mailto:wendyzhong08@outlook.com" className="text-accent-strong hover:text-primary underline">
               wendyzhong08@outlook.com
             </a>
           </p>

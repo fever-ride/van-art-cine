@@ -2,13 +2,10 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Archivo, Hanken_Grotesk } from 'next/font/google';
 import type { UIState, SetUI } from '@/lib/hooks/useScreeningsUI';
 import type { ScreeningFacets, ScreeningFacetValue, RatingThresholdValue } from '@/app/lib/screenings';
 import { Input } from '@/components/ui';
 
-const archivo = Archivo({ subsets: ['latin'], weight: ['700'], display: 'swap' });
-const hanken = Hanken_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600'], display: 'swap' });
 
 const VISIBLE_COUNT = 5;
 const SEARCH_DEBOUNCE_MS = 350;
@@ -73,7 +70,7 @@ export default function ScreeningsFilterPanel({ ui, setUI, facets, pending }: Pr
   };
 
   return (
-    <div className={`${hanken.className} mb-6`}>
+    <div className="mb-6">
       <div className="relative mb-3 max-w-sm">
         <Input
           type="text"
@@ -267,10 +264,10 @@ function MobileFilterSheet({
         role="dialog"
         aria-modal="true"
         aria-label="Filter"
-        className={`${hanken.className} fixed inset-x-0 bottom-0 z-[101] flex max-h-[85vh] flex-col rounded-t-card bg-surface animate-slide-up`}
+        className="fixed inset-x-0 bottom-0 z-[101] flex max-h-[85vh] flex-col rounded-t-card bg-surface animate-slide-up"
       >
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
-          <h2 className={`${archivo.className} text-sm font-bold uppercase tracking-wide text-primary`}>
+          <h2 className="font-display text-sm font-bold uppercase tracking-wide text-primary">
             Filter
           </h2>
           <button
@@ -291,7 +288,7 @@ function MobileFilterSheet({
           <button
             type="button"
             onClick={onClose}
-            className="w-full rounded-btn bg-accent px-4 py-3 text-sm font-semibold text-white hover:bg-accent-hover"
+            className="w-full rounded-btn bg-accent px-4 py-3 text-sm font-semibold text-accent-ink hover:bg-accent-hover"
           >
             Show results
           </button>
@@ -360,7 +357,7 @@ function FacetColumn({
 
   return (
     <div>
-      <h3 className={`${archivo.className} mb-3 text-[11px] uppercase tracking-wide text-muted`}>
+      <h3 className="font-display mb-3 text-[11px] uppercase tracking-wide text-muted">
         {title}
       </h3>
       {/* Once expanded, a long tail (language in particular can run past 30
@@ -381,7 +378,7 @@ function FacetColumn({
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="text-xs font-semibold text-accent underline"
+          className="text-xs font-semibold text-accent-strong underline"
         >
           See more ({hiddenCount} more)
         </button>
@@ -420,7 +417,7 @@ function ThresholdPicker({
             onClick={() => onChange(selected ? '' : thresholdValue)}
             className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
               selected
-                ? 'border-accent bg-accent text-white'
+                ? 'border-accent bg-accent text-accent-ink'
                 : 'border-border text-primary hover:bg-surface-subtle'
             }`}
           >
@@ -453,7 +450,7 @@ function RatingFilterColumn({
 }) {
   return (
     <div>
-      <h3 className={`${archivo.className} mb-3 text-[11px] uppercase tracking-wide text-muted`}>
+      <h3 className="font-display mb-3 text-[11px] uppercase tracking-wide text-muted">
         Rating
       </h3>
       <div className="mb-3">

@@ -22,7 +22,7 @@ export default function ImdbBadge({
 
   return (
     <span className="inline-flex items-center gap-1">
-      <span className="rounded-[3px] bg-[#F5C518] px-1 py-0.5 text-[9px] font-extrabold leading-none text-black">
+      <span className="rounded-[3px] bg-imdb px-1 py-0.5 text-[9px] font-extrabold leading-none text-black">
         IMDb
       </span>
       <span className="text-[11px] font-semibold text-primary">{parsed.toFixed(1)}</span>

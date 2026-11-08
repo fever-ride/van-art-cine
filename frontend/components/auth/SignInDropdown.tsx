@@ -55,11 +55,11 @@ export default function SignInDropdown({ isOpen, onClose, onSuccess }: Props) {
       {/* Dropdown Form */}
       <div className="fixed top-[140px] left-0 right-0 z-50 animate-slide-down">
         <div className="mx-auto max-w-4xl px-4">
-          <div className="relative rounded-card border border-border bg-[#1a1a1a] p-6 shadow-2xl">
+          <div className="relative rounded-card border border-border bg-hero-bg p-6 shadow-2xl">
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute right-4 top-4 text-gray-400 hover:text-white transition-colors"
+              className="absolute right-4 top-4 text-white/55 hover:text-white transition-colors"
               aria-label="Close"
             >
               <svg
@@ -87,7 +87,7 @@ export default function SignInDropdown({ isOpen, onClose, onSuccess }: Props) {
               <div className="flex flex-col md:flex-row md:items-end gap-4">
                 {/* Email field */}
                 <div className="flex-1">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="email" className="block text-sm font-medium text-white/70 mb-2">
                     Email
                   </label>
                   <Input
@@ -98,13 +98,13 @@ export default function SignInDropdown({ isOpen, onClose, onSuccess }: Props) {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="your@email.com"
                     autoComplete="email"
-                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
                   />
                 </div>
 
                 {/* Password field */}
                 <div className="flex-1">
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="password" className="block text-sm font-medium text-white/70 mb-2">
                     Password
                   </label>
                   <Input
@@ -115,7 +115,7 @@ export default function SignInDropdown({ isOpen, onClose, onSuccess }: Props) {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     autoComplete="current-password"
-                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
                   />
                 </div>
 

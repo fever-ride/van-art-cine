@@ -100,8 +100,8 @@ export default function WatchlistButton({
         'min-w-[7.5rem]', // ensures stable width ("Add to Watchlist" width)
         pending ? 'opacity-60 cursor-not-allowed' : '',
         saved
-          ? 'border border-dashed border-slate-300 text-slate-500 bg-slate-50 hover:bg-slate-100'
-          : 'bg-accent text-surface hover:bg-accent-hover',
+          ? 'border border-dashed border-border text-muted bg-surface-subtle hover:bg-border-light'
+          : 'bg-accent text-accent-ink hover:bg-accent-hover',
         className,
       ].join(' ')}
     >

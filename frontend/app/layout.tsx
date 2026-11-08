@@ -1,18 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Archivo, Hanken_Grotesk } from "next/font/google";
 import { Analytics } from '@vercel/analytics/next';
 import "./globals.css";
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Display face: Archivo with its width axis, so headings can use font-stretch.
+const archivo = Archivo({
+  variable: "--font-archivo",
   subsets: ["latin"],
+  axes: ["wdth"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Body face.
+const hanken = Hanken_Grotesk({
+  variable: "--font-hanken",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const SITE_URL = 'https://www.cinephilesvan.com';
@@ -63,8 +68,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" className={`${archivo.variable} ${hanken.variable}`}>
+      <body className="antialiased">
         <NavBar />
         <main className="min-h-[calc(100vh-200px)]">
           {children}

@@ -1,6 +1,5 @@
 'use client';
 
-import { Archivo, Hanken_Grotesk } from 'next/font/google';
 import Link from 'next/link';
 import type { FilmListItem } from '@/app/lib/screenings';
 import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
@@ -8,8 +7,6 @@ import { formatGenre } from '@/app/lib/formatGenre';
 import { parseImdbRating, isValidRtRating } from '@/app/lib/displayText';
 import { RatedBadge, ImdbBadge, RtBadge } from '@/components/ui';
 
-const archivo = Archivo({ subsets: ['latin'], weight: ['500', '700'], display: 'swap' });
-const hanken = Hanken_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600'], display: 'swap' });
 
 const FALLBACK_POSTER =
   'https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?q=80&w=600&auto=format&fit=crop';
@@ -38,7 +35,7 @@ export default function FilmListView({ films }: { films: FilmListItem[] }) {
   }
 
   return (
-    <div className={`${hanken.className} grid grid-cols-1 gap-6 sm:grid-cols-2`}>
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
       {films.map((film) => {
         const genres = formatGenre(film.genre);
         const imdbRating = parseImdbRating(film.imdb_rating);
@@ -74,7 +71,7 @@ export default function FilmListView({ films }: { films: FilmListItem[] }) {
 
             <div className="min-w-0 flex-1">
               <Link href={`/films/${film.film_id}`} className="hover:underline">
-                <h3 className={`${archivo.className} text-[20px] font-bold uppercase leading-[1.1] tracking-tight text-primary`}>
+                <h3 className="font-display text-[20px] font-bold uppercase leading-[1.1] tracking-tight text-primary">
                   {film.title}
                 </h3>
               </Link>
@@ -92,7 +89,7 @@ export default function FilmListView({ films }: { films: FilmListItem[] }) {
                   </span>
                 ))}
                 {isNew && (
-                  <span className="rounded-[3px] border border-amber-700 px-1.5 py-1 text-[10px] font-medium uppercase leading-none text-amber-700">
+                  <span className="rounded-[3px] border border-accent-strong px-1.5 py-1 text-[10px] font-medium uppercase leading-none text-accent-strong">
                     New
                   </span>
                 )}
@@ -121,7 +118,7 @@ export default function FilmListView({ films }: { films: FilmListItem[] }) {
                       href={s.source_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`${pillClass} hover:bg-accent hover:text-white`}
+                      className={`${pillClass} hover:bg-accent hover:text-accent-ink hover:border-accent`}
                     >
                       {label}
                     </a>
@@ -135,7 +132,7 @@ export default function FilmListView({ films }: { films: FilmListItem[] }) {
               {hiddenCount > 0 && (
                 <Link
                   href={`/films/${film.film_id}`}
-                  className="mt-1 inline-block text-[11px] font-semibold text-accent underline"
+                  className="mt-1 inline-block text-[11px] font-semibold text-accent-strong underline"
                 >
                   +{hiddenCount} more showtime{hiddenCount > 1 ? 's' : ''} &raquo;
                 </Link>
@@ -149,7 +146,7 @@ export default function FilmListView({ films }: { films: FilmListItem[] }) {
 
               <Link
                 href={`/films/${film.film_id}`}
-                className={`${archivo.className} mt-2 inline-block border-b border-primary text-[12px] font-bold uppercase text-primary`}
+                className="font-display mt-2 inline-block border-b border-primary text-[12px] font-bold uppercase text-primary"
               >
                 Read more &raquo;
               </Link>

@@ -8,7 +8,7 @@ export type ButtonSize = 'sm' | 'md' | 'icon';
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-accent text-white hover:bg-accent-hover disabled:opacity-60 disabled:hover:bg-accent',
+    'bg-accent text-accent-ink hover:bg-accent-hover disabled:opacity-60 disabled:hover:bg-accent',
   outline:
     'border border-border bg-surface text-primary hover:bg-surface-hover transition-colors',
   danger:

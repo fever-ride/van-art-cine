@@ -111,10 +111,10 @@ export default function FilmHeader({ film, nextScreening }: Props) {
           <div className="mt-4 flex flex-wrap items-center gap-4">
             {imdbRating != null && (
               <div className="flex items-baseline gap-2">
-                <span className="text-sm font-medium text-gray-300">IMDb</span>
+                <span className="text-sm font-medium text-white/70">IMDb</span>
                 <span className="text-2xl font-bold text-white">{imdbRating.toFixed(1)}</span>
                 {typeof imdb_votes === 'number' && (
-                  <span className="text-sm text-gray-300">
+                  <span className="text-sm text-white/70">
                     ({imdb_votes.toLocaleString()})
                   </span>
                 )}
@@ -123,7 +123,7 @@ export default function FilmHeader({ film, nextScreening }: Props) {
 
             {isValidRtRating(rt_rating_pct) && (
               <div className="flex items-baseline gap-2">
-                <span className="text-sm font-medium text-gray-300">Rotten Tomatoes</span>
+                <span className="text-sm font-medium text-white/70">Rotten Tomatoes</span>
                 <span className="text-2xl font-bold text-white">{rt_rating_pct}%</span>
               </div>
             )}
@@ -136,9 +136,9 @@ export default function FilmHeader({ film, nextScreening }: Props) {
                 href={imdb_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+                className="inline-flex items-center gap-2 rounded-btn bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
               >
-                <span className="rounded-[3px] bg-[#F5C518] px-1.5 py-0.5 text-[11px] font-extrabold leading-none text-black">
+                <span className="rounded-[3px] bg-imdb px-1.5 py-0.5 text-[11px] font-extrabold leading-none text-black">
                   IMDb
                 </span>
                 View Profile

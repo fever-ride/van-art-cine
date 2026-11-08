@@ -1,28 +1,43 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens — editorial, high-contrast style (see docs/design-refs/).
+ * Ink on white, hairline rules, small radii, one salmon accent.
+ * Accent is a FILL colour: text on it uses --accent-ink; accent-coloured
+ * text on white uses --accent-strong (salmon itself is too light for text).
+ * Dark mode is deferred (docs/frontend-redesign-plan.md); when added,
+ * redefine these under prefers-color-scheme / [data-theme="dark"].
+ */
 :root {
-  /* Color palette - Modern balanced */
-  --primary: #1A1A1A;      /* Dark gray for text */
-  --background: #FAFAFA;   /* Light gray background */
-  --accent: #2563EB;       /* Vibrant blue for interactive elements */
-  --accent-hover: #1D4ED8; /* Darker blue for hover */
-  --highlight: #F1CB99;    /* Warm orange for emphasis */
-  --footer-bg: #FFFFFF;    /* White for footer */
-  --hero-bg: #1A1A1A;      /* Dark hero section */
-  --table-header-bg: #1A1A1A; /* Dark table header */
-  
-  /* Semantic colors derived from palette */
+  /* Core */
+  --primary: #111111;        /* ink */
+  --background: #FFFFFF;
+  --accent: #E98F76;         /* salmon */
+  --accent-hover: #E27B5F;
+  --accent-ink: #1A1A1A;     /* text on accent fills */
+  --accent-strong: #A8452B;  /* accent-coloured text/links on white */
+  --highlight: #F2DCB0;
+  --footer-bg: #FFFFFF;
+  --hero-bg: #101010;
+  --table-header-bg: #111111;
+  --rule: #111111;           /* strong hairline rules */
+
+  /* Semantic */
   --foreground: var(--primary);
-  --surface: #FFFFFF;      /* White for cards/tables */
-  --surface-hover: #F4F8FB; /* Light tint for hover (buttons, nav) */
-  --border: #E5E7EB;       /* Light gray for borders */
-  --border-subtle: #E5E2D8; /* Warmer border (nav, cards) */
-  --border-light: #F0EEE8;  /* Lighter divider */
-  --muted: #6B7280;        /* Gray for secondary text */
-  --pill: #E9EFF3;         /* Light blue pill */
-  --band: #FFF8E7;         /* Cream band for card headers */
-  --surface-subtle: #F3F4F6; /* Light gray bg (hover, subtle areas) */
-  --disabled: #D1D5DB;     /* Disabled controls (gray-300) */
+  --surface: #FFFFFF;
+  --surface-hover: #F5F5F5;
+  --border: #E3E3E3;
+  --border-subtle: #E3E3E3;
+  --border-light: #F0F0F0;
+  --muted: #6F6F6F;
+  --pill: #F2F2F2;
+  --band: #F5F5F5;
+  --surface-subtle: #F5F5F5;
+  --disabled: #D1D1D1;
+
+  /* Third-party brand marks */
+  --imdb: #F5C518;
+  --rt: #FA320A;
 
   /* Error / destructive */
   --error-bg: #FEF2F2;
@@ -40,12 +55,12 @@
   --success-bg: #F0FDF4;
   --success-text: #15803D;
 
-  /* Border radius - Modern balanced style */
-  --radius-control: 0.25rem;   /* 4px – small controls, icons */
-  --radius-input: 0.375rem;    /* 6px – inputs, form fields */
-  --radius-btn: 0.5rem;        /* 8px – buttons, nav pills */
-  --radius-card: 0.5rem;       /* 8px – cards, sections */
-  --radius-card-lg: 0.75rem;   /* 12px – large sections */
+  /* Border radius — kept small, per the references */
+  --radius-control: 2px;
+  --radius-input: 3px;
+  --radius-btn: 4px;
+  --radius-card: 4px;
+  --radius-card-lg: 4px;
 }
 
 @theme inline {
@@ -53,7 +68,12 @@
   --color-background: var(--background);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-strong: var(--accent-strong);
   --color-highlight: var(--highlight);
+  --color-rule: var(--rule);
+  --color-imdb: var(--imdb);
+  --color-rt: var(--rt);
   --color-footer-bg: var(--footer-bg);
   --color-hero-bg: var(--hero-bg);
   --color-table-header-bg: var(--table-header-bg);
@@ -83,14 +103,29 @@
   --radius-btn: var(--radius-btn);
   --radius-card: var(--radius-card);
   --radius-card-lg: var(--radius-card-lg);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-hanken), "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* Display type: wide Archivo, tight tracking (references use 112–118%). */
+.font-display {
+  font-stretch: 112%;
+  letter-spacing: -0.01em;
+}
+
+@layer base {
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    font-stretch: 112%;
+    letter-spacing: -0.02em;
+  }
 }
 
 /* Slide down animation for auth dropdown */

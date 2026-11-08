@@ -146,8 +146,8 @@ export default function ScreeningDateInput({
           disabled={minDate ? { before: minDate } : undefined}
           showOutsideDays={false}
           classNames={{
-            today: 'font-semibold text-accent',
-            selected: 'bg-accent text-white',
+            today: 'font-semibold text-accent-strong',
+            selected: 'bg-accent text-accent-ink',
             disabled: 'text-disabled opacity-50',
           }}
         />

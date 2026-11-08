@@ -9,10 +9,8 @@ import {
   apiDeleteMyAccount,
   User
 } from '@/app/lib/profile';
-import { Noto_Sans } from 'next/font/google';
 import { Card, Input, Button } from '@/components/ui';
 
-const noto = Noto_Sans({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -135,7 +133,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className={`${noto.className} mx-auto max-w-3xl px-4 py-8`}>
+      <main className="mx-auto max-w-3xl px-4 py-8">
         <h1 className="text-2xl font-semibold text-primary">My Profile</h1>
         <p className="mt-4 text-sm text-muted">Loading your profile…</p>
       </main>
@@ -144,7 +142,7 @@ export default function ProfilePage() {
 
   if (loadError || !user) {
     return (
-      <main className={`${noto.className} mx-auto max-w-3xl px-4 py-8`}>
+      <main className="mx-auto max-w-3xl px-4 py-8">
         <h1 className="text-2xl font-semibold text-primary">My Profile</h1>
         <p className="mt-4 text-sm text-error-text">
           {loadError || 'You are not logged in.'}
@@ -156,7 +154,7 @@ export default function ProfilePage() {
   const nameChanged = (user.name ?? '') !== nameInput.trim();
 
   return (
-    <main className={`${noto.className} mx-auto max-w-4xl px-4 py-8`}>
+    <main className="mx-auto max-w-4xl px-4 py-8">
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-primary">My Profile</h1>
         <p className="mt-2 text-base text-muted">

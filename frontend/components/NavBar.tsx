@@ -5,13 +5,11 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { apiLogout, apiMe } from '@/app/lib/auth';
-import { Noto_Sans } from 'next/font/google';
 import { Button, getButtonClassName } from '@/components/ui';
 import SignInDropdown from '@/components/auth/SignInDropdown';
 import CreateAccountModal from '@/components/auth/CreateAccountModal';
 import MustSeesMenu from '@/components/MustSeesMenu';
 
-const noto = Noto_Sans({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
 export default function NavBar() {
   const [isAuthed, setIsAuthed] = useState(false);
@@ -43,7 +41,7 @@ export default function NavBar() {
 
   return (
     <header
-      className={`${noto.className} sticky top-0 z-50 border-b border-border-subtle bg-surface backdrop-blur supports-[backdrop-filter]:bg-surface/75 shadow-[0_10px_24px_rgba(0,0,0,0.04)]`}
+      className="sticky top-0 z-50 border-b border-rule bg-surface backdrop-blur supports-[backdrop-filter]:bg-surface/85"
     >
       <div className="mx-auto max-w-7xl">
         {/* Row 1: Brand (left) + Auth (right) */}

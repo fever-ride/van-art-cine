@@ -10,7 +10,7 @@ export default function RtBadge({ pct }: { pct?: number | null }) {
 
   return (
     <span className="inline-flex items-center gap-1">
-      <span className="rounded-full bg-[#FA320A] px-1.5 py-0.5 text-[9px] font-extrabold leading-none text-white">
+      <span className="rounded-full bg-rt px-1.5 py-0.5 text-[9px] font-extrabold leading-none text-white">
         RT
       </span>
       <span className="text-[11px] font-semibold text-primary">{pct}%</span>

@@ -200,7 +200,7 @@ export default function Filters({
               type="button"
               variant="ghost"
               size="sm"
-              className="text-xs font-semibold text-accent hover:underline"
+              className="text-xs font-semibold text-accent-strong hover:underline"
               onClick={() => setLocalUI({ ...localUI, cinemaIds: [] })}
             >
               Clear ({localUI.cinemaIds.length})
@@ -228,7 +228,7 @@ export default function Filters({
               >
                 <input
                   type="checkbox"
-                  className="h-3.5 w-3.5 rounded-control border border-border text-accent focus:ring-1 focus:ring-accent/20"
+                  className="h-3.5 w-3.5 rounded-control border border-border text-accent-strong focus:ring-1 focus:ring-accent/20"
                   checked={checked}
                   onChange={(e) => {
                     if (e.target.checked) {

@@ -1,13 +1,11 @@
 import Link from 'next/link';
-import { Noto_Sans } from 'next/font/google';
 
-const noto = Noto_Sans({ subsets: ['latin'], weight: ['400', '500'] });
 
 export default function Footer() {
-  const linkStyle = 'text-muted hover:text-accent transition-colors text-xs';
+  const linkStyle = 'text-muted hover:text-accent-strong transition-colors text-xs';
 
   return (
-    <footer className={`${noto.className} bg-footer-bg border-t border-border-subtle mt-24`}>
+    <footer className="bg-footer-bg border-t border-border-subtle mt-24">
       <div className="mx-auto max-w-7xl px-6 py-10">
         {/* Top Row: Discover, Cinemas, About */}
         <div className="flex flex-wrap gap-x-16 gap-y-8 mb-10">
