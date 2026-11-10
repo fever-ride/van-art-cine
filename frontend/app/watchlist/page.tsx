@@ -1,15 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { apiListWatchlist } from '@/app/lib/watchlist';
-import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
-import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import { getGuestSet } from '@/app/lib/guestWatchlist';
 import { isErrorLike } from '@/app/lib/typeGuards';
-import { Card } from '@/components/ui';
-
-// Global font for this page
+import WatchlistList, { type WatchlistRow } from '@/components/watchlist/WatchlistList';
+import { LIST_FRAME } from '@/components/screenings/ScreeningRowParts';
 
 // Shape of the /api/screenings/bulk response items (only fields we use)
 type BulkScreening = {
@@ -33,27 +29,6 @@ type BulkScreening = {
 
 type BulkResponse = {
   items?: BulkScreening[];
-};
-
-type WatchlistRow = {
-  screening_id: number;
-  start_at_utc: string | null;
-  end_at_utc?: string | null;
-  runtime_min?: number | null;
-  tz?: string | null;
-
-  film_id: number | null;
-  title: string;
-  year?: number | null;
-  imdb_rating?: number | null;
-  rt_rating_pct?: number | null;
-
-  cinema_id: number | null;
-  cinema_name: string | null;
-
-  source_url?: string | null;
-
-  status: 'upcoming' | 'past' | 'unavailable';
 };
 
 export default function WatchlistPage() {
@@ -176,43 +151,30 @@ export default function WatchlistPage() {
     }
   }
 
-  function StatusBadge({ status }: { status: WatchlistRow['status'] }) {
-    const map: Record<WatchlistRow['status'], string> = {
-      upcoming: 'bg-success-bg text-success-text',
-      past: 'bg-surface-subtle text-muted',
-      unavailable: 'bg-warning-bg text-warning-text',
-    };
-    const label: Record<WatchlistRow['status'], string> = {
-      upcoming: 'Upcoming',
-      past: 'Past',
-      unavailable: 'Unavailable',
-    };
-    return (
-      <span
-        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] leading-5 font-semibold ${map[status]}`}
-      >
-        {label[status]}
-      </span>
-    );
-  }
-
   const rowsToShow = includePast ? items : items.filter((r) => r.status === 'upcoming');
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8">
+    <main className="mx-auto max-w-[1400px] px-4 py-8 md:py-10">
       {/* Header row */}
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-[22px] font-semibold text-primary">
-          My Watchlist
-        </h1>
-        <label className="flex items-center gap-2 text-sm text-muted">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div>
+          <h1 className="text-[clamp(28px,4vw,40px)] font-bold uppercase leading-none tracking-[-0.02em] text-primary">
+            My Watchlist
+          </h1>
+          {!loading && items.length > 0 && (
+            <p className="mt-2 text-sm text-muted">
+              {rowsToShow.length} saved screening{rowsToShow.length === 1 ? '' : 's'}
+            </p>
+          )}
+        </div>
+        <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm text-muted lg:min-h-9">
           <input
             type="checkbox"
-            className="h-4 w-4 rounded border-border"
+            className="h-4 w-4 rounded-control border border-border accent-[var(--accent-strong)]"
             checked={includePast}
             onChange={(e) => setIncludePast(e.target.checked)}
           />
-          Show past & unavailable
+          Show past &amp; unavailable
         </label>
       </div>
 
@@ -220,7 +182,7 @@ export default function WatchlistPage() {
       {err && <p className="text-sm text-error-text">Error: {err}</p>}
 
       {authed === false && !loading && (
-        <div className="mb-4 rounded-input border border-warning-border bg-warning-bg px-4 py-3 text-sm text-warning-text">
+        <div className="mb-4 rounded-card border border-warning-border bg-warning-bg px-4 py-3 text-sm text-warning-text">
           You’re browsing as a guest. Sign in to save your watchlist and access it anytime, on any device.
         </div>
       )}
@@ -230,208 +192,9 @@ export default function WatchlistPage() {
       )}
 
       {!loading && rowsToShow.length > 0 && (
-        <Card
-          className="mt-4 overflow-hidden"
-          bandClassName="bg-surface border-b border-border px-4 py-3 md:px-6"
-          band={
-            <h2 className="text-lg font-bold text-primary">
-              Saved Screenings
-            </h2>
-          }
-        >
-          {/* DESKTOP / TABLET >= md: keep table layout */}
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full border-separate border-spacing-0 text-[14px]">
-              <tbody>
-                {rowsToShow.map((r) => (
-                  <tr
-                    key={r.screening_id}
-                    className="border-t border-border/70 bg-surface transition-colors hover:bg-band"
-                  >
-                    {/* WHEN — compact 3-line stack */}
-                    <td className="px-4 py-3 align-middle">
-                      {r.start_at_utc ? (
-                        <div className="leading-5">
-                          <div className="text-[13px] text-muted">
-                            {formatScreeningDate(new Date(r.start_at_utc))}
-                          </div>
-                          <div className="text-[15px] font-semibold text-primary">
-                            {formatScreeningTime(new Date(r.start_at_utc))}
-                          </div>
-                          {typeof r.runtime_min === 'number' && (
-                            <div className="text-[12px] text-muted">
-                              {r.runtime_min} min
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-
-                    {/* TITLE */}
-                    <td className="px-4 py-3 align-middle">
-                      <div className="text-[15px] font-semibold text-primary">
-                        {r.film_id ? (
-                          <Link
-                            href={`/films/${r.film_id}`}
-                            className="hover:underline"
-                          >
-                            {r.title} {r.year ? `(${r.year})` : ''}
-                          </Link>
-                        ) : (
-                          <>
-                            {r.title} {r.year ? `(${r.year})` : ''}
-                          </>
-                        )}
-                      </div>
-                      {typeof r.imdb_rating === 'number' && (
-                        <div className="mt-0.5 text-[12px] text-muted">
-                          IMDb {r.imdb_rating.toFixed(1)}
-                        </div>
-                      )}
-                    </td>
-
-                    {/* CINEMA */}
-                    <td className="px-4 py-3 align-middle text-[14px] text-primary">
-                      {r.cinema_name ?? '—'}
-                    </td>
-
-                    {/* STATUS */}
-                    <td className="px-4 py-3 align-middle">
-                      <StatusBadge status={r.status} />
-                    </td>
-
-                    {/* ACTION: ticket link + watchlist button */}
-                    <td className="px-4 py-3 align-middle">
-                      <div className="flex items-center justify-end gap-3">
-                        {r.source_url ? (
-                          <a
-                            href={r.source_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent-strong transition-colors hover:bg-surface-hover"
-                          >
-                            Get tickets
-                          </a>
-                        ) : (
-                          <span className="text-xs text-muted">
-                            No ticket link
-                          </span>
-                        )}
-
-                        <WatchlistButton
-                          screeningId={r.screening_id}
-                          initialSaved={true}
-                          onChange={(saved) =>
-                            handleSavedChange(r.screening_id, saved)
-                          }
-                          size="sm"
-                          confirmBeforeRemove
-                          confirmMessage={`Remove "${r.title}" from your watchlist?`}
-                          className="whitespace-nowrap"
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* MOBILE < md: stacked layout similar to FilmShowtimes */}
-          <ul className="divide-y divide-border md:hidden">
-            {rowsToShow.map((r) => (
-              <li
-                key={r.screening_id}
-                className="flex flex-col gap-2 px-4 py-3 text-[13px] leading-6"
-              >
-                {/* When */}
-                <div className="flex flex-col items-start leading-tight text-primary">
-                  {r.start_at_utc ? (
-                    <>
-                      <div className="text-[14px] font-medium text-muted">
-                        {formatScreeningDate(new Date(r.start_at_utc))}
-                      </div>
-                      <div className="text-[16px] font-semibold text-primary">
-                        {formatScreeningTime(new Date(r.start_at_utc))}
-                      </div>
-                      {typeof r.runtime_min === 'number' && (
-                        <div className="text-[12px] text-muted">
-                          {r.runtime_min} min
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-[13px] text-muted">—</span>
-                  )}
-                </div>
-
-                {/* Title + IMDb */}
-                <div className="text-[14px] text-primary">
-                  <div className="text-[15px] font-semibold text-primary">
-                    {r.film_id ? (
-                      <Link
-                        href={`/films/${r.film_id}`}
-                        className="hover:underline"
-                      >
-                        {r.title} {r.year ? `(${r.year})` : ''}
-                      </Link>
-                    ) : (
-                      <>
-                        {r.title} {r.year ? `(${r.year})` : ''}
-                      </>
-                    )}
-                  </div>
-                  {typeof r.imdb_rating === 'number' && (
-                    <div className="mt-0.5 text-[12px] text-muted">
-                      IMDb {r.imdb_rating.toFixed(1)}
-                    </div>
-                  )}
-                </div>
-
-                {/* Cinema */}
-                <div className="text-[13px] text-primary">
-                  {r.cinema_name ?? '—'}
-                </div>
-
-                {/* Status + actions */}
-                <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
-                  <StatusBadge status={r.status} />
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    {r.source_url ? (
-                      <a
-                        href={r.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center rounded-btn border border-border bg-surface px-3 py-1.5 text-xs font-medium text-accent-strong transition-colors hover:bg-surface-hover"
-                      >
-                        Get tickets
-                      </a>
-                    ) : (
-                      <span className="text-xs text-muted">
-                        No ticket link
-                      </span>
-                    )}
-
-                    <WatchlistButton
-                      screeningId={r.screening_id}
-                      initialSaved={true}
-                      onChange={(saved) =>
-                        handleSavedChange(r.screening_id, saved)
-                      }
-                      size="sm"
-                      confirmBeforeRemove
-                      confirmMessage={`Remove "${r.title}" from your watchlist?`}
-                      className="whitespace-nowrap"
-                    />
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Card>
+        <div className={LIST_FRAME}>
+          <WatchlistList items={rowsToShow} onSavedChange={handleSavedChange} />
+        </div>
       )}
     </main>
   );

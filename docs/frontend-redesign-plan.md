@@ -100,7 +100,7 @@ Verified at 375 / 768 / 1024 / 1280: `scrollWidth === innerWidth` (no sideways s
   - Information unchanged, row and expanded details alike.
   - Expand kept: click anywhere on the row/card (except links/buttons), the chevron on desktop or "Details ›" on mobile. Toggles carry `aria-expanded`/`aria-controls`.
   - Long titles and cinema names wrap inside their column (never truncated).
-- [ ] Reuse `ScreeningList` on the watchlist page (it still has its own dual layout).
+- [x] Watchlist page aligned with the homepage list. Its rows carry different data (status, IMDb score, "Get tickets", confirm-before-remove, no details), so it is its own `components/watchlist/WatchlistList.tsx` built from shared cells in `components/screenings/ScreeningRowParts.tsx` (`ScreeningWhen`, `FilmTitle`, `ListHeader`, `Chevron`, frame/row classes) — the same parts `ScreeningList` now uses. The old duplicated `<table>` + mobile `<ul>` (two copies of every row) is gone. Layout: card below `md`; at `md` four columns with the buttons on a second line (five columns squeezed titles to one word per line at 768px); one line from `lg`. Fixed-width actions column so the header row stays aligned. Page shell now matches the homepage (`max-w-[1400px]`, Archivo uppercase heading, saved-count line). Information unchanged except the "Saved Screenings" band, replaced by the column header row and count. Tests in `tests/components/WatchlistList.test.jsx`.
 - [ ] Restyle the view toggle as a reference-style segmented control.
 - [ ] Hero area: follow the reference "Now Showing in Vancouver" headline and short intro.
 - [ ] Add `prefers-reduced-motion` support.

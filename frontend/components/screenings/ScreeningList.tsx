@@ -1,17 +1,21 @@
 'use client';
 
 import { useState, type MouseEvent } from 'react';
-import Link from 'next/link';
 import type { Screening } from '@/app/lib/screenings';
-import {
-  formatScreeningDate,
-  formatScreeningTime,
-  formatScreeningDateTime,
-} from '@/app/lib/formatDate';
+import { formatScreeningDateTime } from '@/app/lib/formatDate';
 import { cleanDisplayText, formatPeopleLine } from '@/app/lib/displayText';
 import { formatGenre } from '@/app/lib/formatGenre';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import { RatedBadge, ImdbBadge, RtBadge } from '@/components/ui';
+import {
+  COL_LABEL,
+  ROW_ITEM,
+  ROW_BODY,
+  ListHeader,
+  ScreeningWhen,
+  FilmTitle,
+  Chevron,
+} from '@/components/screenings/ScreeningRowParts';
 
 type Props = {
   readonly items: Screening[];
@@ -32,8 +36,6 @@ const ROW_GRID =
   "grid-cols-[5.75rem_minmax(0,1fr)] [grid-template-areas:'when_main'_'when_cinema'_'when_actions'] " +
   "md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,9rem)_9rem_1.5rem] lg:grid-cols-[8rem_minmax(0,1fr)_minmax(0,13rem)_9rem_1.5rem] md:[grid-template-areas:'when_main_cinema_actions_chev'] md:items-center";
 
-const COL_LABEL = 'text-[11px] font-semibold uppercase tracking-[0.08em] text-muted';
-
 export default function ScreeningList({ items, savedIds, onSavedChange }: Props) {
   const [open, setOpen] = useState<Set<number>>(new Set());
   const toggle = (id: number) =>
@@ -47,12 +49,15 @@ export default function ScreeningList({ items, savedIds, onSavedChange }: Props)
   return (
     <div className="bg-surface">
       {/* Column header — desktop only; mobile cards are self-explanatory. */}
-      <div aria-hidden="true" className={`${ROW_GRID} hidden border-b border-rule px-4 py-3 md:grid`}>
-        <span className={`${COL_LABEL} [grid-area:when]`}>When</span>
-        <span className={`${COL_LABEL} [grid-area:main]`}>Film</span>
-        <span className={`${COL_LABEL} [grid-area:cinema]`}>Cinema</span>
-        <span className={`${COL_LABEL} [grid-area:actions] text-center`}>Watchlist</span>
-      </div>
+      <ListHeader
+        grid={ROW_GRID}
+        columns={[
+          { area: 'when', label: 'When' },
+          { area: 'main', label: 'Film' },
+          { area: 'cinema', label: 'Cinema' },
+          { area: 'actions', label: 'Watchlist', align: 'center' },
+        ]}
+      />
 
       <ul role="list" aria-label="Screenings">
         {items.map((s) => (
@@ -83,10 +88,6 @@ function ScreeningItem({
   saved?: boolean;
   onSavedChange?: (screeningId: number, saved: boolean) => void;
 }) {
-  const dt = new Date(s.start_at_utc);
-  const dateStr = formatScreeningDate(dt);
-  const timeStr = formatScreeningTime(dt);
-  const year = s.year ? ` (${s.year})` : '';
   const genres = formatGenre(s.genre ?? (s as Screening & { genres?: string[] }).genres);
   const directors = formatPeopleLine(s.directors);
   const detailsId = `screening-details-${s.id}`;
@@ -99,45 +100,21 @@ function ScreeningItem({
   };
 
   return (
-    <li className="border-b border-border last:border-b-0">
+    <li className={ROW_ITEM}>
       <div
         onClick={onRowClick}
-        className={`${ROW_GRID} cursor-pointer px-4 py-4 transition-colors hover:bg-surface-hover ${
+        className={`${ROW_GRID} ${ROW_BODY} cursor-pointer ${
           isOpen ? 'bg-surface-hover' : ''
         }`}
       >
         {/* WHEN */}
         <div className="[grid-area:when] md:self-start">
-          <div className="whitespace-nowrap font-display text-[17px] font-bold leading-tight text-primary md:text-[20px]">
-            {timeStr}
-          </div>
-          <div className="mt-0.5 text-[13px] text-muted">{dateStr}</div>
-          {s.runtime_min != null && (
-            <div className="text-[13px] text-muted">{s.runtime_min} min</div>
-          )}
+          <ScreeningWhen startUtc={s.start_at_utc} runtimeMin={s.runtime_min} />
         </div>
 
         {/* FILM: title (year), directors, genres */}
         <div className="min-w-0 [grid-area:main]">
-          <div className="text-[16px] font-semibold leading-snug text-primary">
-            {s.film_id ? (
-              <Link
-                href={`/films/${s.film_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline-offset-2 hover:underline"
-                aria-label={`View details for ${s.title} in a new tab`}
-              >
-                {s.title}
-                {year}
-              </Link>
-            ) : (
-              <>
-                {s.title}
-                {year}
-              </>
-            )}
-          </div>
+          <FilmTitle filmId={s.film_id} title={s.title} year={s.year} newTab />
           {directors && <div className="mt-0.5 text-[13px] text-muted">{directors}</div>}
           {genres.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -268,22 +245,5 @@ function ScreeningDetails({ s }: { s: Screening }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function Chevron({ open }: { open: boolean }) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-90' : ''}`}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="8 4 16 12 8 20" />
-    </svg>
   );
 }
