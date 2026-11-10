@@ -95,9 +95,12 @@ Verified at 375 / 768 / 1024 / 1280: `scrollWidth === innerWidth` (no sideways s
   - on the right: title (Archivo), director · year · runtime, genre tags
   - below: showtime pills ("venue + time"), each linking to tickets
   - one column on mobile; poster can be shrunk or placed above
-- [ ] **Showtimes view:**
-  - `md+`: keep the table, with restyled visuals.
-  - `<md`: compact cards — time on the left · title and cinema in the middle · watchlist button on the right. Tap to expand details. Follow the dual layout in `app/watchlist/page.tsx`.
+- [x] **Showtimes view → adaptive list** (`components/screenings/ScreeningList.tsx`, replaces the deleted `ResultsTable.tsx`; tests in `tests/components/ScreeningList.test.jsx`):
+  - One CSS-grid markup per screening: card below `md` (time column left; title, cinema, actions stacked right), aligned columns from `md` (When · Film · Cinema · Watchlist · chevron). No sideways scroll at 375 / 768 / 1280.
+  - Information unchanged, row and expanded details alike.
+  - Expand kept: click anywhere on the row/card (except links/buttons), the chevron on desktop or "Details ›" on mobile. Toggles carry `aria-expanded`/`aria-controls`.
+  - Long titles and cinema names wrap inside their column (never truncated).
+- [ ] Reuse `ScreeningList` on the watchlist page (it still has its own dual layout).
 - [ ] Restyle the view toggle as a reference-style segmented control.
 - [ ] Hero area: follow the reference "Now Showing in Vancouver" headline and short intro.
 - [ ] Add `prefers-reduced-motion` support.

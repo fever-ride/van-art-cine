@@ -23,7 +23,7 @@ import { apiListWatchlist } from '@/app/lib/watchlist';
  *   - `savedIds`: a `Set<number>` of screening IDs considered saved in the UI.
  *   - `handleSavedChange(screeningId, saved)`: helper to update the Set after
  *     a successful add/remove/toggle operation (typically called from
- *     components like `ResultsTable` or `WatchlistButton`).
+ *     components like `ScreeningList` or `WatchlistButton`).
  *
  * This hook does not perform mutations itself; it is a read/derived state
  * layer on top of the watchlist APIs and guest storage.

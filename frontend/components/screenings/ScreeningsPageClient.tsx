@@ -7,7 +7,7 @@ import { useScreeningsUI } from '@/lib/hooks/useScreeningsUI';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { apiListCinemas, type Cinema } from '@/app/lib/cinemas';
 import Filters from '@/components/screenings/Filters';
-import ResultsTable from '@/components/screenings/ResultsTable';
+import ScreeningList from '@/components/screenings/ScreeningList';
 import Pagination from '@/components/screenings/Pagination';
 import FilmListView from '@/components/screenings/FilmListView';
 import ScreeningsFilterPanel, { MobileFilterSheet } from '@/components/screenings/ScreeningsFilterPanel';
@@ -357,11 +357,11 @@ export default function ScreeningsPageClient({
             <div
               ref={tableRef}
               id="screenings-results"
-              className="scroll-mt-(--scroll-offset) overflow-x-auto rounded-card border border-border bg-surface"
+              className="scroll-mt-(--scroll-offset) overflow-hidden rounded-card border border-rule bg-surface"
               style={{ overflowAnchor: 'none' }}
             >
               {items.length > 0 ? (
-                <ResultsTable
+                <ScreeningList
                   items={items}
                   savedIds={watchlist.savedIds}
                   onSavedChange={watchlist.handleSavedChange}
