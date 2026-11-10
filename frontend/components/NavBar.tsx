@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { apiLogout, apiMe } from '@/app/lib/auth';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { Button, getButtonClassName } from '@/components/ui';
 import SignInDropdown from '@/components/auth/SignInDropdown';
 import CreateAccountModal from '@/components/auth/CreateAccountModal';
@@ -12,7 +12,8 @@ import MustSeesMenu from '@/components/MustSeesMenu';
 
 
 export default function NavBar() {
-  const [isAuthed, setIsAuthed] = useState(false);
+  const { status, signOut } = useAuth();
+  const isAuthed = status === 'authed';
   const [showSignIn, setShowSignIn] = useState(false);
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const pathname = usePathname();
@@ -31,23 +32,6 @@ export default function NavBar() {
     return () => ro.disconnect();
   }, []);
 
-  const checkAuth = async () => {
-    try {
-      const data = await apiMe();
-      setIsAuthed(!!data?.user);
-    } catch {
-      setIsAuthed(false);
-    }
-  };
-
-  useEffect(() => {
-    checkAuth();
-  }, [pathname]);
-
-  async function handleLogout() {
-    await apiLogout();
-    setIsAuthed(false);
-  }
 
   const isActive = (href: string) => pathname === href;
   const pill =
@@ -83,7 +67,13 @@ export default function NavBar() {
           </Link>
 
           {/* Auth actions */}
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {/* Hidden (space kept) until auth is known, so signed-in users
+              don't see "Sign in" flash on every page load. */}
+          <div
+            className={`flex shrink-0 items-center gap-2 sm:gap-3 ${
+              status === 'loading' ? 'invisible' : ''
+            }`}
+          >
             {!isAuthed ? (
               <>
                 <button
@@ -101,7 +91,7 @@ export default function NavBar() {
                 </button>
               </>
             ) : (
-              <Button variant="outline" size="sm" onClick={handleLogout}>
+              <Button variant="outline" size="sm" onClick={signOut}>
                 Sign out
               </Button>
             )}
@@ -112,14 +102,12 @@ export default function NavBar() {
         <SignInDropdown
           isOpen={showSignIn}
           onClose={() => setShowSignIn(false)}
-          onSuccess={checkAuth}
         />
 
         {/* Create Account Modal */}
         <CreateAccountModal
           isOpen={showCreateAccount}
           onClose={() => setShowCreateAccount(false)}
-          onSuccess={checkAuth}
         />
 
         {/* Row 2: Section menu */}

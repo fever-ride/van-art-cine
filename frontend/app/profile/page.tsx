@@ -10,10 +10,15 @@ import {
   User
 } from '@/app/lib/profile';
 import { Card, Input, Button } from '@/components/ui';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 
 export default function ProfilePage() {
   const router = useRouter();
+  // Re-load whenever who's signed in changes, so signing out while on this
+  // page drops to "not logged in" right away instead of after a refresh.
+  const { status: authStatus, user: authUser, signOut } = useAuth();
+  const uid = authUser?.uid ?? null;
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,8 +41,18 @@ export default function ProfilePage() {
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authStatus === 'loading') return;
     let cancelled = false;
 
+    if (authStatus === 'guest') {
+      setUser(null);
+      setLoadError('You are not logged in.');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setLoadError(null);
     (async () => {
       try {
         const u = await apiGetMyProfile();
@@ -63,7 +78,7 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authStatus, uid]);
 
   async function handleSaveName(e: React.FormEvent) {
     e.preventDefault();
@@ -122,8 +137,8 @@ export default function ProfilePage() {
     setDeleting(true);
     try {
       await apiDeleteMyAccount();
+      await signOut(); // clear cookies + shared auth state everywhere
       router.push('/');
-      router.refresh();
     } catch (e: unknown) {
       const err = e as Error;
       setDeleteMessage(err.message || 'Could not delete account.');

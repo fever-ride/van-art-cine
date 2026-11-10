@@ -948,3 +948,136 @@ change, and a real filter change. The first two fail on the old code.
   sidebar into one shared search bar above both views. Merge the duplicated
   350ms debounce in `Filters.tsx` and `ScreeningsFilterPanel.tsx` at the same
   time.
+
+## Sign in / sign out needs a page refresh
+
+Also covers "Sign out does nothing until refresh" (referenced from
+`backend/src/routes/auth.js`).
+
+### Symptom
+
+Found on 2026-11-09. Two separate problems:
+
+1. **Sign out sometimes does nothing.** You click "Sign out", nothing visibly
+   happens, and no error is shown. After a page refresh, Sign out works.
+2. **Only the nav bar follows sign-in / sign-out.** The nav bar switches
+   between "Sign in" and "Sign out", but the rest of the page doesn't update
+   until a refresh:
+   - Watchlist buttons on the homepage and film pages.
+   - The watchlist page.
+   - The profile page.
+
+   Right after signing in, saved marks can even disappear.
+
+Neither problem came from the 2026-11 redesign. The auth logic is unchanged
+since 2025-10-19 (`c443ba3`, `8298b3e`). Both only show up under specific
+conditions, so they went unnoticed:
+
+- Problem 1 needs the page open for more than 15 minutes.
+- Problem 2's vanishing marks need a non-empty guest watchlist at sign-in.
+
+### Cause
+
+**1. Logout depended on a token that expires.** `POST /api/auth/logout` sat
+behind `requireAuth`. The access token lives 15 minutes, and the frontend's
+`apiLogout` used plain `fetch` with no refresh-and-retry. After 15 idle
+minutes the sequence was:
+
+1. Logout returned 401.
+2. `apiLogout` threw.
+3. `handleLogout` in NavBar stopped before `setIsAuthed(false)`.
+
+Nothing was shown to the user, and the cookies stayed in place.
+
+Refreshing the page made `/me` refresh the access token, which is why the
+next Sign out worked.
+
+**2. Three copies of "who is signed in", none of them shared.** Each of these
+asked the server once on mount and never heard about later changes:
+
+- NavBar's `isAuthed`.
+- `useWatchlist`'s "try the account list, else use guest storage".
+- The watchlist page's "guest if `/watchlist` returns 401".
+
+Sign-in only re-ran NavBar's check. `router.refresh()` only re-renders Server
+Components, so it doesn't reach any of these client components.
+
+On top of that, sign-in merges the guest list into the account and then
+clears it. The clear fires a guest-storage event, and `useWatchlist`
+answered it by replacing the marks with the now-empty guest set.
+
+### Fix
+
+**Logout is idempotent.** `/api/auth/logout` is public: no `requireAuth`. It
+revokes the refresh token from the caller's own cookie if there is one,
+clears both cookies, and always returns 200. Logout can only remove access,
+so it needs no proof of identity.
+
+Tests: `backend/tests/controllers/logout.test.js`.
+
+**One auth source on the frontend.**
+`frontend/components/auth/AuthProvider.tsx`, mounted in `app/layout.tsx`,
+holds `status` (`loading | authed | guest`) and `user`. It also provides
+`signIn`, `register`, `signOut` and `refresh`.
+
+`signOut` always ends signed out locally, even if the request fails. A
+localStorage broadcast keeps other tabs in sync.
+
+The provider re-checks `/me` when the tab becomes visible again. This
+replaces NavBar's old re-check on every route change, so a session that
+ended meanwhile still shows as signed out.
+
+Only the newest `/me` request may write state. A slow, stale answer can't
+flip the user back to "authed" after sign-out.
+
+While auth is `loading`, the nav's auth buttons are hidden but keep their
+space, so signed-in users don't see "Sign in" flash.
+
+These all read `useAuth()` and reload when `status` / `uid` changes:
+
+| Consumer | Before |
+|---|---|
+| NavBar | own `isAuthed` |
+| Sign-in dropdown, create-account modal | `onSuccess` + `router.refresh()` |
+| `/auth/login`, `/auth/register` pages | called `apiLogin` / `apiRegister` directly |
+| `useWatchlist` | checked once on mount |
+| Watchlist page | inferred guest from a 401 |
+| Profile page | checked once on mount |
+
+While signed in, `useWatchlist` ignores guest-storage events.
+
+Account deletion now calls `signOut()`.
+
+Tests:
+
+- `tests/components/NavBar.test.jsx`: a failing logout still signs out.
+- `tests/components/AuthProvider.test.jsx`: a stale `/me` can't undo sign-out,
+  and the cross-tab re-check works.
+- `tests/hooks/useWatchlist.test.jsx`: guest → sign in → account list. The
+  guest-clear event doesn't wipe the marks. Sign out → guest list.
+
+### Prevention / lessons
+
+- **Shared state needs one owner.** If several components each fetch "who am
+  I" on their own, any change is seen only by whoever triggered it. Put
+  app-wide state in one provider. Phase 4 may move this onto RTK Query.
+  Consumers only use `useAuth()`, so they won't change.
+- **Logout must not require a valid session.** Make it idempotent: clear
+  cookies, revoke if possible, return 200.
+- **Never let a failed request skip the local state update the user asked
+  for.** Wrap it in `try` and update state after.
+- **`router.refresh()` does not re-run client effects.** Don't rely on it to
+  sync client state.
+
+**Deploy order:** deploy the backend **before or with** the frontend. With
+the new frontend and the old backend, an expired-session sign-out clears
+only the local state. The refresh cookie survives, so the next page load
+signs the user back in.
+
+### Quick verify
+
+- `curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:3000/api/auth/logout`
+  returns `200` with no cookies. Before the fix it returned `401`.
+- Sign in with items in the guest watchlist. The Watchlist buttons show the
+  merged marks without a refresh. Sign out: they go back to guest marks. The
+  watchlist and profile pages switch too.

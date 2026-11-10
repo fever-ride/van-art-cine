@@ -2,19 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { apiRegister } from '@/app/lib/auth';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { isErrorLike } from '@/app/lib/typeGuards';
-import { useRouter } from 'next/navigation';
 import { Input, Button } from '@/components/ui';
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
 };
 
-export default function CreateAccountModal({ isOpen, onClose, onSuccess }: Props) {
-  const router = useRouter();
+export default function CreateAccountModal({ isOpen, onClose }: Props) {
+  const { register } = useAuth();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -32,10 +30,8 @@ export default function CreateAccountModal({ isOpen, onClose, onSuccess }: Props
     setErr(null);
     setLoading(true);
     try {
-      await apiRegister({ email, password, name });
+      await register({ email, password, name });
       onClose();
-      onSuccess?.();
-      router.refresh();
     } catch (err: unknown) {
       if (isErrorLike(err)) {
         setErr(err.message);

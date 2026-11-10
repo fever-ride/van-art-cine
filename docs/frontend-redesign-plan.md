@@ -103,7 +103,7 @@ Verified at 375 / 768 / 1024 / 1280: `scrollWidth === innerWidth` (no sideways s
 - [x] Watchlist page aligned with the homepage list. Its rows carry different data (status, IMDb score, "Get tickets", confirm-before-remove, no details), so it is its own `components/watchlist/WatchlistList.tsx` built from shared cells in `components/screenings/ScreeningRowParts.tsx` (`ScreeningWhen`, `FilmTitle`, `ListHeader`, `Chevron`, frame/row classes) — the same parts `ScreeningList` now uses. The old duplicated `<table>` + mobile `<ul>` (two copies of every row) is gone. Layout: card below `md`; at `md` four columns with the buttons on a second line (five columns squeezed titles to one word per line at 768px); one line from `lg`. Fixed-width actions column so the header row stays aligned. Page shell now matches the homepage (`max-w-[1400px]`, Archivo uppercase heading, saved-count line). Information unchanged except the "Saved Screenings" band, replaced by the column header row and count. Tests in `tests/components/WatchlistList.test.jsx`.
 - [x] View toggle → underline tabs (`components/screenings/ViewTabs.tsx`): current view = ink text + apricot bar, other = muted; no filled block, so it never reads as a button next to the apricot "Add to Watchlist". Two filled variants were tried and rejected (ink fill: unclear which half is selected; apricot fill: looks like the action button). The bar slides between tabs (0.3s, `motion-reduce` → jump) and moves optimistically on click, before the view navigation commits. `role="group"` + `aria-pressed`. Tests in `tests/components/ViewTabs.test.jsx`.
 - [ ] Hero area: follow the reference "Now Showing in Vancouver" headline and short intro.
-- [ ] Add `prefers-reduced-motion` support.
+- [x] `prefers-reduced-motion` support (site-wide): slide-in panels (auth dropdown/modal, mobile filter sheet) fade instead; skeleton pulse stops; details chevron and view-tab bar jump instead of animating; poster hover zoom off. Colour/opacity transitions and the search spinner (only "working" signal) are kept. Central rules in `globals.css`, component-level via `motion-safe:` / `motion-reduce:`.
 
 ## Phase 4 — State Layer (Redux Toolkit)
 
@@ -114,7 +114,7 @@ Our state needs fall into three groups:
 | State | Where it lives now | Target |
 |---|---|---|
 | Filters, sort, page, view | URL | **Stays in the URL** (SEO, shareable links, server rendering). Not moved into Redux. |
-| Auth (`me`) | Fetched separately in 3 places | RTK Query `me` endpoint, shared everywhere |
+| Auth (`me`) | ~~Fetched separately in 3 places~~ → one `AuthProvider` + `useAuth()` (2026-11-09, fixes sign-in/out needing a refresh; TROUBLESHOOTING.md) | Optionally back `AuthProvider` with RTK Query `me`; consumers keep `useAuth()` unchanged |
 | Watchlist | hook + button + page, 3 copies | RTK Query, with optimistic updates (UI changes first, then confirmed with the server) |
 | Cinemas / facets | Hand-written `useEffect` | RTK Query cache |
 | Guest watchlist | localStorage | Slice + sync to localStorage |

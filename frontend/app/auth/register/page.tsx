@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { apiRegister } from '@/app/lib/auth';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { isErrorLike } from '@/app/lib/typeGuards';
@@ -9,6 +9,7 @@ import { Card, Input, Button } from '@/components/ui';
 
 export default function RegisterPage() {
   const r = useRouter();
+  const { register } = useAuth();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -21,7 +22,7 @@ export default function RegisterPage() {
     setErr(null);
     setLoading(true);
     try {
-      await apiRegister({ email, password, name });
+      await register({ email, password, name });
       r.replace('/');
     } catch (err: unknown) {
       if (isErrorLike(err)) {

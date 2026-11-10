@@ -109,7 +109,7 @@ export function Chevron({ open }: { open: boolean }) {
   return (
     <svg
       aria-hidden="true"
-      className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-90' : ''}`}
+      className={`h-3.5 w-3.5 transition-transform motion-reduce:transition-none ${open ? 'rotate-90' : ''}`}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import NavBar from '@/components/NavBar';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 import { apiMe, apiLogout } from '@/app/lib/auth';
 
 // Mock next/navigation
@@ -35,7 +36,17 @@ jest.mock('next/image', () => {
 jest.mock('@/app/lib/auth', () => ({
   apiMe: jest.fn(),
   apiLogout: jest.fn(),
+  apiLogin: jest.fn(),
+  apiRegister: jest.fn(),
 }));
+
+// NavBar reads auth from the app-wide provider (as in app/layout.tsx).
+const renderNav = () =>
+  render(
+    <AuthProvider>
+      <NavBar />
+    </AuthProvider>,
+  );
 
 describe('NavBar Component', () => {
   beforeEach(() => {
@@ -45,7 +56,7 @@ describe('NavBar Component', () => {
   test('displays login and register when user is not authenticated', async () => {
     apiMe.mockResolvedValue({ user: null });
 
-    render(<NavBar />);
+    renderNav();
 
     await waitFor(() => {
       expect(apiMe).toHaveBeenCalled();
@@ -60,7 +71,7 @@ describe('NavBar Component', () => {
   test('displays logout and My Profile when user is authenticated', async () => {
     apiMe.mockResolvedValue({ user: { id: 1, name: 'Test User' } });
 
-    render(<NavBar />);
+    renderNav();
 
     await waitFor(() => {
       expect(screen.getByText('Sign out')).toBeInTheDocument();
@@ -74,7 +85,7 @@ describe('NavBar Component', () => {
   test('shows common navigation links for all users', async () => {
     apiMe.mockResolvedValue({ user: null });
 
-    render(<NavBar />);
+    renderNav();
 
     await waitFor(() => {
       expect(apiMe).toHaveBeenCalled();
@@ -88,7 +99,7 @@ describe('NavBar Component', () => {
     apiMe.mockResolvedValue({ user: { id: 1 } });
     apiLogout.mockResolvedValue({ ok: true });
 
-    render(<NavBar />);
+    renderNav();
 
     const logoutButton = await screen.findByText('Sign out');
 
@@ -109,7 +120,7 @@ describe('NavBar Component', () => {
 
     apiMe.mockResolvedValue({ user: null });
 
-    render(<NavBar />);
+    renderNav();
 
     await waitFor(() => {
       expect(apiMe).toHaveBeenCalled();
@@ -117,5 +128,20 @@ describe('NavBar Component', () => {
 
     const aboutLink = screen.getByText('About').closest('a');
     expect(aboutLink).toHaveClass('bg-primary');
+  });
+
+  test('sign out still signs out locally when the request fails (expired session)', async () => {
+    // Regression: logout used to require a valid 15-min access token; when it
+    // 401'd, handleLogout threw before updating state and the button did nothing.
+    apiMe.mockResolvedValue({ user: { uid: 1 } });
+    apiLogout.mockRejectedValue(new Error('Logout failed: 401'));
+
+    renderNav();
+    fireEvent.click(await screen.findByText('Sign out'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Sign in')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('My Profile')).not.toBeInTheDocument();
   });
 });
