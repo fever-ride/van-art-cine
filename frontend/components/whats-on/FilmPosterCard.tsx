@@ -28,7 +28,7 @@ export default function FilmPosterCard({ screening }: { screening: Screening }) 
           src={poster}
           alt={`${screening.title} poster`}
           loading="lazy"
-          className="aspect-[2/3] w-full object-cover transition-transform group-hover:scale-[1.03]"
+          className="aspect-[2/3] w-full object-cover transition-transform motion-safe:group-hover:scale-[1.03]"
         />
         <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
           {isNew && (

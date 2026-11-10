@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { apiLogin } from '@/app/lib/auth';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { isErrorLike } from '@/app/lib/typeGuards';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -9,6 +9,7 @@ import { Card, Input, Button } from '@/components/ui';
 
 export default function LoginPage() {
   const r = useRouter();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [reveal, setReveal] = useState(false);
@@ -20,7 +21,7 @@ export default function LoginPage() {
     setErr(null);
     setLoading(true);
     try {
-      await apiLogin({ email, password });
+      await signIn({ email, password });
       r.replace('/');
     } catch (err: unknown) {
       if (isErrorLike(err)) {

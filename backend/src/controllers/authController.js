@@ -106,8 +106,9 @@ export async function refreshHandler(req, res, next) {
 }
 
 /**
- * POST /api/auth/logout
- * @cookie refresh_token — revoked server-side
+ * POST /api/auth/logout — public and idempotent (no valid access token
+ * needed; always 200, even if already logged out).
+ * @cookie refresh_token — revoked server-side if present
  * @returns {200} {{ ok: true, message }} — clears access_token + refresh_token cookies
  */
 export async function logoutHandler(req, res, next) {

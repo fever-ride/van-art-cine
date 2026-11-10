@@ -7,7 +7,8 @@ import { useScreeningsUI } from '@/lib/hooks/useScreeningsUI';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { apiListCinemas, type Cinema } from '@/app/lib/cinemas';
 import Filters from '@/components/screenings/Filters';
-import ResultsTable from '@/components/screenings/ResultsTable';
+import ScreeningList from '@/components/screenings/ScreeningList';
+import ViewTabs from '@/components/screenings/ViewTabs';
 import Pagination from '@/components/screenings/Pagination';
 import FilmListView from '@/components/screenings/FilmListView';
 import ScreeningsFilterPanel, { MobileFilterSheet } from '@/components/screenings/ScreeningsFilterPanel';
@@ -257,26 +258,7 @@ export default function ScreeningsPageClient({
           pending={screeningsUI.pending.search}
           onBeforeCommit={isFilmView ? undefined : handleBeforeFilterCommit}
         />
-        <div className="inline-flex self-start rounded-btn bg-surface-subtle p-1 md:self-auto">
-          <button
-            type="button"
-            onClick={() => screeningsUI.setView('film')}
-            className={`min-h-10 rounded-control px-4 text-sm font-semibold transition-colors ${
-              isFilmView ? 'bg-surface text-primary shadow-sm' : 'text-muted'
-            }`}
-          >
-            Movies
-          </button>
-          <button
-            type="button"
-            onClick={() => screeningsUI.setView('table')}
-            className={`min-h-10 rounded-control px-4 text-sm font-semibold transition-colors ${
-              !isFilmView ? 'bg-surface text-primary shadow-sm' : 'text-muted'
-            }`}
-          >
-            Showtimes
-          </button>
-        </div>
+        <ViewTabs view={isFilmView ? 'film' : 'table'} onChange={screeningsUI.setView} />
       </div>
 
       {isFilmView ? (
@@ -357,11 +339,11 @@ export default function ScreeningsPageClient({
             <div
               ref={tableRef}
               id="screenings-results"
-              className="scroll-mt-(--scroll-offset) overflow-x-auto rounded-card border border-border bg-surface"
+              className="scroll-mt-(--scroll-offset) overflow-hidden rounded-card border border-rule bg-surface"
               style={{ overflowAnchor: 'none' }}
             >
               {items.length > 0 ? (
-                <ResultsTable
+                <ScreeningList
                   items={items}
                   savedIds={watchlist.savedIds}
                   onSavedChange={watchlist.handleSavedChange}

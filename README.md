@@ -121,9 +121,10 @@ frontend/
 │   │   └── FilmShowtimes.tsx# Upcoming screenings list for a film
 │   │
 │   ├── screenings/          # Components for homepage screening listings
-│   │   ├── Filters.tsx            # Search bar, cinemas, date filters
+│   │   ├── SearchBar.tsx          # Debounced title search (shared by both views)
+│   │   ├── Filters.tsx            # Cinemas, sort, date filters (Apply-only)
 │   │   ├── Pagination.tsx         # Pagination controls
-│   │   ├── ResultsTable.tsx       # Screening listing
+│   │   ├── ScreeningList.tsx      # Adaptive screening list (cards on mobile, columns on desktop)
 │   │   └── ScreeningDateInput.tsx # Custom date picker input
 │   │
 │   ├── ui/                  # Low-level shared UI primitives

@@ -2,19 +2,17 @@
 
 import { createPortal } from 'react-dom';
 import { useState } from 'react';
-import { apiLogin } from '@/app/lib/auth';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { isErrorLike } from '@/app/lib/typeGuards';
-import { useRouter } from 'next/navigation';
 import { Input, Button } from '@/components/ui';
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
 };
 
-export default function SignInDropdown({ isOpen, onClose, onSuccess }: Props) {
-  const router = useRouter();
+export default function SignInDropdown({ isOpen, onClose }: Props) {
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState<string | null>(null);
@@ -25,10 +23,8 @@ export default function SignInDropdown({ isOpen, onClose, onSuccess }: Props) {
     setErr(null);
     setLoading(true);
     try {
-      await apiLogin({ email, password });
+      await signIn({ email, password });
       onClose();
-      onSuccess?.();
-      router.refresh();
     } catch (err: unknown) {
       if (isErrorLike(err)) {
         setErr(err.message);

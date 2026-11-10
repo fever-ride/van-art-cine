@@ -3,6 +3,7 @@ import { Archivo, Hanken_Grotesk } from "next/font/google";
 import { Analytics } from '@vercel/analytics/next';
 import "./globals.css";
 import NavBar from '@/components/NavBar';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 import Footer from '@/components/Footer';
 
 // Display face: Archivo with its width axis, so headings can use font-stretch.
@@ -70,11 +71,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${archivo.variable} ${hanken.variable}`}>
       <body className="antialiased">
-        <NavBar />
-        <main className="min-h-[calc(100vh-200px)]">
-          {children}
-        </main>
-        <Footer />
+        <AuthProvider>
+          <NavBar />
+          <main className="min-h-[calc(100vh-200px)]">
+            {children}
+          </main>
+          <Footer />
+        </AuthProvider>
         <Analytics />
       </body>
     </html>
