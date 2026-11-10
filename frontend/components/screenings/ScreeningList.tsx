@@ -115,13 +115,13 @@ function ScreeningItem({
         {/* FILM: title (year), directors, genres */}
         <div className="min-w-0 [grid-area:main]">
           <FilmTitle filmId={s.film_id} title={s.title} year={s.year} newTab />
-          {directors && <div className="mt-0.5 text-[13px] text-muted">{directors}</div>}
+          {directors && <div className="mt-0.5 text-meta text-muted">{directors}</div>}
           {genres.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {genres.map((g) => (
                 <span
                   key={g}
-                  className="rounded-control border border-border px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted"
+                  className="rounded-control border border-border px-1.5 py-0.5 text-label font-medium uppercase tracking-wide text-muted"
                 >
                   {g}
                 </span>
@@ -131,7 +131,7 @@ function ScreeningItem({
         </div>
 
         {/* CINEMA */}
-        <div className="min-w-0 text-[14px] text-primary [grid-area:cinema] md:self-center">
+        <div className="min-w-0 text-sm text-primary [grid-area:cinema] md:self-center">
           {s.cinema_name}
         </div>
 
@@ -148,7 +148,7 @@ function ScreeningItem({
             onClick={onToggle}
             aria-expanded={isOpen}
             aria-controls={detailsId}
-            className="inline-flex min-h-10 shrink-0 items-center gap-1 whitespace-nowrap text-[13px] font-semibold text-primary md:hidden"
+            className="inline-flex min-h-10 shrink-0 items-center gap-1 whitespace-nowrap text-meta font-semibold text-primary md:hidden"
           >
             Details
             <Chevron open={isOpen} />
@@ -222,7 +222,7 @@ function ScreeningDetails({ s }: { s: Screening }) {
                 href={s.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-10 items-center rounded-btn bg-accent px-4 text-[13px] font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
+                className="inline-flex min-h-10 items-center rounded-btn bg-accent px-4 text-meta font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
               >
                 View on cinema site
               </a>
@@ -233,9 +233,9 @@ function ScreeningDetails({ s }: { s: Screening }) {
                 href={s.imdb_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-btn border border-primary bg-surface px-4 text-[13px] font-semibold text-primary transition-colors hover:bg-surface-hover"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-btn border border-primary bg-surface px-4 text-meta font-semibold text-primary transition-colors hover:bg-surface-hover"
               >
-                <span className="rounded-[3px] bg-imdb px-1.5 py-0.5 text-[10px] font-extrabold leading-none text-black">
+                <span className="rounded-[3px] bg-imdb px-1.5 py-0.5 text-micro font-extrabold leading-none text-black">
                   IMDb
                 </span>
                 Profile

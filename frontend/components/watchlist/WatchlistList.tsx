@@ -83,11 +83,11 @@ export default function WatchlistList({
               <div className="min-w-0 [grid-area:main]">
                 <FilmTitle filmId={r.film_id} title={r.title} year={r.year} />
                 {typeof r.imdb_rating === 'number' && (
-                  <div className="mt-0.5 text-[13px] text-muted">IMDb {r.imdb_rating.toFixed(1)}</div>
+                  <div className="mt-0.5 text-meta text-muted">IMDb {r.imdb_rating.toFixed(1)}</div>
                 )}
               </div>
 
-              <div className="min-w-0 text-[14px] text-primary [grid-area:cinema]">
+              <div className="min-w-0 text-sm text-primary [grid-area:cinema]">
                 {r.cinema_name ?? '—'}
               </div>
 
@@ -101,7 +101,7 @@ export default function WatchlistList({
                     href={r.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-10 items-center whitespace-nowrap rounded-btn border border-primary bg-surface px-4 text-[13px] font-semibold text-primary transition-colors hover:bg-surface-hover"
+                    className="inline-flex min-h-10 items-center whitespace-nowrap rounded-btn border border-primary bg-surface px-4 text-meta font-semibold text-primary transition-colors hover:bg-surface-hover"
                   >
                     Get tickets
                   </a>
@@ -140,7 +140,7 @@ const STATUS_LABEL: Record<WatchlistStatus, string> = {
 function StatusBadge({ status }: { status: WatchlistStatus }) {
   return (
     <span
-      className={`inline-flex items-center rounded-control px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${STATUS_STYLE[status]}`}
+      className={`inline-flex items-center rounded-control px-2 py-0.5 text-label font-semibold uppercase tracking-wide ${STATUS_STYLE[status]}`}
     >
       {STATUS_LABEL[status]}
     </span>

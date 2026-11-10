@@ -9,7 +9,7 @@ import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
  */
 
 /** Small uppercase label used for column headers and detail terms. */
-export const COL_LABEL = 'text-[11px] font-semibold uppercase tracking-[0.08em] text-muted';
+export const COL_LABEL = 'text-label font-semibold uppercase tracking-[0.08em] text-muted';
 
 /** Outer frame of a list — same card as the homepage results. */
 export const LIST_FRAME = 'overflow-hidden rounded-card border border-rule bg-surface';
@@ -51,15 +51,15 @@ export function ScreeningWhen({
   startUtc: string | null | undefined;
   runtimeMin?: number | null;
 }) {
-  if (!startUtc) return <div className="text-[13px] text-muted">—</div>;
+  if (!startUtc) return <div className="text-meta text-muted">—</div>;
   const dt = new Date(startUtc);
   return (
     <>
-      <div className="whitespace-nowrap font-display text-[17px] font-bold leading-tight text-primary md:text-[20px]">
+      <div className="whitespace-nowrap font-display text-time font-bold leading-tight text-primary md:text-xl">
         {formatScreeningTime(dt)}
       </div>
-      <div className="mt-0.5 text-[13px] text-muted">{formatScreeningDate(dt)}</div>
-      {runtimeMin != null && <div className="text-[13px] text-muted">{runtimeMin} min</div>}
+      <div className="mt-0.5 text-meta text-muted">{formatScreeningDate(dt)}</div>
+      {runtimeMin != null && <div className="text-meta text-muted">{runtimeMin} min</div>}
     </>
   );
 }
@@ -83,7 +83,7 @@ export function FilmTitle({
     </>
   );
   return (
-    <div className="text-[16px] font-semibold leading-snug text-primary">
+    <div className="text-base font-semibold leading-snug text-primary">
       {filmId ? (
         <Link
           href={`/films/${filmId}`}

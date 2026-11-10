@@ -62,7 +62,7 @@ Decisions: accent = apricot `#F2A65A` (salmon `#e98f76` was dropped — too clos
 - [x] Typography: `font-display` utility (Archivo, `font-stretch: 112%`); `h1`/`h2` use it by default. Hero headline uses `clamp(36px, 6.1vw, 72px)`, uppercase.
 - [x] Hard-coded colours replaced: `#F5C518`→`bg-imdb`, `#FA320A`→`bg-rt`, `#1a1a1a`→`bg-hero-bg`, `gray-*`/`slate-*`/`amber-*` → tokens or `white/x`.
 - [x] Nav bar: shadow removed, black hairline rule. `app/page.tsx.backup` removed.
-- [ ] Pixel font sizes (`text-[14px]` etc.) → type scale. Deferred to Phase 3, where those components are redesigned anyway.
+- [x] Pixel font sizes (`text-[14px]` etc.) → type scale. Done in Phase 3 for Showtimes + watchlist lists: `@theme` tokens `text-micro` 10 / `text-label` 11 / `text-meta` 13 / `text-time` 17, plus built-in `text-sm` 14 / `text-base` 16 / `text-xl` 20 (computed sizes verified unchanged). Film-view files (`FilmListView`, `ScreeningsFilterPanel`) still use `text-[Npx]` — left alone per the Phase 3 scope decision; convert when Film view is next touched.
 
 ### Deferred: dark mode (requirement recorded)
 - Tokens are the only place colours live, so dark mode = redefining `:root` values under `@media (prefers-color-scheme: dark)` guarded by `:root:not([data-theme="light"])`, plus `:root[data-theme="dark"]`.

@@ -111,6 +111,17 @@
   --radius-card-lg: var(--radius-card-lg);
   --font-sans: var(--font-hanken), "Helvetica Neue", Arial, sans-serif;
   --font-display: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
+
+  /* Type scale — the in-between sizes Tailwind's defaults lack. Use these
+   * (or the built-in text-xs/sm/base/lg/xl) instead of text-[Npx].
+   *   micro 10  brand marks (IMDb chip)
+   *   label 11  uppercase column headers, chips, status badges
+   *   meta  13  secondary lines: date, runtime, directors, compact buttons
+   *   time  17  showtime on mobile (desktop uses text-xl = 20) */
+  --text-micro: 0.625rem;
+  --text-label: 0.6875rem;
+  --text-meta: 0.8125rem;
+  --text-time: 1.0625rem;
 }
 
 body {
