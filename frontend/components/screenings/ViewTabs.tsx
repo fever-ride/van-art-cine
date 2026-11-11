@@ -12,7 +12,7 @@ const TABS: readonly (readonly [View, string])[] = [
 /**
  * Movies / Showtimes switch as underline tabs: the current view is ink text
  * with an apricot bar under it, the other is muted. No filled block, so it
- * never reads as an action button (Add to Watchlist owns the apricot fill).
+ * never reads as an action button (apricot fill = primary action or "in your watchlist").
  *
  * The bar is one shared element that slides between tabs. It moves on click
  * (optimistic) rather than after the view's navigation commits, so the

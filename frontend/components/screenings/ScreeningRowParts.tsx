@@ -8,7 +8,8 @@ import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
  * the same wherever a screening is shown.
  */
 
-/** Small uppercase label used for column headers and detail terms. */
+/** Small uppercase label used for detail terms (e.g. Language, Cast).
+ * Lists have no column-header row — by decision, don't add one back. */
 export const COL_LABEL = 'text-label font-semibold uppercase tracking-[0.08em] text-muted';
 
 /** Outer frame of a list — same card as the homepage results. */
@@ -17,31 +18,6 @@ export const LIST_FRAME = 'overflow-hidden rounded-card border border-rule bg-su
 /** One row/card: divider + hover, shared padding. */
 export const ROW_ITEM = 'border-b border-border last:border-b-0';
 export const ROW_BODY = 'px-4 py-4 transition-colors hover:bg-surface-hover';
-
-/** Desktop-only column header row. `grid` is the list's ROW_GRID. */
-export function ListHeader({
-  grid,
-  columns,
-}: {
-  grid: string;
-  columns: { area: string; label: string; align?: 'center' | 'end' }[];
-}) {
-  return (
-    <div aria-hidden="true" className={`${grid} hidden border-b border-rule px-4 py-3 md:grid`}>
-      {columns.map((c) => (
-        <span
-          key={c.area}
-          style={{ gridArea: c.area }}
-          className={`${COL_LABEL} ${
-            c.align === 'center' ? 'text-center' : c.align === 'end' ? 'text-right' : ''
-          }`}
-        >
-          {c.label}
-        </span>
-      ))}
-    </div>
-  );
-}
 
 /** Time (prominent) · date · runtime. Shows "—" when the start is unknown. */
 export function ScreeningWhen({
@@ -91,7 +67,10 @@ export function FilmTitle({
           {...(newTab
             ? {
                 target: '_blank',
-                rel: 'noopener noreferrer',
+                // Internal link: keep the Referer (no `noreferrer`) so the
+                // film page knows the visit came from this site and doesn't
+                // show the outside-visitor intro (SiteIntroBar).
+                rel: 'noopener',
                 'aria-label': `View details for ${title} in a new tab`,
               }
             : {})}
@@ -119,5 +98,32 @@ export function Chevron({ open }: { open: boolean }) {
     >
       <polyline points="8 4 16 12 8 20" />
     </svg>
+  );
+}
+
+/**
+ * "Get tickets ↗" — the external ticket/showtime link. Same 32px height and
+ * 7.25rem width as WatchlistButton so the two sit as a matched pair (side by
+ * side or stacked); a link (not a toggle),
+ * so it's text + outbound arrow rather than a stateful button. Renders a
+ * muted "No ticket link" when the screening has no URL.
+ */
+export function TicketLink({ href, className = '' }: { href?: string | null; className?: string }) {
+  if (!href) {
+    return (
+      <span className={`inline-flex h-8 w-[7.25rem] items-center justify-center text-meta text-muted ${className}`}>
+        No ticket link
+      </span>
+    );
+  }
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`inline-flex h-8 w-[7.25rem] shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-btn border border-primary bg-surface px-2.5 text-meta font-semibold text-primary transition-colors hover:bg-surface-hover ${className}`}
+    >
+      Get tickets <span aria-hidden="true">↗</span>
+    </a>
   );
 }

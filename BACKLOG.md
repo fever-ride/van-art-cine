@@ -682,6 +682,35 @@ natural place to host venue specific questions and answers.
 
 ---
 
+#### SEO-14. Add breadcrumbs to film detail pages
+
+**Problem:** Film detail pages (`/films/[id]`) are the main landing page from
+search. They show no breadcrumb trail and emit no `BreadcrumbList`
+structured data. Visitors who land there have no visible "up one level" path
+to the rest of the site. Google also has no breadcrumb to show in place of
+the raw URL in results.
+
+**Impact:**
+- SEO: Google shows a "The Cinephile's Van › Now Playing › Film" path in
+  results. That reads better and can improve click-through.
+- UX: gives search visitors a way into the homepage, which helps the high
+  bounce rate on this page.
+- Complements the site intro bar added 2026-11-11 (`SiteIntroBar`).
+
+**Approach:**
+- Add a small visible trail above the film title in `FilmHero`:
+  "Now Playing › {title}", where "Now Playing" links to `/`.
+- Emit matching `BreadcrumbList` JSON-LD next to the existing `Movie` /
+  `ItemList` structured data in `app/films/[id]/page.tsx`. Reuse
+  `safeJsonLd`.
+- Keep the visible trail and the JSON-LD in sync from one source array.
+- Consider the same for the hub pages (Top Rated) at the same time.
+
+**Priority:** Medium. The user wants this; it's low effort and pairs with the
+landing-page bounce work.
+
+---
+
 #### SEO-7. Add tag based hub pages
 
 **Problem:** `screening.tags` already holds a clean set of event style

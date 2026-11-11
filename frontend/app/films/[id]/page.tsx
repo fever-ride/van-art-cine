@@ -3,13 +3,15 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import { cookies, headers } from 'next/headers';
 import { getFilmDetail } from '@/app/lib/films';
 import type { Screening } from '@/app/lib/screenings';
 import { ItemListStructuredData, safeJsonLd } from '@/app/lib/structuredData';
-import FilmHeader from '@/components/films/FilmHeader';
+import FilmHero from '@/components/films/FilmHero';
 import FilmMeta from '@/components/films/FilmMeta';
 import FilmShowtimes from '@/components/films/FilmShowtimes';
 import PosterCarousel from '@/components/whats-on/PosterCarousel';
+import { INTRO_DISMISSED_COOKIE } from '@/app/lib/siteIntro';
 
 
 
@@ -205,7 +207,7 @@ function StructuredData({
  * boundary. `getFilmDetail` returns from React.cache() on this call since
  * `generateMetadata` already populated it.
  */
-async function FilmContent({ id }: { id: number }) {
+async function FilmContent({ id, showIntro }: { id: number; showIntro: boolean }) {
   const { film, upcoming, related } = await getFilmDetail(id);
 
   // Soonest upcoming screening, if any — same ordering FilmShowtimes uses,
@@ -218,20 +220,19 @@ async function FilmContent({ id }: { id: number }) {
     <>
       <StructuredData film={film} upcoming={upcoming} />
       <ItemListStructuredData films={related} />
-      <FilmHeader film={film} nextScreening={nextScreening} />
-      {/* Two-column layout: film metadata left, showtimes right */}
-      <div className="mt-8 grid grid-cols-1 gap-10 md:grid-cols-[0.4fr_0.6fr]">
-        <div>
-          <FilmMeta film={film} />
+      <FilmHero film={film} nextScreening={nextScreening} showIntro={showIntro} />
+      {/* Showtimes first (the reason most visitors land here), About beside
+          them on wide screens and sticky so it stays in view while a long
+          showtime list scrolls; stacked below on phones. */}
+      <div className="mx-auto max-w-[1400px] px-4 py-8 md:py-10">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start">
+          <FilmShowtimes upcoming={upcoming} filmTitle={film.title ?? 'This Film'} />
+          <div className="lg:sticky lg:top-(--scroll-offset)">
+            <FilmMeta film={film} />
+          </div>
         </div>
-        <div>
-          <FilmShowtimes
-            upcoming={upcoming}
-            filmTitle={film.title ?? 'This Film'}
-          />
-        </div>
+        <RelatedFilms films={related} />
       </div>
-      <RelatedFilms films={related} />
     </>
   );
 }
@@ -246,13 +247,11 @@ function RelatedFilms({ films }: { films: Screening[] }) {
   if (films.length === 0) return null;
 
   return (
-    <section className="mt-8 overflow-hidden rounded-card border border-border bg-surface">
-      <div className="bg-table-header-bg px-6 py-3">
-        <h2 className="text-[11px] font-medium uppercase tracking-wide text-white">
-          You May Also Like
-        </h2>
-      </div>
-      <div className="px-6 py-5">
+    <section aria-labelledby="related-heading" className="mt-12">
+      <h2 id="related-heading" className="mb-3 font-display text-xl font-bold uppercase text-primary md:text-2xl">
+        You may also like
+      </h2>
+      <div className="border-t-2 border-rule pt-4">
         <PosterCarousel films={films} />
       </div>
     </section>
@@ -261,34 +260,32 @@ function RelatedFilms({ films }: { films: Screening[] }) {
 
 /**
  * Pulse skeleton shown while FilmContent resolves.
- * Mirrors the approximate layout of FilmHeader (poster + text) and the
+ * Mirrors the approximate layout of FilmHero (poster + text) and the
  * two-column Meta / Showtimes grid below it.
  */
 function FilmPageSkeleton() {
   return (
     <>
-      {/* Header skeleton: poster placeholder + text lines */}
-      <div className="flex gap-6 p-4 md:p-6">
-        <div className="h-[176px] w-[128px] shrink-0 animate-pulse rounded-card bg-surface-subtle" />
-        <div className="flex grow flex-col gap-3 pt-1">
-          <div className="h-8 w-2/3 animate-pulse rounded bg-surface-subtle" />
-          <div className="h-4 w-1/2 animate-pulse rounded bg-surface-subtle" />
-          <div className="mt-2 flex gap-2">
-            <div className="h-6 w-24 animate-pulse rounded-full bg-surface-subtle" />
-            <div className="h-6 w-24 animate-pulse rounded-full bg-surface-subtle" />
+      {/* Hero skeleton: dark band with poster + title placeholders */}
+      <div className="bg-hero-bg">
+        <div className="mx-auto flex max-w-[1400px] gap-4 px-4 py-12 sm:gap-6 md:py-16">
+          <div className="h-[150px] w-[100px] shrink-0 animate-pulse rounded-control bg-white/10 sm:h-[200px] sm:w-[133px]" />
+          <div className="flex grow flex-col justify-end gap-3">
+            <div className="h-9 w-2/3 animate-pulse rounded bg-white/10" />
+            <div className="h-4 w-1/2 animate-pulse rounded bg-white/10" />
           </div>
         </div>
       </div>
-      {/* Two-column skeleton: meta rows left, showtime cards right */}
-      <div className="mt-8 grid grid-cols-1 gap-10 md:grid-cols-[0.4fr_0.6fr]">
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-4 animate-pulse rounded bg-surface-subtle" />
-          ))}
-        </div>
+      {/* Showtimes + About skeleton */}
+      <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-10 px-4 py-8 lg:grid-cols-[1.5fr_1fr]">
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="h-12 animate-pulse rounded bg-surface-subtle" />
+          ))}
+        </div>
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-4 animate-pulse rounded bg-surface-subtle" />
           ))}
         </div>
       </div>
@@ -326,11 +323,34 @@ export default async function FilmPage({
     // FilmContent's own fetch below, which surfaces them via error.tsx.
   }
 
+  const showIntro = await shouldShowSiteIntro();
+
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8">
+    <main>
       <Suspense fallback={<FilmPageSkeleton />}>
-        <FilmContent id={film_id} />
+        <FilmContent id={film_id} showIntro={showIntro} />
       </Suspense>
     </main>
   );
+}
+
+/**
+ * Show the one-line site intro to visitors arriving from outside this site
+ * (search engines, social, shared links, typed URL) until they dismiss it.
+ * Decided server-side from the Referer + dismiss cookie so the bar is part of
+ * the first paint. This page is already rendered per request (film detail
+ * fetch is `no-store`), so reading headers/cookies costs no caching.
+ */
+async function shouldShowSiteIntro(): Promise<boolean> {
+  const cookieStore = await cookies();
+  if (cookieStore.get(INTRO_DISMISSED_COOKIE)) return false;
+
+  const h = await headers();
+  const referer = h.get('referer');
+  if (!referer) return true; // direct visit / shared link / referrer stripped
+  try {
+    return new URL(referer).host !== h.get('host');
+  } catch {
+    return true;
+  }
 }

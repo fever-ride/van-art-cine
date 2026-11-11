@@ -1,8 +1,8 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import type { Film } from '@/app/lib/films';
 import { isMissingText } from '@/app/lib/typeGuards';
+import { COL_LABEL } from '@/components/screenings/ScreeningRowParts';
 
 type Props = {
   film: Pick<Film, 'language' | 'description'> & {
@@ -45,57 +45,43 @@ export default function FilmMeta({ film }: Props) {
     writers.length > 0 ||
     topCast.length > 0;
 
-  return (
-    <section className="overflow-hidden rounded-card border border-border bg-surface">
-      <div className="bg-table-header-bg px-6 py-3">
-        <h2 className="text-[11px] font-medium uppercase tracking-wide text-white">
-          Film Details
-        </h2>
-      </div>
+  // Label/value rows, same small-caps label style as the homepage lists.
+  const rows: [string, string][] = [];
+  if (langs.length > 0) rows.push(['Language', langs.join(', ')]);
+  if (writers.length > 0) rows.push([writers.length > 1 ? 'Writers' : 'Writer', writers.join(', ')]);
+  if (topCast.length > 0) rows.push(['Cast', topCast.join(', ')]);
 
-      <div className="px-6 py-5 space-y-5">
+  return (
+    <section aria-labelledby="film-about-heading">
+      <h2 id="film-about-heading" className="mb-3 font-display text-xl font-bold uppercase text-primary md:text-2xl">
+        About the film
+      </h2>
+
+      {/* Same frame as the showtimes list beside it. */}
+      <div className="rounded-card border border-rule bg-surface p-4 md:p-5">
         {!hasAnyDetail && (
           <p className="text-sm text-muted">No additional details available.</p>
         )}
 
-        {/* Description */}
         {description && (
-          <div>
-            <p className="text-[15px] leading-relaxed text-primary">
-              {description}
-            </p>
-          </div>
+          <p className="text-[15px] leading-relaxed text-primary">{description}</p>
         )}
 
-        {/* Details */}
-        {(langs.length > 0 ||
-          writers.length > 0 ||
-          topCast.length > 0) && (
-          <div className="space-y-4 text-sm pt-3">
-            {langs.length > 0 && (
-              <div className="flex gap-4">
-                <span className="font-semibold text-primary w-20">Language</span>
-                <span className="text-primary">{langs.join(', ')}</span>
+        {rows.length > 0 && (
+          <dl
+            className={`grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm ${
+              description ? 'mt-4 border-t border-border pt-4' : ''
+            }`}
+          >
+            {rows.map(([label, value]) => (
+              <div key={label} className="contents">
+                <dt className={`${COL_LABEL} pt-0.5`}>{label}</dt>
+                <dd className="text-primary">{value}</dd>
               </div>
-            )}
-
-            {writers.length > 0 && (
-              <div className="flex gap-4">
-                <span className="font-semibold text-primary w-20">Writer{writers.length > 1 ? 's' : ''}</span>
-                <span className="text-primary">{writers.join(', ')}</span>
-              </div>
-            )}
-
-            {topCast.length > 0 && (
-              <div className="flex gap-4">
-                <span className="font-semibold text-primary w-20">Cast</span>
-                <span className="text-primary">{topCast.join(', ')}</span>
-              </div>
-            )}
-          </div>
+            ))}
+          </dl>
         )}
       </div>
     </section>
   );
 }
-

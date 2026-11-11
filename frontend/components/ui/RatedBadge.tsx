@@ -6,7 +6,7 @@ import { isDisplayableRating } from '@/app/lib/displayText';
  * weight nobody has to learn, unlike IMDb/RT's own badges (which borrow
  * those services' actual brand colors instead, since a rating card has no
  * equivalent "brand" of its own). Solid white fill + black border reads
- * clearly on both this project's light card surfaces and FilmHeader's dark
+ * clearly on both this project's light card surfaces and FilmHero's dark
  * hero background, so this needs no light/dark variant.
  *
  * Renders nothing for a missing or non-informative value (OMDb's "N/A",

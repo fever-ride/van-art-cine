@@ -64,4 +64,11 @@ describe('WatchlistList', () => {
     fireEvent.click(btn);
     expect(onSavedChange).toHaveBeenCalledWith(7, false);
   });
+
+  test('has no column-header row (removed by decision)', () => {
+    render(<WatchlistList items={[upcoming]} onSavedChange={() => {}} />);
+    for (const label of ['When', 'Film', 'Cinema', 'Status']) {
+      expect(screen.queryByText(label, { exact: true })).toBeNull();
+    }
+  });
 });

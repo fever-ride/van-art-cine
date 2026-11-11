@@ -26,3 +26,4 @@ describe('Vancouver display time', () => {
     expect(todayYmdInDisplayTimezone(new Date('2026-11-09T07:00:00Z'))).toBe('2026-11-09');
   });
 });
+
