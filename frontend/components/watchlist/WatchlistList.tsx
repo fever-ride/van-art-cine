@@ -4,9 +4,9 @@ import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import {
   ROW_ITEM,
   ROW_BODY,
-  ListHeader,
   ScreeningWhen,
   FilmTitle,
+  TicketLink,
 } from '@/components/screenings/ScreeningRowParts';
 
 export type WatchlistStatus = 'upcoming' | 'past' | 'unavailable';
@@ -42,9 +42,8 @@ export type WatchlistRow = {
  *          when | status
  *          actions (full width — tickets + remove need the room)
  *
- * The actions column has a fixed width, not `auto`: the header row has no
- * content there, so `auto` would size it differently from the data rows and
- * the header labels would drift off their columns.
+ * Fixed column widths (not `auto`) keep every row aligned with the others.
+ * No column-header row, by decision.
  */
 const ROW_GRID =
   'grid gap-x-4 gap-y-1 ' +
@@ -52,7 +51,7 @@ const ROW_GRID =
   // md (tablet): 4 columns, actions drop to a second line under the film.
   "md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,10rem)_6.5rem] md:[grid-template-areas:'when_main_cinema_status'_'when_actions_actions_actions'] md:items-center " +
   // lg+: everything on one line.
-  "lg:grid-cols-[8rem_minmax(0,1fr)_minmax(0,13rem)_7rem_15rem] lg:[grid-template-areas:'when_main_cinema_status_actions']";
+  "lg:grid-cols-[8rem_minmax(0,1fr)_minmax(0,13rem)_7rem_15.5rem] lg:[grid-template-areas:'when_main_cinema_status_actions']";
 
 export default function WatchlistList({
   items,
@@ -63,15 +62,6 @@ export default function WatchlistList({
 }) {
   return (
     <div className="bg-surface">
-      <ListHeader
-        grid={ROW_GRID}
-        columns={[
-          { area: 'when', label: 'When' },
-          { area: 'main', label: 'Film' },
-          { area: 'cinema', label: 'Cinema' },
-          { area: 'status', label: 'Status' },
-        ]}
-      />
       <ul role="list" aria-label="Saved screenings">
         {items.map((r) => (
           <li key={r.screening_id} className={ROW_ITEM}>
@@ -96,18 +86,7 @@ export default function WatchlistList({
               </div>
 
               <div className="mt-3 flex items-center justify-end gap-2 [grid-area:actions] md:mt-2 md:justify-start lg:mt-0 lg:justify-end">
-                {r.source_url ? (
-                  <a
-                    href={r.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-10 items-center whitespace-nowrap rounded-btn border border-primary bg-surface px-4 text-meta font-semibold text-primary transition-colors hover:bg-surface-hover"
-                  >
-                    Get tickets
-                  </a>
-                ) : (
-                  <span className="whitespace-nowrap text-xs text-muted">No ticket link</span>
-                )}
+                <TicketLink href={r.source_url} />
                 <WatchlistButton
                   screeningId={r.screening_id}
                   initialSaved={true}

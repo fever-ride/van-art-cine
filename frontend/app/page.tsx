@@ -21,6 +21,7 @@ import {
   type UIState,
 } from '@/lib/hooks/screeningsUrlState';
 import ScreeningsPageClient from '@/components/screenings/ScreeningsPageClient';
+import HeroGlow from '@/components/HeroGlow';
 
 const SITE_URL = 'https://www.cinephilesvan.com';
 
@@ -281,16 +282,17 @@ export default async function Home({
   return (
     <main>
       <CanonicalLink ui={ui} page={page} />
-      <section className="bg-hero-bg text-white mb-12">
-        <div className="mx-auto max-w-[1400px] px-4 py-16 md:py-20">
-          <h1 className="mb-4 text-[clamp(36px,6.1vw,72px)] font-bold uppercase leading-[0.95] tracking-[-0.03em]">
-            Vancouver&apos;s indie
-            <br />
-            screenings,
-            <br />
-            all in one place.
+      {/* Hero: same copy as before, now 2 lines on wide screens (natural wrap
+          on phones) over the teal/apricot glow. bg-hero-bg stays as the
+          fallback colour under the SVG. */}
+      <section className="relative isolate mb-8 overflow-hidden bg-hero-bg text-white">
+        <HeroGlow className="-z-10" />
+        <div className="mx-auto max-w-[1400px] px-4 py-12 md:py-16">
+          <h1 className="mb-4 text-[clamp(32px,5vw,64px)] font-bold uppercase leading-[0.95] tracking-[-0.03em]">
+            Vancouver&apos;s indie screenings,
+            <br className="hidden md:inline" /> all in one place.
           </h1>
-          <p className="text-lg text-white/70 max-w-2xl">
+          <p className="max-w-2xl text-base text-white/75 md:text-lg">
             Discover independent films, art-house cinema, and festival screenings across the city&apos;s best theaters.
           </p>
         </div>

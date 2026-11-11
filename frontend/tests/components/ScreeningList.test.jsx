@@ -93,4 +93,11 @@ describe('ScreeningList', () => {
     expect(onSavedChange).toHaveBeenCalledWith(1, true);
     expect(screen.queryByText('View on cinema site')).toBeNull();
   });
+
+  test('has no column-header row (removed by decision)', () => {
+    render(<ScreeningList items={items} />);
+    for (const label of ['When', 'Film', 'Cinema', 'Status']) {
+      expect(screen.queryByText(label, { exact: true })).toBeNull();
+    }
+  });
 });

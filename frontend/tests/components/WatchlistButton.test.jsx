@@ -19,21 +19,21 @@ describe('WatchlistButton', () => {
     jest.clearAllMocks();
   });
 
-  test('renders "Add to Watchlist" when initialSaved is false or undefined', () => {
+  test('renders "+ Watchlist" when initialSaved is false or undefined', () => {
     render(<WatchlistButton screeningId={123} />);
 
     const button = screen.getByRole('button', { name: /add to watchlist/i });
     expect(button).toBeInTheDocument();
-    expect(button).toHaveTextContent('Add to Watchlist');
+    expect(button).toHaveTextContent('+ Watchlist');
     expect(button).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('renders "Added ✓" when initialSaved is true', () => {
+  test('renders "✓ In watchlist" when initialSaved is true', () => {
     render(<WatchlistButton screeningId={123} initialSaved={true} />);
 
-    const button = screen.getByRole('button', { name: /saved — remove/i });
+    const button = screen.getByRole('button', { name: /remove from watchlist/i });
     expect(button).toBeInTheDocument();
-    expect(button).toHaveTextContent('Added ✓');
+    expect(button).toHaveTextContent('✓ In watchlist');
     expect(button).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -58,8 +58,8 @@ describe('WatchlistButton', () => {
 
     // After success we end up in saved state
     await waitFor(() => {
-      const updated = screen.getByRole('button', { name: /saved — remove/i });
-      expect(updated).toHaveTextContent('Added ✓');
+      const updated = screen.getByRole('button', { name: /remove from watchlist/i });
+      expect(updated).toHaveTextContent('✓ In watchlist');
       expect(updated).toHaveAttribute('aria-pressed', 'true');
     });
   });
@@ -82,12 +82,12 @@ describe('WatchlistButton', () => {
     // Immediately after click we should see optimistic "Working…" text
     expect(button).toHaveTextContent('Working…');
 
-    // After the rejected promise, we should roll back to "Add to Watchlist"
+    // After the rejected promise, we should roll back to "+ Watchlist"
     await waitFor(() => {
       const reverted = screen.getByRole('button', {
         name: /add to watchlist/i,
       });
-      expect(reverted).toHaveTextContent('Add to Watchlist');
+      expect(reverted).toHaveTextContent('+ Watchlist');
       expect(reverted).toHaveAttribute('aria-pressed', 'false');
     });
 
@@ -116,8 +116,8 @@ describe('WatchlistButton', () => {
     });
 
     // Button should now be in "saved" state
-    const updated = screen.getByRole('button', { name: /saved — remove/i });
-    expect(updated).toHaveTextContent('Added ✓');
+    const updated = screen.getByRole('button', { name: /remove from watchlist/i });
+    expect(updated).toHaveTextContent('✓ In watchlist');
     expect(updated).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -138,7 +138,7 @@ describe('WatchlistButton', () => {
       />,
     );
 
-    const button = screen.getByRole('button', { name: /saved — remove/i });
+    const button = screen.getByRole('button', { name: /remove from watchlist/i });
 
     // Click should trigger confirm dialog
     fireEvent.click(button);
@@ -149,7 +149,7 @@ describe('WatchlistButton', () => {
     expect(apiToggleWatchlist).not.toHaveBeenCalled();
 
     // State remains saved
-    expect(button).toHaveTextContent('Added ✓');
+    expect(button).toHaveTextContent('✓ In watchlist');
     expect(button).toHaveAttribute('aria-pressed', 'true');
 
     confirmSpy.mockRestore();

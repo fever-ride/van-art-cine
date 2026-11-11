@@ -11,7 +11,6 @@ import {
   COL_LABEL,
   ROW_ITEM,
   ROW_BODY,
-  ListHeader,
   ScreeningWhen,
   FilmTitle,
   Chevron,
@@ -29,7 +28,8 @@ type Props = {
  *                  when | title | cinema | watchlist | chevron
  *   mobile:        a card — time column on the left, everything else
  *                  stacked on the right.
- * Column widths live here once so the header and every row line up.
+ * Column widths live here once so every row lines up. No column-header
+ * row, by decision.
  */
 const ROW_GRID =
   'grid gap-x-4 gap-y-1 ' +
@@ -48,17 +48,6 @@ export default function ScreeningList({ items, savedIds, onSavedChange }: Props)
 
   return (
     <div className="bg-surface">
-      {/* Column header — desktop only; mobile cards are self-explanatory. */}
-      <ListHeader
-        grid={ROW_GRID}
-        columns={[
-          { area: 'when', label: 'When' },
-          { area: 'main', label: 'Film' },
-          { area: 'cinema', label: 'Cinema' },
-          { area: 'actions', label: 'Watchlist', align: 'center' },
-        ]}
-      />
-
       <ul role="list" aria-label="Screenings">
         {items.map((s) => (
           <ScreeningItem

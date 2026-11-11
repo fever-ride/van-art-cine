@@ -102,8 +102,60 @@ Verified at 375 / 768 / 1024 / 1280: `scrollWidth === innerWidth` (no sideways s
   - Long titles and cinema names wrap inside their column (never truncated).
 - [x] Watchlist page aligned with the homepage list. Its rows carry different data (status, IMDb score, "Get tickets", confirm-before-remove, no details), so it is its own `components/watchlist/WatchlistList.tsx` built from shared cells in `components/screenings/ScreeningRowParts.tsx` (`ScreeningWhen`, `FilmTitle`, `ListHeader`, `Chevron`, frame/row classes) — the same parts `ScreeningList` now uses. The old duplicated `<table>` + mobile `<ul>` (two copies of every row) is gone. Layout: card below `md`; at `md` four columns with the buttons on a second line (five columns squeezed titles to one word per line at 768px); one line from `lg`. Fixed-width actions column so the header row stays aligned. Page shell now matches the homepage (`max-w-[1400px]`, Archivo uppercase heading, saved-count line). Information unchanged except the "Saved Screenings" band, replaced by the column header row and count. Tests in `tests/components/WatchlistList.test.jsx`.
 - [x] View toggle → underline tabs (`components/screenings/ViewTabs.tsx`): current view = ink text + apricot bar, other = muted; no filled block, so it never reads as a button next to the apricot "Add to Watchlist". Two filled variants were tried and rejected (ink fill: unclear which half is selected; apricot fill: looks like the action button). The bar slides between tabs (0.3s, `motion-reduce` → jump) and moves optimistically on click, before the view navigation commits. `role="group"` + `aria-pressed`. Tests in `tests/components/ViewTabs.test.jsx`.
-- [ ] Hero area: follow the reference "Now Showing in Vancouver" headline and short intro.
+- [x] Hero area: kept the original copy ("Vancouver's indie screenings, all in one place." + intro; user preferred it over the reference "Now Showing in Vancouver"). Title now 2 lines on md+ / natural wrap on phones (was 3 forced lines), shorter padding (~420px → ~320px at 1440). Background: `components/HeroGlow.tsx`, an inline-SVG abstract glow — deep teal + apricot blurred lights with grain on near-black (option "2b" of 8+3 explored). Teal is deliberately a second hue so the page isn't apricot-only. Follow-up idea: watchlist buttons outline until saved, to cut apricot further.
 - [x] `prefers-reduced-motion` support (site-wide): slide-in panels (auth dropdown/modal, mobile filter sheet) fade instead; skeleton pulse stops; details chevron and view-tab bar jump instead of animating; poster hover zoom off. Colour/opacity transitions and the search spinner (only "working" signal) are kept. Central rules in `globals.css`, component-level via `motion-safe:` / `motion-reduce:`.
+
+## Phase 3b — Film Detail Page (main landing page from search) ✅
+
+Goal: answer "when and where can I see it" above the fold, and match the homepage style. Nothing that was shown before was removed.
+
+- [x] `components/films/FilmHero.tsx` replaces `FilmHeader.tsx`.
+  - Full-width hero on the homepage's `HeroGlow` backdrop. Per-film poster-colour extraction was considered and dropped as too complex for the gain.
+  - Same facts as before: poster (with fallback), `<h1>` title, year / country / runtime / director, genre chips, rating badge, IMDb score + votes, RT score, IMDb profile link. The IMDb link is now secondary, no longer the apricot button.
+  - New **Next screening** card: date · time · cinema, plus **Get tickets**, the page's only apricot action. It uses the `nextScreening` the page already computed; no new API.
+- [x] `FilmShowtimes.tsx`:
+  - Heading kept ("Upcoming screenings in Vancouver", for SEO). Summary line "N screenings · M cinemas".
+  - Grouped by Vancouver day. Folds after ~8 rows without splitting a day; Show all / Show fewer toggle.
+  - **Cinema filter** chips when there are 2+ cinemas. Client-side: `/api/films/:id` already returns up to 200 upcoming rows, so no new API was needed.
+  - Rows show start – end time and runtime. On phones the end time moves under the start time and the buttons stack.
+  - Tickets and Watchlist buttons are outline. `WatchlistButton` got a `variant="outline"`; the default `solid` is unchanged elsewhere.
+- [x] Layout: Showtimes first. "About the film" (`FilmMeta`) sits beside the showtimes on `lg` and is sticky; it stacks below on phones. Black header bars → hairline-rule + small-caps labels, as on the homepage. "You may also like" got the same treatment.
+- Measured on phones: showtimes now start at ~520px (was ~1080px). The Next screening card with Get tickets is in the first screen.
+- [x] **Round 2 after review** (the first version was hard to read on desktop):
+  - Showtimes now use the homepage list system:
+    - `LIST_FRAME` card with a column header.
+    - Grey day bands showing "N screenings".
+    - Divided, hoverable rows; display-font times with "until … · N min".
+  - About and You may also like headings match. About sits in the same ruled card.
+  - **Buttons redesigned site-wide**, because a link and a toggle had been styled as the same thing in different sizes:
+    - `TicketLink` ("Get tickets ↗", outbound link) and `WatchlistButton` ("+ Watchlist" / "✓ In watchlist", toggle) are both 8.5rem × 40px, so they pair up side by side or stacked.
+    - Watchlist is ink outline until saved, then apricot. Apricot now means "yours", which also removes the column of apricot buttons on the homepage list.
+    - The wording matches the nav's "My Watchlist"; "Save" was rejected as unclear. Tooltip and aria-label: "Add to watchlist" / "Remove from watchlist".
+    - The `variant` prop is gone: one look everywhere (homepage, film page, watchlist page).
+- [x] **Round 3** (user feedback):
+  - Removed the WHEN / CINEMA header row: filter chips → day bands → rows reads clearly without it.
+  - Per-screening end time ("until …") and runtime are no longer shown. Scraped end/runtime data isn't reliable enough and could mislead.
+  - Cinema filter chips are flatter: 32px instead of 40px, same text size.
+- [x] **Round 4**: lighter pair. `TicketLink` and `WatchlistButton` are now 7.25rem × 32px (was 8.5rem × 40px, felt heavy). Film-page rows use tighter padding: row height ~53px on desktop (was ~72), ~91px on phones (was ~120). Text size unchanged. The watchlist page's actions column narrowed to 15.5rem to match. Trade-off: 32px tap targets, below the 40–44px guideline, accepted for a lighter look.
+- [x] **Round 5**: agenda layout. Each day is a row of the ruled card: a calendar block on the left (weekday / big day number / month, via the new `screeningDateParts`) with that day's screenings stacked on the right. The cinema name in each row is muted, so the time leads. The cinema filter is now a quiet text control on the heading line ("Cinema: **All** · …", with the same apricot underline as the homepage view tabs) instead of boxed chips inside the card: it's secondary, so it no longer competes with the showtimes.
+- [x] **Round 6 (current)**: the agenda layout was rejected as not good-looking. For now the showtimes copy the homepage Showtimes row exactly:
+  - Display-font time with the date under it, then the cinema, then `TicketLink` + `WatchlistButton`.
+  - Divided rows in the ruled card, flat and soonest first. Folds after 8 rows.
+  - Day grouping, header row and runtime are gone. The quiet text cinema filter stays.
+  - On phones, the buttons sit side by side on their own line under time and cinema.
+  - **Open:** find a better showtimes design for this page later; don't reuse the day-band or calendar-block versions (rounds 2 and 5) without a new idea.
+- [x] **No column-header rows in any screening list** (homepage, watchlist page, film page). `ListHeader` was deleted. Tests assert the lists render no "When / Film / Cinema / Status" header. Don't add one back.
+- [x] **Site intro bar for search visitors** (`components/SiteIntroBar.tsx`). This addresses the high bounce rate on the film page.
+  - A small eyebrow line at the top of the dark film hero (it was first a separate grey band under the nav, which made the top feel fragmented), reusing the homepage headline: "Vancouver's indie screenings, all in one place. See what's on →", linking to `/`.
+  - Shown only to visitors arriving from outside the site (external Referer, or none), until they dismiss it.
+  - Decided server-side from the Referer and the `intro_dismissed` cookie, so there's no flash or layout shift. The page is already per-request.
+  - The cookie name lives in `app/lib/siteIntro.ts`, not the client file: a server component importing a constant from a `'use client'` module gets a reference, not the string.
+- Next bounce ideas, not done yet:
+  - Track Get tickets / Watchlist clicks; check whether the Vercel plan supports custom events.
+  - Clickable genre / cinema / "more on this date" links into homepage filters.
+  - Breadcrumbs → BACKLOG SEO-14.
+- Not added: awards. The free-text needs standardising first; see BACKLOG DP-9.
+- Tests: `tests/components/FilmHero.test.jsx`, `tests/components/FilmShowtimes.test.jsx` (fold, day groups, filter, summary, end time).
 
 ## Phase 4 — State Layer (Redux Toolkit)
 

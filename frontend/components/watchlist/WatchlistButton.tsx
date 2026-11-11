@@ -80,12 +80,18 @@ export default function WatchlistButton({
     }
   }
 
+  // One look everywhere (homepage list, film page, watchlist page):
+  //   not saved → "+ Watchlist", ink outline (a quiet toggle)
+  //   saved     → "✓ In watchlist", apricot fill (apricot now means "yours")
+  // Words match the nav's "My Watchlist" so users know where it goes.
+  // Fixed width + same 32px height as the "Get tickets" link (TicketLink),
+  // so the pair lines up and the button never resizes when toggled.
   const sizeClass: Record<NonNullable<Props['size']>, string> = {
-    sm: 'min-h-10 px-3 py-1.5 text-xs',
-    md: 'px-4 py-2 text-sm',
+    sm: 'h-8 text-meta',
+    md: 'h-10 text-sm',
   };
 
-  const label = saved ? 'Saved — Remove' : 'Add to Watchlist';
+  const label = saved ? 'Remove from watchlist' : 'Add to watchlist';
 
   return (
     <button
@@ -94,18 +100,28 @@ export default function WatchlistButton({
       disabled={pending}
       aria-pressed={saved}
       aria-label={label}
+      title={label}
       className={[
-        'rounded-btn font-semibold transition-all duration-150 whitespace-nowrap shrink-0',
+        'inline-flex w-[7.25rem] shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-btn border px-2.5 font-semibold transition-colors duration-150',
         sizeClass[size],
-        'min-w-[7.5rem]', // ensures stable width ("Add to Watchlist" width)
-        pending ? 'opacity-60 cursor-not-allowed' : '',
+        pending ? 'cursor-not-allowed opacity-60' : '',
         saved
-          ? 'border border-dashed border-border text-muted bg-surface-subtle hover:bg-border-light'
-          : 'bg-accent text-accent-ink hover:bg-accent-hover',
+          ? 'border-accent bg-accent text-accent-ink hover:border-accent-hover hover:bg-accent-hover'
+          : 'border-primary bg-surface text-primary hover:bg-surface-hover',
         className,
       ].join(' ')}
     >
-      {pending ? 'Working…' : saved ? 'Added ✓' : 'Add to Watchlist'}
+      {pending ? (
+        'Working…'
+      ) : saved ? (
+        <>
+          <span aria-hidden="true">✓</span> In watchlist
+        </>
+      ) : (
+        <>
+          <span aria-hidden="true">+</span> Watchlist
+        </>
+      )}
     </button>
   );
 }
