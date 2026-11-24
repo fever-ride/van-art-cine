@@ -1,4 +1,4 @@
-// src/models/userModel.js
+// src/models/user.js
 import { prisma } from '../lib/prismaClient.js';
 import { Prisma } from '@prisma/client';
 import { hashToken } from '../utils/tokenHash.js';

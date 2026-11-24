@@ -18,7 +18,7 @@ import {
   updatePassword,
   revokeAllRefreshTokens,
   deleteUserWatchlist,
-} from '../models/userModel.js';
+} from '../models/user.js';
 import { NotFoundError, AuthError } from '../utils/errors.js';
 import { hashPassword } from '../utils/password.js';
 

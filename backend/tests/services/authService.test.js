@@ -7,7 +7,7 @@ const consumeRefreshToken = jest.fn();
 const revokeRefreshToken = jest.fn();
 const findById = jest.fn();
 
-jest.unstable_mockModule('../../src/models/userModel.js', () => ({
+jest.unstable_mockModule('../../src/models/user.js', () => ({
   findByEmail,
   createUser,
   storeRefreshToken,

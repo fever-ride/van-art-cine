@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Cinephile’s Van — layout demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f3f4f6;
+    --card: #ffffff;
+    --ink: #12151a;
+    --muted: #666d78;
+    --line: #e2e5ea;
+    --brand: #2b5fe0;
+    --brand-soft: #e8eefc;
+    --new-bg: #fff0e3;
+    --new-ink: #a8430a;
+    --header-h: 64px;
+    --strip-h: 82px;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1013; --card: #171a1f; --ink: #eef0f3; --muted: #9aa1ac; --line: #272b32;
+      --brand: #7a9bff; --brand-soft: #1d2740; --new-bg: #3a2414; --new-ink: #ffb27a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1013; --card: #171a1f; --ink: #eef0f3; --muted: #9aa1ac; --line: #272b32;
+    --brand: #7a9bff; --brand-soft: #1d2740; --new-bg: #3a2414; --new-ink: #ffb27a;
+  }
+  html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + var(--header-h) + var(--strip-h) + 12px); }
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 6px; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  .display { font-family: "Archivo", "Helvetica Neue", Arial, sans-serif; }
+
+  /* ---------- Header: one row, same container as the page ---------- */
+  header.site {
+    position: sticky; top: 0; z-index: 30; background: var(--card); border-bottom: 1px solid var(--line);
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  header .wrap { height: var(--header-h); display: flex; align-items: center; gap: 36px; }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); flex: none; }
+  .brand svg { width: 38px; height: 38px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .brand b { display: block; font-family: "Archivo", sans-serif; font-weight: 700; font-size: 19px; line-height: 1.1; letter-spacing: -.01em; }
+  .brand small { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.2; }
+  nav.main { display: flex; gap: 6px; margin-right: auto; }
+  nav.main a, nav.main button {
+    background: none; border: 0; cursor: pointer; text-decoration: none; color: var(--muted);
+    font-size: 15px; font-weight: 500; padding: 8px 12px; border-radius: 8px; display: inline-flex; gap: 6px; align-items: center;
+  }
+  nav.main a:hover, nav.main button:hover { color: var(--ink); background: var(--bg); }
+  nav.main svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--brand); color: #fff; font-size: 12px; font-weight: 700; display: inline-grid; place-items: center; }
+  .badge[hidden] { display: none; }
+  .actions { display: flex; align-items: center; gap: 8px; }
+  .link { background: none; border: 0; padding: 8px 12px; font-size: 15px; font-weight: 500; cursor: pointer; border-radius: 8px; }
+  .link:hover { background: var(--bg); }
+  .cta { background: var(--brand); color: #fff; border: 0; padding: 9px 16px; font-size: 15px; font-weight: 600; border-radius: 8px; cursor: pointer; }
+  .cta:hover { filter: brightness(1.08); }
+
+  /* ---------- Date strip ---------- */
+  .strip {
+    position: sticky; top: calc(var(--header-h) + env(safe-area-inset-top, 0px)); z-index: 20;
+    background: var(--bg); border-bottom: 1px solid var(--line);
+  }
+  .strip .wrap { height: var(--strip-h); display: flex; align-items: center; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+  .strip .wrap::-webkit-scrollbar { display: none; }
+  .day {
+    flex: 1 0 84px; max-width: 150px; text-align: left; cursor: pointer;
+    background: transparent; border: 1px solid transparent; border-radius: 10px; padding: 9px 12px;
+  }
+  .day:hover { background: var(--card); }
+  .day .n { display: block; font-size: 13px; color: var(--muted); }
+  .day .d { display: block; font-family: "Archivo", sans-serif; font-weight: 700; font-size: 18px; line-height: 1.25; }
+  .day .c { display: block; font-size: 12.5px; color: var(--muted); }
+  .day[aria-pressed="true"] { background: var(--brand); color: #fff; }
+  .day[aria-pressed="true"] .n, .day[aria-pressed="true"] .c { color: rgba(255,255,255,.82); }
+  .day.zero { opacity: .5; }
+
+  /* ---------- Shell ---------- */
+  .shell { display: grid; grid-template-columns: 220px 1fr; gap: 36px; padding-top: 28px; padding-bottom: 96px; }
+  aside.rail {
+    position: sticky; top: calc(var(--header-h) + var(--strip-h) + 16px + env(safe-area-inset-top, 0px)); align-self: start;
+  }
+  .rail h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .rail fieldset { border: 0; margin: 0 0 26px; padding: 0; }
+  .opt { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 15px; cursor: pointer; }
+  .opt input { width: 16px; height: 16px; accent-color: var(--brand); margin: 0; }
+  .opt .n { margin-left: auto; font-size: 13px; color: var(--muted); }
+  .clear { background: none; border: 0; padding: 0; color: var(--brand); font-weight: 600; font-size: 14px; cursor: pointer; }
+  .clear[hidden] { display: none; }
+  .filters-btn { display: none; }
+
+  /* ---------- Results ---------- */
+  .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .head h1 { margin: 0; font-weight: 700; font-size: 30px; line-height: 1.1; letter-spacing: -.02em; }
+  .head p { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+  .tools { display: flex; gap: 10px; align-items: center; }
+  .seg { display: inline-flex; padding: 3px; background: color-mix(in srgb, var(--ink) 7%, transparent); border-radius: 10px; }
+  .seg button { border: 0; background: transparent; padding: 7px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  select.sort { appearance: none; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+  .card {
+    position: relative; display: flex; gap: 16px; padding: 14px; background: var(--card);
+    border: 1px solid var(--line); border-radius: 14px; transition: border-color .15s, box-shadow .15s;
+  }
+  .card:hover { border-color: color-mix(in srgb, var(--ink) 28%, transparent); box-shadow: 0 6px 18px rgba(0,0,0,.07); }
+  .poster { flex: none; width: 112px; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden; align-self: flex-start; }
+  .poster svg { width: 100%; height: 100%; display: block; }
+  .body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .titlerow { display: flex; gap: 8px; align-items: flex-start; }
+  .titlerow h3 { margin: 0; flex: 1; font-weight: 700; font-size: 19px; line-height: 1.18; letter-spacing: -.012em; text-wrap: balance; }
+  .titlerow h3 a { color: inherit; text-decoration: none; }
+  .titlerow h3 a::after { content: ""; position: absolute; inset: 0; border-radius: 14px; }
+  .save {
+    position: relative; z-index: 2; flex: none; width: 34px; height: 34px; margin: -6px -6px 0 0;
+    display: grid; place-items: center; background: none; border: 0; border-radius: 8px; cursor: pointer; color: var(--muted);
+  }
+  .save:hover { background: var(--bg); color: var(--ink); }
+  .save svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linejoin: round; }
+  .save[aria-pressed="true"] { color: var(--brand); }
+  .save[aria-pressed="true"] svg { fill: currentColor; }
+  .dir { margin: 3px 0 0; font-size: 14.5px; color: var(--muted); }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+  .tag { font-size: 12.5px; font-weight: 500; line-height: 1; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; }
+  .tag.new { background: var(--new-bg); border-color: transparent; color: var(--new-ink); font-weight: 700; }
+  .imdb { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; margin-left: 2px; }
+  .imdb i { font-style: normal; background: #f5c518; color: #000; font-size: 11px; font-weight: 800; padding: 2px 4px; border-radius: 3px; }
+  .meta { margin: 9px 0 0; font-size: 13.5px; color: var(--muted); }
+  .meta span + span::before { content: "|"; margin: 0 8px; opacity: .5; }
+  .syn {
+    margin: 10px 0 0; font-size: 14.5px; line-height: 1.45;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .shows { margin-top: auto; padding-top: 14px; display: grid; gap: 8px; }
+  .vrow { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .vrow .v { flex: none; min-width: 92px; font-size: 13.5px; font-weight: 600; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill {
+    position: relative; z-index: 2; display: inline-block; text-decoration: none; cursor: pointer;
+    border: 1.5px solid var(--brand); color: var(--brand); border-radius: 999px; padding: 4px 12px; font-size: 14px; font-weight: 600; line-height: 1.3;
+  }
+  .pill:hover { background: var(--brand-soft); }
+
+  /* ---------- Table view ---------- */
+  .tablewrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+  table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  th { text-align: left; font-size: 13px; font-weight: 600; color: var(--muted); padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  td { padding: 13px 16px; border-bottom: 1px solid var(--line); font-size: 15px; vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.time { font-weight: 700; font-family: "Archivo", sans-serif; white-space: nowrap; }
+  td .sub { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+  td a { color: inherit; font-weight: 600; text-decoration: none; }
+  td a:hover { color: var(--brand); text-decoration: underline; }
+  .empty { padding: 56px 8px; color: var(--muted); font-size: 17px; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1000px) {
+    .shell { grid-template-columns: 1fr; gap: 0; }
+    aside.rail { position: static; display: none; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 6px; margin-bottom: 16px; }
+    aside.rail.open { display: block; }
+    .filters-btn { display: inline-flex; border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 8px 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    nav.main a:not(.keep), nav.main button { display: none; }
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 0 16px; }
+    header .wrap { gap: 12px; }
+    .brand small, .link { display: none; }
+    .grid { grid-template-columns: 1fr; }
+    .head h1 { font-size: 24px; }
+    .poster { width: 96px; }
+    .vrow .v { min-width: 0; width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="#" aria-label="The Cinephile’s Van — home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M5 27V13a4 4 0 0 1 4-4h16a4 4 0 0 1 3.600 2.200L33 20.500a4 4 0 0 1 1 2.700V27a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z"/><path d="M10 14h11v7H10zM25 14h2.500l3 7H25z"/><circle cx="12" cy="30" r="3.200" fill="var(--card)"/><circle cx="28" cy="30" r="3.200" fill="var(--card)"/></svg>
+      <span><b>The Cinephile’s Van</b><small>Rolling through Vancouver’s film scene</small></span>
+    </a>
+    <nav class="main" aria-label="Main">
+      <button type="button">Must-Sees <svg viewBox="0 0 14 14"><path d="m3 5 4 4 4-4"/></svg></button>
+      <a href="#" class="keep" id="watchlistLink">My Watchlist <span class="badge" id="wlCount" hidden>0</span></a>
+      <a href="#">About</a>
+    </nav>
+    <div class="actions">
+      <button class="link" type="button">Sign in</button>
+      <button class="cta" type="button">Create account</button>
+    </div>
+  </div>
+</header>
+
+<div class="strip">
+  <div class="wrap" id="days" role="group" aria-label="Choose a day"></div>
+</div>
+
+<div class="wrap shell">
+  <aside class="rail" id="rail" aria-label="Filters">
+    <fieldset id="fNew">
+      <h2>Release</h2>
+      <label class="opt"><input type="checkbox" id="newOnly"> New releases only</label>
+    </fieldset>
+    <fieldset id="fVenue"><h2>Venue</h2></fieldset>
+    <fieldset id="fGenre"><h2>Genre</h2></fieldset>
+    <fieldset id="fWatch">
+      <h2>Saved</h2>
+      <label class="opt"><input type="checkbox" id="watchOnly"> My watchlist only</label>
+    </fieldset>
+    <button class="clear" id="clear" type="button" hidden>Clear all filters</button>
+    <div style="height:18px"></div>
+  </aside>
+
+  <main>
+    <div class="head">
+      <div>
+        <h1 class="display" id="title">Today</h1>
+        <p id="sub"></p>
+      </div>
+      <div class="tools">
+        <button class="filters-btn" id="filtersBtn" type="button" aria-expanded="false" aria-controls="rail">Filters</button>
+        <div class="seg" role="group" aria-label="View">
+          <button type="button" id="vFilm" aria-pressed="true">Film view</button>
+          <button type="button" id="vTable" aria-pressed="false">Table view</button>
+        </div>
+        <select class="sort" id="sort" aria-label="Sort">
+          <option value="time">Earliest first</option>
+          <option value="az">A–Z</option>
+        </select>
+      </div>
+    </div>
+    <div id="out" aria-live="polite"></div>
+  </main>
+</div>
+
+<script>
+  /* Sample data. Titles/directors/tags/synopses are from the screenshot; venues, extra showtimes and
+     any missing fields are placeholders — swap in your real data. */
+  const S = (day, venue, h, m) => ({ day, venue, m: h * 60 + m });
+  const FILMS = [
+    { id:'evening', title:'An Evening with Cristóbal Tapia de Veer', dir:'', tags:[], isNew:false, year:'', country:'', runtime:90, lang:'', imdb:null, syn:'', hue:225,
+      shows:[S(0,'Rio Theatre',17,30)] },
+    { id:'terry', title:'Run Terry Run', dir:'Sean Menard', tags:['Documentary'], isNew:true, year:'2025', country:'', runtime:108, lang:'English', imdb:null,
+      syn:'A behind-the-scenes look at Terry Fox’s legendary 1980 Marathon of Hope.', hue:36,
+      shows:[S(0,'VIFF Centre',17,30), S(2,'VIFF Centre',19,0)] },
+    { id:'coward', title:'Coward', dir:'Lukas Dhont', tags:['Drama','Romance','War'], isNew:true, year:'2026', country:'Belgium, France, Netherlands', runtime:120, lang:'French, Dutch', imdb:'6.9',
+      syn:'Pierre, a young Belgian soldier wants to prove himself on the battlefield during the First World War. Behind the frontlines, he meets Francis, who is asked to find a way to boost morale.', hue:28,
+      shows:[S(0,'Park Theatre',17,45), S(1,'Park Theatre',20,15), S(4,'Rio Theatre',18,0)] },
+    { id:'bryce', title:'The Bryce Lee Story', dir:'Arnold Lim', tags:[], isNew:true, year:'2026', country:'United States', runtime:84, lang:'English, Mandarin', imdb:null,
+      syn:'When thirteen-year-old Bryce Lee claims to be related to martial arts legend Bruce Lee to gain respect at school, the falsehood threatens to unravel his identity, his friendships, and his self-worth.', hue:240,
+      shows:[S(0,'Rio Theatre',18,0), S(3,'Rio Theatre',18,0), S(5,'VIFF Centre',14,30)] },
+    { id:'beloved', title:'The Beloved', dir:'Rodrigo Sorogoyen', tags:['Drama'], isNew:true, year:'', country:'', runtime:null, lang:'', imdb:null, syn:'', hue:95,
+      shows:[S(0,'VIFF Centre',20,30), S(6,'Park Theatre',16,0)] },
+    { id:'rose', title:'Rose', dir:'Dolly Dulu, Markus Schleinzer', tags:['Drama','Romance'], isNew:true, year:'', country:'', runtime:null, lang:'', imdb:null, syn:'', hue:350,
+      shows:[S(0,'Park Theatre',20,0), S(1,'VIFF Centre',18,15)] }
+  ];
+  const START = new Date(2026, 9, 5);
+  const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateOf = i => { const d = new Date(START); d.setDate(d.getDate() + i); return d; };
+  const fmtTime = m => { const h = Math.floor(m / 60), mm = String(m % 60).padStart(2, '0'); return ((h + 11) % 12 + 1) + ':' + mm + ' ' + (h < 12 ? 'AM' : 'PM'); };
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+  const state = { day: 0, venues: new Set(), genres: new Set(), newOnly: false, watchOnly: false, view: 'film', sort: 'time', watch: new Set() };
+
+  /* ---------- Rail ---------- */
+  const venues = [...new Set(FILMS.flatMap(f => f.shows.map(s => s.venue)))].sort();
+  const genres = [...new Set(FILMS.flatMap(f => f.tags))].sort();
+  function mkOpts(host, list, set, countFn) {
+    list.forEach(v => {
+      const l = document.createElement('label'); l.className = 'opt';
+      l.innerHTML = '<input type="checkbox" value="' + esc(v) + '"><span>' + esc(v) + '</span><span class="n" data-count="' + esc(v) + '"></span>';
+      l.querySelector('input').addEventListener('change', e => { e.target.checked ? set.add(v) : set.delete(v); render(); });
+      host.appendChild(l);
+    });
+  }
+  mkOpts(document.getElementById('fVenue'), venues, state.venues);
+  mkOpts(document.getElementById('fGenre'), genres, state.genres);
+  document.getElementById('newOnly').addEventListener('change', e => { state.newOnly = e.target.checked; render(); });
+  document.getElementById('watchOnly').addEventListener('change', e => { state.watchOnly = e.target.checked; render(); });
+  document.getElementById('clear').addEventListener('click', () => {
+    state.venues.clear(); state.genres.clear(); state.newOnly = false; state.watchOnly = false;
+    document.querySelectorAll('#rail input').forEach(i => i.checked = false); render();
+  });
+  const rail = document.getElementById('rail'), fbtn = document.getElementById('filtersBtn');
+  fbtn.addEventListener('click', () => { const o = rail.classList.toggle('open'); fbtn.setAttribute('aria-expanded', o); });
+
+  /* ---------- Filtering ---------- */
+  function matches(f, ignore) {
+    if (ignore !== 'new' && state.newOnly && !f.isNew) return false;
+    if (state.genres.size && !f.tags.some(t => state.genres.has(t))) return false;
+    if (state.watchOnly && !state.watch.has(f.id)) return false;
+    return true;
+  }
+  function showsFor(f, day) {
+    return f.shows.filter(s => s.day === day && (!state.venues.size || state.venues.has(s.venue))).sort((a, b) => a.m - b.m);
+  }
+
+  /* ---------- Posters (generated, one per film, so nothing repeats) ---------- */
+  function poster(f) {
+    const h = f.hue, a = 'hsl(' + h + ',48%,20%)', b = 'hsl(' + (h + 28) + ',55%,42%)';
+    const words = f.title.replace(/^(An?|The)\s+/i, '').split(' ').slice(0, 3);
+    const lines = words.map((w, i) => '<text x="14" y="' + (222 + i * 24) + '" font-family="Archivo,Arial,sans-serif" font-weight="800" font-size="22" fill="#fff" letter-spacing="-.5">' + esc(w.toUpperCase().slice(0, 11)) + '</text>').join('');
+    const id = 'g' + f.id;
+    return '<svg viewBox="0 0 200 300" role="img" aria-label="Poster placeholder for ' + esc(f.title) + '"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + a + '"/><stop offset="1" stop-color="' + b + '"/></linearGradient></defs><rect width="200" height="300" fill="url(#' + id + ')"/><circle cx="150" cy="86" r="62" fill="#fff" opacity=".12"/><circle cx="150" cy="86" r="30" fill="#fff" opacity=".14"/><rect y="170" width="200" height="130" fill="#000" opacity=".28"/>' + lines + '</svg>';
+  }
+
+  /* ---------- Render ---------- */
+  const bookmark = '<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.500L6 21z"/></svg>';
+  function cardHTML(f, shows) {
+    const meta = [f.year, f.country, f.runtime ? f.runtime + ' min' : '', f.lang].filter(Boolean).map(x => '<span>' + esc(x) + '</span>').join('');
+    const tags = (f.isNew ? '<span class="tag new">New</span>' : '') + f.tags.map(t => '<span class="tag">' + esc(t) + '</span>').join('') +
+                 (f.imdb ? '<span class="imdb"><i>IMDb</i>' + f.imdb + '</span>' : '');
+    const byVenue = {};
+    shows.forEach(s => (byVenue[s.venue] = byVenue[s.venue] || []).push(s));
+    const rows = Object.entries(byVenue).map(([v, arr]) =>
+      '<div class="vrow"><span class="v">' + esc(v) + '</span><span class="chips">' + arr.map(s => '<a class="pill" href="#">' + fmtTime(s.m) + '</a>').join('') + '</span></div>').join('');
+    const saved = state.watch.has(f.id);
+    return '<article class="card"><div class="poster">' + poster(f) + '</div><div class="body">' +
+      '<div class="titlerow"><h3 class="display"><a href="#">' + esc(f.title) + '</a></h3>' +
+      '<button class="save" type="button" data-id="' + f.id + '" aria-pressed="' + saved + '" aria-label="' + (saved ? 'Remove from' : 'Add to') + ' watchlist">' + bookmark + '</button></div>' +
+      (f.dir ? '<p class="dir">' + esc(f.dir) + '</p>' : '') +
+      (tags ? '<div class="tags">' + tags + '</div>' : '') +
+      (meta ? '<p class="meta">' + meta + '</p>' : '') +
+      (f.syn ? '<p class="syn">' + esc(f.syn) + '</p>' : '') +
+      '<div class="shows">' + rows + '</div></div></article>';
+  }
+
+  function render() {
+    // day strip
+    const strip = document.getElementById('days'); strip.innerHTML = '';
+    for (let i = 0; i < 7; i++) {
+      const d = dateOf(i);
+      const n = FILMS.filter(f => matches(f) && showsFor(f, i).length).length;
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'day' + (n ? '' : ' zero'); b.setAttribute('aria-pressed', i === state.day);
+      b.innerHTML = '<span class="n">' + (i === 0 ? 'Today' : DOW[d.getDay()]) + '</span><span class="d">' + MON[d.getMonth()] + ' ' + d.getDate() + '</span><span class="c">' + n + (n === 1 ? ' film' : ' films') + '</span>';
+      b.addEventListener('click', () => { state.day = i; render(); });
+      strip.appendChild(b);
+    }
+
+    // heading
+    const d = dateOf(state.day);
+    const list = FILMS.filter(f => matches(f) && showsFor(f, state.day).length)
+      .map(f => ({ f, shows: showsFor(f, state.day) }));
+    list.sort((a, b) => state.sort === 'az' ? a.f.title.localeCompare(b.f.title) : a.shows[0].m - b.shows[0].m);
+    document.getElementById('title').textContent = (state.day === 0 ? 'Today' : DOW[d.getDay()]) + ', ' + MON[d.getMonth()] + ' ' + d.getDate();
+    const nShows = list.reduce((s, x) => s + x.shows.length, 0);
+    document.getElementById('sub').textContent = list.length + (list.length === 1 ? ' film' : ' films') + ' · ' + nShows + (nShows === 1 ? ' screening' : ' screenings') + ' in Vancouver';
+
+    // rail counts + clear
+    document.querySelectorAll('#fVenue .n').forEach(el => {
+      const v = el.dataset.count;
+      el.textContent = FILMS.filter(f => matches(f) && f.shows.some(s => s.day === state.day && s.venue === v)).length;
+    });
+    document.querySelectorAll('#fGenre .n').forEach(el => {
+      const g = el.dataset.count;
+      el.textContent = FILMS.filter(f => f.tags.includes(g) && showsFor(f, state.day).length).length;
+    });
+    const active = state.venues.size || state.genres.size || state.newOnly || state.watchOnly;
+    document.getElementById('clear').hidden = !active;
+
+    // watchlist badge
+    const c = document.getElementById('wlCount'); c.textContent = state.watch.size; c.hidden = !state.watch.size;
+
+    // body
+    const out = document.getElementById('out');
+    if (!list.length) { out.innerHTML = '<p class="empty">No screenings match these filters on this day. Try another day or clear a filter.</p>'; return; }
+    if (state.view === 'film') {
+      out.innerHTML = '<div class="grid">' + list.map(x => cardHTML(x.f, x.shows)).join('') + '</div>';
+      out.querySelectorAll('.save').forEach(btn => btn.addEventListener('click', () => {
+        const id = btn.dataset.id; state.watch.has(id) ? state.watch.delete(id) : state.watch.add(id); render();
+      }));
+    } else {
+      const rows = list.flatMap(x => x.shows.map(s => ({ f: x.f, s }))).sort((a, b) => state.sort === 'az' ? a.f.title.localeCompare(b.f.title) || a.s.m - b.s.m : a.s.m - b.s.m);
+      out.innerHTML = '<div class="tablewrap"><table><thead><tr><th>Time</th><th>Film</th><th>Venue</th><th>Runtime</th><th>Language</th></tr></thead><tbody>' +
+        rows.map(({ f, s }) => '<tr><td class="time">' + fmtTime(s.m) + '</td><td><a href="#">' + esc(f.title) + '</a>' + (f.dir ? '<span class="sub">' + esc(f.dir) + '</span>' : '') + '</td><td>' + esc(s.venue) + '</td><td>' + (f.runtime ? f.runtime + ' min' : '—') + '</td><td>' + (f.lang ? esc(f.lang) : '—') + '</td></tr>').join('') +
+        '</tbody></table></div>';
+    }
+  }
+
+  document.getElementById('vFilm').addEventListener('click', () => setView('film'));
+  document.getElementById('vTable').addEventListener('click', () => setView('table'));
+  function setView(v) {
+    state.view = v;
+    document.getElementById('vFilm').setAttribute('aria-pressed', v === 'film');
+    document.getElementById('vTable').setAttribute('aria-pressed', v === 'table');
+    render();
+  }
+  document.getElementById('sort').addEventListener('change', e => { state.sort = e.target.value; render(); });
+  document.getElementById('watchlistLink').addEventListener('click', e => {
+    e.preventDefault(); state.watchOnly = !state.watchOnly;
+    document.getElementById('watchOnly').checked = state.watchOnly; render();
+  });
+  document.addEventListener('click', e => { if (e.target.closest('a[href="#"]')) e.preventDefault(); });
+  render();
+</script>
+</body>
+</html>

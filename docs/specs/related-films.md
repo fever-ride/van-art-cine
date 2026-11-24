@@ -9,7 +9,7 @@ multi-tag genre field).
 
 Tracked in BACKLOG.md as SEO-4. Background on why this sits in the broader
 hub-pages/SEO initiative, and the data investigation behind the design
-decisions below, also lives in `docs/seo-hub-pages.md`.
+decisions below, also lives in `frontend/docs/seo-hub-pages.md`.
 
 ## Goal
 

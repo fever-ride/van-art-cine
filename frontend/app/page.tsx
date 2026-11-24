@@ -1,7 +1,7 @@
 /** `/` — server-rendered. Fetches the current, filtered screening list on
  * the server so the default and any filtered view are both present in the
  * first HTML response, not only after client side JavaScript runs. See
- * docs/specs/url-driven-filters.md and docs/specs/homepage-ssr.md. */
+ * frontend/docs/specs/url-driven-filters.md and frontend/docs/specs/homepage-ssr.md. */
 
 import { Suspense } from 'react';
 import type { Metadata } from 'next';

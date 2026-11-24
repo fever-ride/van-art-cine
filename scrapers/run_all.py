@@ -4,8 +4,8 @@
 Run all scrapers sequentially with a single command.
 
 Usage:
-  python run_all_scrapers.py
-  python run_all_scrapers.py --continue-on-error
+  python run_all.py
+  python run_all.py --continue-on-error
 """
 
 import argparse

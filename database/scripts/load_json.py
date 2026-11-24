@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-Load scraped movie screening data into the vancine database (PostgreSQL version).
+Load scraped film screening data into the `vancine` database (PostgreSQL) —
+`vancine` is this project's Postgres database name, not an alternate name
+for the project itself (the project is "The Cinephile's Van", live at
+cinephilesvan.com).
 
 - Reads JSON files from data/latest/ (or specified paths)
 - Normalizes entity data (cinemas, films, people)

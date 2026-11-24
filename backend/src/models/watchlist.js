@@ -1,4 +1,4 @@
-// src/models/watchlistModel.js
+// src/models/watchlist.js
 import { prisma } from '../lib/prismaClient.js';
 
 /**

@@ -13,7 +13,7 @@ Merge steps:
     so they only log what they would do (no DB changes).
 
 ALL STEPS (step name == module name without .py):
-  1) load_json               Load scraped movie screening data into staging
+  1) load_json               Load scraped film screening data into staging
   2) resolve_imdb_id_url     Fetch TMDB/IMDB IDs for films
   3) merge_duplicate_films   Merge duplicate film records
   4) omdb_api                Fetch detailed film metadata and create person records

@@ -69,7 +69,7 @@ jobs:
         # JSON was produced; we re-fail the job below if any scraper failed.
         continue-on-error: true
         id: scrapers
-        run: python scrapers/run_all_scrapers.py --continue-on-error
+        run: python scrapers/run_all.py --continue-on-error
 
       - name: Run enrichment pipeline
         id: enrich

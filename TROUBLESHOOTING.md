@@ -452,7 +452,7 @@ const handlePageChange = (nextPage: number) => {
 
 ### Act 5 — The same bug came back after the SSR/URL-driven-filters rewrite
 
-**Context:** `frontend/app/page.tsx` was later rewritten as a Server Component (SSR of the screening list, all filter state moved into the URL — see `docs/specs/url-driven-filters.md`). The scroll-handling logic (`captureRowHeight`/`settleScrollAfterRefetch`) moved into the new `frontend/components/screenings/ScreeningsPageClient.tsx` largely as-is, but two things were lost in translation:
+**Context:** `frontend/app/page.tsx` was later rewritten as a Server Component (SSR of the screening list, all filter state moved into the URL — see `frontend/docs/specs/url-driven-filters.md`). The scroll-handling logic (`captureRowHeight`/`settleScrollAfterRefetch`) moved into the new `frontend/components/screenings/ScreeningsPageClient.tsx` largely as-is, but two things were lost in translation:
 
 1. **`router.push`/`router.replace` inside `useScreeningsUI.setUI` had no `{ scroll: false }`.** Every filter or search commit reset scroll to the very top of the page (past the hero banner) — a plain reintroduction of Act 1, just in a new call site.
 2. **The `filterKey`-watching `useEffect` that called `captureRowHeight()` on every committed filter change (including debounced search) was dropped as "redundant"** during the rewrite, since Apply/Reset already call it via `onApply`. It was not redundant: search has no discrete click to hang a capture call on, so a search that shrank the result set while the reader was scrolled into the lower rows landed them back on the page footer — a plain reintroduction of Act 3/4.

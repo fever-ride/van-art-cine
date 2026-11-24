@@ -22,7 +22,7 @@ const {
   addManyWatchlistScreenings,
   countWatchlist,
   findWatchlistedScreeningIdsSet,
-} = await import('../../src/models/watchlistModel.js');
+} = await import('../../src/models/watchlist.js');
 
 beforeEach(() => {
   jest.clearAllMocks();

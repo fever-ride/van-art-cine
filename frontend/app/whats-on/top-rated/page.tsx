@@ -1,7 +1,7 @@
 /** `/whats-on/top-rated` — server-rendered hub page: the highest IMDb-rated
  * films with an upcoming screening, split into "this week" (a poster
  * carousel highlight) and "this month" (the full ranked list). See
- * BACKLOG.md's Top Rated hub page item and docs/seo-hub-pages.md for the
+ * BACKLOG.md's Top Rated hub page item and frontend/docs/seo-hub-pages.md for the
  * data investigation behind this (screening.tags turned out to come almost
  * entirely from one venue, so it was dropped in favor of this direction). */
 

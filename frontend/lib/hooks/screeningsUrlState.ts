@@ -14,7 +14,7 @@
  *
  * Kept separate from `useScreeningsUI` so both directions can be unit
  * tested in isolation before being wired into any component or hook. See
- * docs/specs/url-driven-filters.md, task 1.
+ * frontend/docs/specs/url-driven-filters.md, task 1.
  *
  * `page` is deliberately not handled here. It already has its own working
  * URL round trip in `frontend/app/page.tsx`, and this module only extends

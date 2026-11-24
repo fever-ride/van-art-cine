@@ -21,7 +21,7 @@ import {
   consumeRefreshToken,
   revokeRefreshToken,
   findById,
-} from '../models/userModel.js';
+} from '../models/user.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { signAccess, signRefresh, verifyRefresh } from '../utils/jwt.js';
 import jwt from 'jsonwebtoken';

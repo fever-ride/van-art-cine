@@ -288,7 +288,7 @@ def scrape_rio_complete():
 
 if __name__ == "__main__":
     # Non-zero exit on either an empty result or a suspiciously-low
-    # extraction rate, so the caller (run_all_scrapers.py, then the GitHub
+    # extraction rate, so the caller (scrapers/run_all.py, then the GitHub
     # Actions job's "Fail job if scrapers failed" step) can actually detect
     # both -- previously this only caught "zero events," so a scrape that
     # returned real events with silently-broken detail extraction looked

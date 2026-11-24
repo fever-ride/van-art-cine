@@ -2,7 +2,7 @@
 
 Status: Draft · 2026-11-08
 Scope: `frontend/` (Next.js 15 App Router, React 19, Tailwind v4)
-Design references: `docs/design-refs/*.html`
+Design references: `frontend/docs/design-refs/*.html`
 
 This plan has four phases. Phases 1–3 cover visuals and mobile. Phase 4 is the state layer and can run in parallel with them. Each phase can ship on its own.
 

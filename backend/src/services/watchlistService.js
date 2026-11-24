@@ -4,7 +4,7 @@
  * This module exposes domain-level operations for a user's watchlist.
  * It sits between HTTP controllers and the persistence layer:
  *  - accepts already-authenticated user IDs and simple arguments
- *  - delegates DB work to watchlistModel
+ *  - delegates DB work to watchlist.js
  *  - enforces business rules and shapes responses for controllers
  *
  * Notable behaviours:
@@ -19,7 +19,7 @@ import {
   listWatchlist,
   addManyWatchlistScreenings,
   countWatchlist,
-} from '../models/watchlistModel.js';
+} from '../models/watchlist.js';
 import { WatchlistError } from '../utils/errors.js';
 
 /**

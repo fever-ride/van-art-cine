@@ -44,7 +44,7 @@ jest.unstable_mockModule('../../src/utils/tokenHash.js', () => ({
 }));
 
 // Import the module under test after mocks are registered.
-const userModel = await import('../../src/models/userModel.js');
+const userModel = await import('../../src/models/user.js');
 
 const {
   mapUserRow,

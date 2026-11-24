@@ -350,7 +350,7 @@ while working on SEO.
 
 #### FE-1. Move screening filter state into the URL
 
-Shipped per `docs/specs/url-driven-filters.md`. `useScreeningsUI`
+Shipped per `frontend/docs/specs/url-driven-filters.md`. `useScreeningsUI`
 (`frontend/lib/hooks/useScreeningsUI.ts`) now derives all filter state from
 `searchParams` and writes it back with `router.push`/`router.replace`
 instead of holding it as local React state, and `frontend/app/page.tsx` is
@@ -451,7 +451,7 @@ a decision on visual direction.
 ## Frontend / SEO
 
 Scope: `frontend/` (Next.js app) and general site discoverability. See
-`docs/seo-hub-pages.md` for the full requirements and design notes behind
+`frontend/docs/seo-hub-pages.md` for the full requirements and design notes behind
 the hub page items below (SEO-7, SEO-9, SEO-10; SEO-3 covered the
 same "hub page" need for the homepage itself and is now done, above).
 
@@ -498,7 +498,7 @@ sharing the same filter clause) plumbed through
 
 #### SEO-3. Server render the homepage now playing list
 
-Shipped per `docs/specs/homepage-ssr.md`, on top of FE-1's Server Component
+Shipped per `frontend/docs/specs/homepage-ssr.md`, on top of FE-1's Server Component
 conversion of `frontend/app/page.tsx`.
 
 - Added `generateMetadata`: falls through to the root layout's static
@@ -746,7 +746,7 @@ reasoning as SEO-9's dropped director pages.
 canonical categories, for example Q&A and filmmaker presence, restoration
 and print format, live accompaniment, and milestone screenings. Full
 grouping proposal and open questions on URL structure are in
-`docs/seo-hub-pages.md`.
+`frontend/docs/seo-hub-pages.md`.
 
 **Priority:** Deferred. See SEO-13 above for the hub page direction that
 replaced this one.
@@ -1033,6 +1033,82 @@ ORG-4) with its `db_helper`/`log_setup` imports re-pointed via a
 `sys.path` patch at the top, matching the pattern `run_all.py` already
 uses for the same problem — verified by running it from the new location.
 
+#### ORG-5. Inconsistent naming inside `backend/src/models/`
+
+Renamed `userModel.js` → `user.js` and `watchlistModel.js` → `watchlist.js`
+to match the bare-noun majority convention (`cinemas.js`, `films.js`,
+`screenings.js`). Updated every import (`userService.js`,
+`watchlistService.js`, `authService.js`), renamed the matching test files
+(`userModel.test.js` → `user.test.js`, `watchlistModel.test.js` →
+`watchlist.test.js`), and fixed the self-referencing path comments at the
+top of both model files. All 102 backend tests still pass.
+
+#### ORG-8. Inconsistent naming between the two pipeline "run everything" scripts
+
+Renamed `scrapers/run_all_scrapers.py` → `scrapers/run_all.py` to match
+`database/scripts/run_all.py`. Updated the reference in
+`.github/workflows/pipeline.yml`, a comment in `rio_scraper.py`, and the
+script's own usage docstring.
+
+#### ORG-9. Project referred to by three different names across committed files
+
+Confirmed "vancine" isn't drift — it's this project's actual Postgres DB
+name, and also shows up consistently as the Docker Hub image name
+(`wendyzhong/vancine-backend`) and EC2 deploy directory
+(`vancine-deploy`) across the CI/deploy workflows. That's a deliberate,
+consistent internal infra codename, distinct from "The Cinephile's Van"
+(the public-facing product name) — nothing to rename. Only fixed the one
+place this wasn't explained: `load_json.py`'s docstring now says
+explicitly that "vancine" is the DB name, not an alternate project name.
+
+#### ORG-10. Inconsistent "film" vs "movie" wording between code and pipeline comments
+
+Turned out narrower than it looked: most of `resolve_imdb_id_url.py`'s
+"movie" wording is accurate as-is — it's describing TMDB's own API
+(`/search/movie`, `movie_results`), which really does call it "movie," not
+this project's `film` table. The one genuine inconsistency was
+`run_all.py`'s step list, where line 16 said "movie" right next to line
+17 saying "films" for the same kind of data — fixed that one line, left
+TMDB's own terminology alone.
+
+#### ORG-12. `frontend/docs/frontend-redesign-plan.md` references a path that doesn't exist
+
+Turned out to be a real loss, not a typo: the three referenced
+`frontend/docs/design-refs/*.html` files genuinely existed but had been orphaned
+into a dangling, unreferenced git commit (an "index" commit left over from
+a past `git stash`, not reachable from any branch or current stash —
+at risk of eventually being garbage collected). Recovered all three files
+with `git checkout <that commit> -- frontend/docs/design-refs` and committed them
+back into the tracked tree.
+
+#### ORG-13. `frontend/docs/specs/url-driven-filters.md` has a stale status
+
+Updated the status line to say it shipped, pointing at BACKLOG.md's FE-1
+entry for what actually landed.
+
+#### ORG-16. Sort documentation by which part of the repo it actually belongs to
+
+Root `docs/` turned out to be holding almost entirely frontend-only
+content (`seo-hub-pages.md`, `frontend-redesign-plan.md`,
+`docs/specs/homepage-ssr.md`, `docs/specs/url-driven-filters.md`,
+`docs/design-refs/*.html`) despite sitting at repo root as if it were
+project-wide — checked by finding every code reference to each doc and
+seeing which side of the stack actually pointed at it. Moved all of it
+into `frontend/docs/` (with its own `specs/` and `design-refs/`
+subfolders). `docs/specs/related-films.md` stayed at the root, since it's
+genuinely cross-cutting — both `backend/src/models/films.js` and
+`backend/src/models/screenings.js` reference it alongside frontend code.
+`README.md`, `BACKLOG.md`, and `TROUBLESHOOTING.md` stayed at root too —
+all three are genuinely cross-cutting, not frontend-specific
+(`TROUBLESHOOTING.md` in particular mixes frontend, backend, and data
+pipeline stories). Updated every cross-reference this touched (BACKLOG.md,
+TROUBLESHOOTING.md, several `frontend/` source comments, and the moved
+docs' own mutual references) to the new paths. `backend/`,
+`database/scripts/`, and `scrapers/` had no doc files of their own to sort
+— nothing to move there yet. Verified with `tsc --noEmit`, the frontend
+test suite (153 tests), and the backend test suite (102 tests), all
+passing.
+
 ### Still deferred
 
 ---
@@ -1064,22 +1140,6 @@ touches live, working import paths — do it carefully, not first.
 
 ---
 
-#### ORG-5. Inconsistent naming inside `backend/src/models/`
-
-**Problem:** Five peer files in the same folder use two different suffix
-conventions: `cinemas.js`, `films.js`, `screenings.js` (bare noun) vs.
-`userModel.js`, `watchlistModel.js` (noun + `Model` suffix).
-
-**Impact:** No functional effect, just inconsistent to read and to pattern-
-match against when adding a new model file.
-
-**Approach:** Pick one convention and rename the minority to match (bare
-noun looks like the majority pattern — 3 of 5 files).
-
-**Priority:** Low.
-
----
-
 #### ORG-6. Two parallel, undifferentiated "lib" folders in the frontend
 
 **Problem:** `frontend/app/lib/` (14 files — `auth.ts`, `cinemas.ts`,
@@ -1099,63 +1159,6 @@ real rule or consolidate into one folder.
 
 **Priority:** Medium. Touches imports across much of the frontend —
 worth a deliberate pass, not a quick rename.
-
----
-
-#### ORG-8. Inconsistent naming between the two pipeline "run everything" scripts
-
-**Problem:** `database/scripts/run_all.py` and `scrapers/run_all_scrapers.py`
-play the same role (top-level orchestrator for their respective pipeline)
-but follow different naming patterns.
-
-**Impact:** Purely cosmetic, but it's the kind of small inconsistency that
-makes the two pipelines feel less like one coherent system.
-
-**Approach:** Rename one to match the other (e.g. `scrapers/run_all.py`,
-since it's already unambiguous within its own folder) and update
-`pipeline.yml` and any docs that reference it by name.
-
-**Priority:** Low.
-
----
-
-#### ORG-9. Project referred to by three different names across committed files
-
-**Problem:** The repo/folder is `van_art_cinema_guide`; `load_json.py`'s
-docstring (and its archived copy) calls it "the vancine database"; the
-live site, README, and `presentation/slides.html` call it "The Cinephile's
-Van" (domain `cinephilesvan.com`).
-
-**Impact:** Not wrong exactly — the project did rename at some point — but
-three names for the same thing across committed files reads as
-unintentional rather than deliberate (e.g. a legacy internal codename vs.
-the public-facing name).
-
-**Approach:** Decide whether "vancine" is a deliberate internal/db-only
-codename worth keeping (e.g. matches the Postgres DB name itself — worth
-checking before changing anything) or just drift, and update stale
-docstrings/comments to match whichever is intentional.
-
-**Priority:** Low.
-
----
-
-#### ORG-10. Inconsistent "film" vs "movie" wording between code and pipeline comments
-
-**Problem:** The Prisma schema, DB tables, and backend/frontend code
-consistently say "film" (`film` model, `frontend/app/lib/films.ts`), but
-several Python pipeline docstrings/comments say "movie" instead
-(`database/scripts/load_json.py:3`, `database/scripts/run_all.py:16`,
-`database/scripts/resolve_imdb_id_url.py`).
-
-**Impact:** Minor, but it's a small tax on reading the pipeline code right
-after reading the schema and wondering if "movie" means something
-different from "film" (it doesn't).
-
-**Approach:** Find-and-replace "movie" → "film" in the Python
-docstrings/comments flagged above, matching the rest of the codebase.
-
-**Priority:** Low.
 
 ---
 
@@ -1182,57 +1185,26 @@ since that reorg would otherwise make the README stale again immediately.
 
 ---
 
-#### ORG-12. `docs/frontend-redesign-plan.md` references a path that doesn't exist
+#### ORG-14. "Specs" means unrelated things across three different doc trees
 
-**Problem:** Line 5 says "Design references: `docs/design-refs/*.html`" —
-no `docs/design-refs/` folder or any `design-refs` path exists anywhere in
-the repo.
-
-**Impact:** A broken pointer in an active planning doc (per the memory
-note, Phases 1-3 are done, Phase 4 is next) — anyone opening it to find
-the design references hits a dead end.
-
-**Approach:** Either the referenced files were never added, or they lived
-somewhere else and the doc wasn't updated — check which, then fix the
-path or remove the reference.
-
-**Priority:** Low, but worth fixing before Phase 4 work resumes.
-
----
-
-#### ORG-13. `docs/specs/url-driven-filters.md` has a stale status
-
-**Problem:** The doc's own header says "Status: Draft, not yet
-implemented," but the feature it describes (FE-1, "Move screening filter
-state into the URL") is listed under Frontend Architecture's **Done**
-section in this very file — and `docs/specs/homepage-ssr.md` already
-assumes FE-1 shipped ("landed first as planned").
-
-**Impact:** Contradicts this file's own Done section; misleading if read
-on its own.
-
-**Approach:** Update the status line to reflect that it shipped.
-
-**Priority:** Low, quick fix.
-
----
-
-#### ORG-14. "Specs" means two unrelated things in two different doc trees
-
-**Problem:** `docs/specs/` holds three ad-hoc, hand-written feature specs
-(this project's own pre-existing convention). `openspec/specs/` is the
-OpenSpec tool's formal capability-spec directory (currently empty, just
-set up). Same word, two unrelated systems, in two different top-level doc
-locations.
+**Problem:** Originally two ad-hoc, hand-written feature-spec trees vs.
+OpenSpec's own formal one; after the docs reorg below (see "Sort
+documentation by which part of the repo it actually belongs to"), it's
+now three: `docs/specs/` (root — just `related-films.md`, kept here
+because both backend and frontend code reference it), `frontend/docs/specs/`
+(`homepage-ssr.md`, `url-driven-filters.md` — frontend-only), and
+`openspec/specs/` (OpenSpec's formal capability-spec directory, currently
+empty, just set up). Same word, three locations.
 
 **Impact:** Confusing once `openspec/specs/` actually has content — "check
-the specs" becomes ambiguous.
+the specs" becomes ambiguous, more so now than with two trees.
 
-**Approach:** No fix prescribed here — options include renaming
-`docs/specs/` to something like `docs/feature-notes/` to free up "specs"
-for OpenSpec alone, or migrating its contents into OpenSpec's structure
-over time (as already discussed when OpenSpec was set up). Worth deciding
-once OpenSpec actually has a few real specs in it, not before.
+**Approach:** No fix prescribed here — options include renaming the
+hand-written ones to something like `*/docs/feature-notes/` to free up
+"specs" for OpenSpec alone, or migrating their contents into OpenSpec's
+structure over time (as already discussed when OpenSpec was set up).
+Worth deciding once OpenSpec actually has a few real specs in it, not
+before.
 
 **Priority:** Low, and arguably blocked on OpenSpec actually being used
 first.

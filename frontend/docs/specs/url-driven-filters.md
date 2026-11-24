@@ -1,9 +1,10 @@
 # Spec: URL Driven Screening Filters
 
-Status: Draft, not yet implemented.
+Status: Shipped. See BACKLOG.md's Frontend Architecture → Done → FE-1 for
+what actually landed.
 
 Tracked as BACKLOG.md item FE-1, under Frontend Architecture. This is a
-foundational fix, not an SEO task by itself, but `docs/specs/homepage-ssr.md`
+foundational fix, not an SEO task by itself, but `frontend/docs/specs/homepage-ssr.md`
 (BACKLOG.md SEO-3) depends on it and should be updated once this ships. Do
 this before finishing SEO-3's narrower version, per the decision recorded
 in FE-1.
@@ -74,7 +75,7 @@ Once this spec ships, that workaround is no longer needed and should be
 removed rather than kept alongside the new approach. The Server Component
 reads `searchParams` directly and can render any filter combination, not
 only the default one, using the same server side fetch function planned in
-homepage-ssr.md. `docs/specs/homepage-ssr.md` should be updated to depend
+homepage-ssr.md. `frontend/docs/specs/homepage-ssr.md` should be updated to depend
 on this spec instead of describing its own separate, narrower fetching
 path.
 
@@ -105,7 +106,7 @@ parameter that could disagree with the other date fields.
    `searchParams` directly, the way Next.js passes it to page components,
    and performs the screenings fetch server side for whatever combination
    of parameters is present. This uses the same server side fetch function
-   already planned in `docs/specs/homepage-ssr.md`.
+   already planned in `frontend/docs/specs/homepage-ssr.md`.
 2. Replace `useScreeningsUI`'s internal `useState` with a hook that reads
    current filter values from `useSearchParams` and exposes a `setUI`-like
    function that calls `router.push` or `router.replace` with updated
@@ -187,7 +188,7 @@ use. All of the following must still work exactly as they do today:
    both with unit tests before wiring them into any component, since the
    rest of this work depends on them being correct.
 2. Add the server side screenings fetch function described in
-   `docs/specs/homepage-ssr.md`, if it does not already exist. It is
+   `frontend/docs/specs/homepage-ssr.md`, if it does not already exist. It is
    needed here regardless of that spec's own status, since this work
    requires a Server Component that can fetch for any filter combination.
 3. Rewrite `useScreeningsUI` to use the helpers from step 1: derive `ui`
@@ -229,7 +230,7 @@ use. All of the following must still work exactly as they do today:
 
 ## Follow ups, not required for this spec
 
-- `docs/specs/homepage-ssr.md` has already been updated to depend on this
+- `frontend/docs/specs/homepage-ssr.md` has already been updated to depend on this
   spec and no longer describes its own `initialItems` or skip-refetch
   plan. No further edit to it is needed once this ships, only its own
   remaining tasks: structured data, `generateMetadata`, and the caching

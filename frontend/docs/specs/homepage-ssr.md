@@ -1,12 +1,12 @@
 # Spec: Server Render the Homepage Screening List
 
-Status: Shipped. `docs/specs/url-driven-filters.md` (FE-1) landed first as
+Status: Shipped. `frontend/docs/specs/url-driven-filters.md` (FE-1) landed first as
 planned; this spec's own tasks (`generateMetadata`, `ItemList` structured
 data, the caching directive) are done — see the Task breakdown below for
 what shipped and how it was verified.
 
 Tracked in BACKLOG.md as SEO-3. Background and reasoning for why this was
-prioritized over other hub page ideas live in `docs/seo-hub-pages.md`. This
+prioritized over other hub page ideas live in `frontend/docs/seo-hub-pages.md`. This
 document is the implementation level spec for this one piece of work.
 
 ## Why this depends on FE-1
@@ -18,7 +18,7 @@ their default. That plan only worked for the single default view, because
 filter state lived outside the URL and a server has no way to read it
 otherwise.
 
-`docs/specs/url-driven-filters.md` moves all filter state into the URL and
+`frontend/docs/specs/url-driven-filters.md` moves all filter state into the URL and
 turns `frontend/app/page.tsx` into a Server Component that reads
 `searchParams` directly and renders any filter combination server side, not
 only the default one. Once that ships, this spec no longer needs its own
@@ -34,7 +34,7 @@ and give that response proper metadata and structured data.
 ## Non-goals
 
 - Do not design the URL scheme, the Server Component conversion, or the
-  filter state handling here. That is `docs/specs/url-driven-filters.md`.
+  filter state handling here. That is `frontend/docs/specs/url-driven-filters.md`.
 - Do not change how the watchlist works. It is already a client side,
   post-mount concern, independent of the screening list itself.
 - Do not change backend query behavior. The default query, with no filter
@@ -146,6 +146,6 @@ and give that response proper metadata and structured data.
 ## Explicitly out of scope, tracked separately
 
 - URL driven filters and the Server Component conversion itself. See
-  `docs/specs/url-driven-filters.md`.
+  `frontend/docs/specs/url-driven-filters.md`.
 - Tag, genre, and cinema hub pages. See BACKLOG.md items SEO-2 and SEO-7
   through SEO-10.
