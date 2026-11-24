@@ -1168,6 +1168,26 @@ Python does automatically for a direct, standalone invocation, with no
 outside help. Also re-confirmed `run_all.py`'s own importlib-based runner
 resolves all 7 `ALL_STEPS` modules end to end.
 
+#### ORG-11. `README.md`'s structure trees are stale
+
+Regenerated both trees from the real current structure (walked the actual
+directories rather than trusting memory): added `docs/`, `openspec/`,
+`BACKLOG.md`, and `TROUBLESHOOTING.md` to the top-level tree, plus
+`database/scripts/pipeline/`/`manual_fixes/` (ORG-4) and `frontend/docs/`
+(ORG-16). Fixed the two stale references (`FilmHeader.tsx` → `FilmHero.tsx`;
+`useScreeningsData.ts`, which no longer exists, → the real
+`screeningsUrlState.ts`), added the missing `whats-on/` route and
+component folder, and filled in everything else that had drifted since —
+`components/screenings/` grew from 5 files to 9, `components/ui/` gained
+the rating badges, several top-level components (`MustSeesMenu.tsx`,
+`HeroGlow.tsx`, `SiteIntroBar.tsx`) were never listed at all. Also fixed
+the backend tree, stale for an unrelated reason (ORG-5's rename earlier in
+this same pass): `userModel.js`/`watchlistModel.js` → `user.js`/
+`watchlist.js`, added `screeningSelect.js` (existed but was never listed),
+filled in `utils/` (previously just "..."), and removed `prisma/migrations/`
+and `seed.ts`, neither of which exist — the real file is `seed.js`, with no
+migrations folder.
+
 ### Still deferred
 
 ---
@@ -1191,29 +1211,6 @@ real rule or consolidate into one folder.
 
 **Priority:** Medium. Touches imports across much of the frontend —
 worth a deliberate pass, not a quick rename.
-
----
-
-#### ORG-11. `README.md`'s structure trees are stale
-
-**Problem:** The "Project Structure" tree (lines 19-39) omits `docs/`,
-`openspec/`, `BACKLOG.md`, and `TROUBLESHOOTING.md` entirely. The
-"Frontend Architecture" tree (lines 97-154) references files that no
-longer exist — `components/films/FilmHeader.tsx` (now
-`FilmHero.tsx`) and `lib/hooks/useScreeningsData.ts` (doesn't exist; the
-real file is `lib/hooks/screeningsUrlState.ts`, not mentioned at all) —
-and omits the entire `frontend/components/whats-on/` folder and
-`frontend/app/whats-on/` route.
-
-**Impact:** A README that describes a repo structure the repo no longer
-has is actively misleading to a new reader (or a future AI session
-reading it instead of the real tree).
-
-**Approach:** Regenerate both trees from the actual current structure —
-now including `database/scripts/pipeline/` and `manual_fixes/` (ORG-4) and
-`frontend/docs/` (ORG-16), both since resolved.
-
-**Priority:** Low effort. No longer blocked on anything — ORG-4 is done.
 
 ---
 

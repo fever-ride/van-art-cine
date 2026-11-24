@@ -28,14 +28,24 @@ project-root/
 ├── data/                # Raw scraped data and cached responses
 │
 ├── database/            # Data enrichment + ETL pipeline scripts
+│   └── scripts/
+│       ├── pipeline/      # Steps run_all.py actually runs (load, enrich, merge)
+│       └── manual_fixes/  # Admin scripts meant to be run by hand only
+│
+├── docs/                # Specs shared by backend + frontend (e.g. related films)
 │
 ├── frontend/            # Next.js client application
+│   └── docs/            # Frontend-only specs, redesign plan, design references
+│
+├── openspec/            # OpenSpec capability specs + change proposals
 │
 ├── presentation/        # Slide deck for project walkthroughs/demos
 │
 ├── scrapers/            # Python + Playwright scraping scripts
 │
-└── tools/               # Developer utilities and test helpers
+├── BACKLOG.md           # Deferred work, organized by area
+├── README.md            # This file
+└── TROUBLESHOOTING.md   # Debugging stories spanning frontend/backend/pipeline
 ```
 
 ## 3. Backend Architecture (Key Files)
@@ -66,9 +76,10 @@ backend/
 │   ├── models/
 │   │   ├── cinemas.js
 │   │   ├── films.js
+│   │   ├── screeningSelect.js  # Shared Prisma `select` shape for screening queries
 │   │   ├── screenings.js
-│   │   ├── userModel.js
-│   │   └── watchlistModel.js
+│   │   ├── user.js
+│   │   └── watchlist.js
 │   │
 │   ├── middleware/
 │   │   └── auth.js
@@ -81,7 +92,15 @@ backend/
 │   │   └── watchlistValidators.js
 │   │
 │   ├── utils/
-│   │   └── ...
+│   │   ├── errors.js
+│   │   ├── jwt.js
+│   │   ├── password.js
+│   │   ├── posterUrl.js
+│   │   ├── ratingThresholds.js
+│   │   ├── time.js
+│   │   ├── tokenHash.js
+│   │   ├── validators.js
+│   │   └── yearEras.js
 │   │
 │   ├── lib/
 │   │   └── prismaClient.js  # Shared Prisma Client singleton
@@ -90,8 +109,7 @@ backend/
 │
 └── prisma/
     ├── schema.prisma        # Database schema
-    ├── migrations/
-    └── seed.ts
+    └── seed.js
 ```
 
 ## 4. Frontend Architecture (Key Files)
@@ -101,50 +119,78 @@ frontend/
 ├── app/                     # Next.js App Router (pages, routes, server actions)
 │   ├── about/               # About page
 │   ├── auth/                # Login + Register pages
-│   ├── films/               # Film detail pages (/films/[id])
-│   ├── lib/                 # Client-side helpers (API wrappers, utilities)
+│   ├── films/[id]/          # Film detail page (+ error/not-found states)
+│   ├── lib/                 # Helpers called from Server Components — API/data
+│   │                        # fetchers, SEO structured data, etc. (see BACKLOG.md
+│   │                        # ORG-6 re: how this differs from the top-level lib/)
 │   ├── profile/             # User profile page
 │   ├── watchlist/           # Watchlist page
-│   ├── favicon.ico
+│   ├── whats-on/            # SEO hub pages (e.g. /whats-on/top-rated)
+│   ├── favicon.ico, icon.svg
 │   ├── globals.css          # Global styles
-│   ├── layout.tsx           # Root layout (fonts, providers, navigation)
-│   └── page.tsx             # Homepage (screenings listing + filters)
+│   ├── layout.tsx           # Root layout (fonts, providers, navigation, analytics)
+│   ├── page.tsx             # Homepage (screenings listing + filters)
+│   └── sitemap.ts
 │
 ├── components/              # Reusable UI components
-│   ├── auth/                # Auth-related modals/dropdowns
+│   ├── auth/                # Auth provider, modals/dropdowns
+│   │   ├── AuthProvider.tsx
 │   │   ├── CreateAccountModal.tsx
 │   │   └── SignInDropdown.tsx
 │   │
 │   ├── films/               # Components for film detail pages
-│   │   ├── FilmHeader.tsx   # Poster + title block
+│   │   ├── FilmHero.tsx     # Poster + title block
 │   │   ├── FilmMeta.tsx     # Metadata (cast, description, ...)
 │   │   └── FilmShowtimes.tsx# Upcoming screenings list for a film
 │   │
-│   ├── screenings/          # Components for homepage screening listings
-│   │   ├── SearchBar.tsx          # Debounced title search (shared by both views)
-│   │   ├── Filters.tsx            # Cinemas, sort, date filters (Apply-only)
-│   │   ├── Pagination.tsx         # Pagination controls
-│   │   ├── ScreeningList.tsx      # Adaptive screening list (cards on mobile, columns on desktop)
-│   │   └── ScreeningDateInput.tsx # Custom date picker input
+│   ├── screenings/          # Homepage screening list: Movies/Showtimes views,
+│   │   │                    # filters, search, pagination (9 files)
+│   │   ├── FilmListView.tsx
+│   │   ├── Filters.tsx
+│   │   ├── Pagination.tsx
+│   │   ├── ScreeningDateInput.tsx
+│   │   ├── ScreeningList.tsx
+│   │   ├── ScreeningRowParts.tsx
+│   │   ├── ScreeningsFilterPanel.tsx
+│   │   ├── ScreeningsPageClient.tsx
+│   │   ├── SearchBar.tsx
+│   │   └── ViewTabs.tsx
 │   │
 │   ├── ui/                  # Low-level shared UI primitives
 │   │   ├── Button.tsx
 │   │   ├── Card.tsx
+│   │   ├── ImdbBadge.tsx
 │   │   ├── Input.tsx
+│   │   ├── RatedBadge.tsx
+│   │   ├── RtBadge.tsx
 │   │   └── buttonStyles.ts
 │   │
 │   ├── watchlist/           # Watchlist-related UI
-│   │   └── WatchlistButton.tsx
+│   │   ├── WatchlistButton.tsx
+│   │   └── WatchlistList.tsx
 │   │
-│   ├── Footer.tsx           # Global footer
-│   └── NavBar.tsx           # Global navigation bar
+│   ├── whats-on/            # Poster grid/carousel for SEO hub pages
+│   │   ├── FilmPosterCard.tsx
+│   │   ├── PosterCarousel.tsx
+│   │   └── PosterGrid.tsx
+│   │
+│   ├── Footer.tsx, NavBar.tsx, MustSeesMenu.tsx, HeroGlow.tsx, SiteIntroBar.tsx
 │
-├── lib/                     # Non-React utilities and helpers
-│   ├── hooks/               # Custom React hooks
-│   │   ├── useScreeningsData.ts
+├── docs/                    # Frontend-only specs, redesign plan, design
+│   │                        # references (see BACKLOG.md ORG-16)
+│   ├── specs/
+│   ├── design-refs/
+│   ├── frontend-redesign-plan.md
+│   └── seo-hub-pages.md
+│
+├── lib/                     # Non-React utilities and custom hooks — see
+│   │                        # BACKLOG.md ORG-6 re: how this differs from app/lib/
+│   ├── hooks/
+│   │   ├── screeningsUrlState.ts
 │   │   ├── useScreeningsUI.ts
 │   │   └── useWatchlist.ts
-│   └── ...
+│   ├── pagination.ts
+│   └── topRated.ts
 │
 ├── public/                  # Static files (images, icons)
 │
