@@ -2,9 +2,15 @@
 """
 Manually merge film records in the database (PostgreSQL).
 
-This script is a template for *manual* merges where you already know
-which film_id should be kept (the "canonical" record) and which film_ids
-should be merged into it and removed.
+This is a backstop, not a routine step: the pipeline's own automatic
+matching (fuzzy TMDB/IMDb lookups in resolve_imdb_id_url.py, the AI title
+cleaning in ai_cleaning.py, etc.) occasionally still lets the same real
+film get scraped into two separate `film` rows — e.g. slightly different
+titles across cinemas, or a title the automatic matching couldn't
+confidently resolve. Run this script by hand only when you've spotted one
+of those duplicates and already know which film_id should be kept (the
+"canonical" record) and which film_ids should be merged into it and
+removed.
 
 You edit the MANUAL_MERGES list below to define groups like:
 
@@ -27,8 +33,8 @@ For each group, the script will:
   3) Delete the losing film rows.
 
 Usage:
-    python scripts/merge_films_manual.py --dry-run   # preview only
-    python scripts/merge_films_manual.py             # apply changes
+    python scripts/manual_fixes/merge_films_manual.py --dry-run   # preview only
+    python scripts/manual_fixes/merge_films_manual.py             # apply changes
 
 IMPORTANT:
   - This script is aware of all tables that reference film.id:
@@ -47,14 +53,25 @@ IMPORTANT:
 """
 
 import sys
+from pathlib import Path
 from typing import List, Tuple, Dict, Any
-from db_helper import conn_open
-from log_setup import get_logger
+
+# db_helper/log_setup live one level up, in database/scripts/ (this file
+# is nested under manual_fixes/) — same sys.path-patching pattern run_all.py
+# uses, needed here because this script isn't run as part of that pipeline.
+SCRIPT_DIR = Path(__file__).resolve().parent.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from db_helper import conn_open  # noqa: E402  (needs sys.path patched above)
+from log_setup import get_logger  # noqa: E402  (needs sys.path patched above)
 
 log = get_logger("merge_films_manual")
 
 # ---------------------------------------------------------------------------
-# EDIT THIS LIST FOR YOUR MANUAL MERGES
+# EDIT THIS LIST FOR YOUR MANUAL MERGES. Leave it empty when idle — this is
+# a one-off patch tool, not a list of merges to keep re-running. Reset it
+# back to empty once you've applied and confirmed a merge.
 # Each tuple is: (keep_film_id, [list_of_loser_film_ids])
 # ---------------------------------------------------------------------------
 
@@ -62,7 +79,6 @@ MANUAL_MERGES: List[Tuple[int, List[int]]] = [
     # Example:
     # (42, [101, 102]),
     # (200, [250]),
-    (136, [198])
 ]
 
 
