@@ -22,14 +22,23 @@ For upcoming screenings:
 All operations are logged to ops_ingest_run.
 
 Usage:
-  python scripts/merge_staging_to_live.py           # apply changes
-  python scripts/merge_staging_to_live.py --dry-run # preview only (no changes)
+  python scripts/pipeline/merge_staging_to_live.py           # apply changes
+  python scripts/pipeline/merge_staging_to_live.py --dry-run # preview only (no changes)
 """
 
 import argparse
+import sys
 from datetime import datetime
-from db_helper import conn_open
-from log_setup import get_logger
+from pathlib import Path
+
+# db_helper/log_setup live one level up, in database/scripts/ (this file is
+# nested under pipeline/) -- same sys.path-patching pattern run_all.py uses.
+SCRIPT_DIR = Path(__file__).resolve().parent.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from db_helper import conn_open  # noqa: E402  (needs sys.path patched above)
+from log_setup import get_logger  # noqa: E402  (needs sys.path patched above)
 
 log = get_logger("merge_staging_to_live")
 

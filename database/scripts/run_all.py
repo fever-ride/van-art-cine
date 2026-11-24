@@ -78,8 +78,8 @@ NOT PART OF THIS PIPELINE (by design — run separately, e.g. weekly cron):
   already-enriched films is a SEPARATE script, deliberately not a step
   here, so it doesn't silently re-spend OMDb quota on every pipeline run:
 
-    python scripts/refresh_ratings.py               # films unrefreshed for 30+ days
-    python scripts/refresh_ratings.py --dry-run     # preview only, no API calls / writes
+    python scripts/pipeline/refresh_ratings.py               # films unrefreshed for 30+ days
+    python scripts/pipeline/refresh_ratings.py --dry-run     # preview only, no API calls / writes
 
   See refresh_ratings.py's module docstring and TROUBLESHOOTING.md
   ("Data pipeline: resolve_imdb_id_url dies mid-run...") for why this is
@@ -97,6 +97,13 @@ import argparse
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
+
+# Every ALL_STEPS module now lives in pipeline/, not next to this file --
+# added here (not just inside each module) so import_and_run's bare-name
+# importlib.import_module(step) below still resolves them by filename alone.
+PIPELINE_DIR = SCRIPT_DIR / "pipeline"
+if str(PIPELINE_DIR) not in sys.path:
+    sys.path.insert(0, str(PIPELINE_DIR))
 
 from log_setup import get_logger  # noqa: E402  (needs sys.path patched above)
 

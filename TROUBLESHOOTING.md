@@ -573,8 +573,8 @@ Fixing the commit strategy meant re-reading and testing this code path closely, 
 
 - `database/scripts/http_retry.py` — shared retry/backoff for TMDB + OMDb requests
 - `database/scripts/db_helper.py` — `reconnect()`, `fetch_films_needing_omdb()`
-- `database/scripts/resolve_imdb_id_url.py` — `main()` per-row commit + reconnect
-- `database/scripts/omdb_api.py` — `OmdbQuotaExceeded`, `_write_with_reconnect()`, `_clean_text()` (HTML unescape), N/A filter, `--all` flag
+- `database/scripts/pipeline/resolve_imdb_id_url.py` — `main()` per-row commit + reconnect
+- `database/scripts/pipeline/omdb_api.py` — `OmdbQuotaExceeded`, `_write_with_reconnect()`, `_clean_text()` (HTML unescape), N/A filter, `--all` flag
 - `database/migrations/2026-07-21_add_omdb_synced_at_to_film.sql`
 
 ### Quick verify

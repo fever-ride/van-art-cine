@@ -27,10 +27,10 @@ Static fields (genre, plot, cast, ...) are left untouched — use
 `omdb_api.py --all` if those need a full re-fetch instead.
 
 Usage:
-    python scripts/refresh_ratings.py                  # films unrefreshed for 30+ days, oldest first
-    python scripts/refresh_ratings.py --days 14         # custom staleness window
-    python scripts/refresh_ratings.py --limit 100       # cap how many films to touch this run
-    python scripts/refresh_ratings.py --dry-run         # list what would be refreshed; no API calls, no writes
+    python scripts/pipeline/refresh_ratings.py                  # films unrefreshed for 30+ days, oldest first
+    python scripts/pipeline/refresh_ratings.py --days 14         # custom staleness window
+    python scripts/pipeline/refresh_ratings.py --limit 100       # cap how many films to touch this run
+    python scripts/pipeline/refresh_ratings.py --dry-run         # list what would be refreshed; no API calls, no writes
 
 Env:
   - OMDB_API_KEY in database/.env
@@ -39,9 +39,18 @@ Env:
 
 import argparse
 import sys
+from pathlib import Path
 from typing import Any, Dict
 
-from db_helper import conn_open, fetch_films_for_rating_refresh
+# db_helper/log_setup live one level up, in database/scripts/ (this file is
+# nested under pipeline/) -- same sys.path-patching pattern run_all.py uses.
+# omdb_api is a sibling in this same pipeline/ folder, so it needs no such
+# patch -- Python already resolves same-directory imports on its own.
+SCRIPT_DIR = Path(__file__).resolve().parent.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from db_helper import conn_open, fetch_films_for_rating_refresh  # noqa: E402
 from omdb_api import (
     OmdbQuotaExceeded,
     _mark_no_omdb_match,
@@ -51,7 +60,7 @@ from omdb_api import (
     parse_imdb_votes,
     parse_rt_percent,
 )
-from log_setup import get_logger
+from log_setup import get_logger  # noqa: E402
 
 log = get_logger("refresh_ratings")
 

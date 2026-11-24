@@ -20,16 +20,24 @@ import requests
 from dotenv import load_dotenv
 from psycopg2.extras import RealDictCursor
 
-from db_helper import conn_open, norm_title, remove_parentheses, reconnect
-from http_retry import get_with_retry
-from log_setup import get_logger
+# This file's own directory is database/scripts/pipeline/. db_helper,
+# http_retry, and log_setup live one level up, in database/scripts/ --
+# add that to sys.path. .env and the project root (for the cache path
+# below) live one and two levels above that, respectively.
+SCRIPT_DIR = Path(__file__).resolve().parent
+SCRIPTS_DIR = SCRIPT_DIR.parent
+DB_DIR = SCRIPTS_DIR.parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+from db_helper import conn_open, norm_title, remove_parentheses, reconnect  # noqa: E402
+from http_retry import get_with_retry  # noqa: E402
+from log_setup import get_logger  # noqa: E402
 
 log = get_logger("resolve_imdb_id_url")
 
 # ---------- Config ----------
 # Load environment variables from .env in database directory
-SCRIPT_DIR = Path(__file__).resolve().parent
-DB_DIR = SCRIPT_DIR.parent
 ENV_PATH = DB_DIR / ".env"
 
 if not ENV_PATH.exists():

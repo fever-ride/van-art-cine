@@ -8,7 +8,7 @@ This script:
 3) Updates the database with found IDs
 
 Usage:
-    python scripts/enrich_person_ids.py
+    python scripts/pipeline/enrich_person_ids.py
 
 Environment:
     Requires TMDB_API_KEY in database/.env
@@ -25,15 +25,22 @@ import psycopg2
 import requests
 from dotenv import load_dotenv
 
-from db_helper import conn_open, reconnect
-from http_retry import get_with_retry
-from log_setup import get_logger
+# This file's own directory is database/scripts/pipeline/. db_helper,
+# http_retry, and log_setup live one level up, in database/scripts/ --
+# add that to sys.path. .env lives one level above that, in database/.
+SCRIPT_DIR = Path(__file__).resolve().parent
+SCRIPTS_DIR = SCRIPT_DIR.parent
+DB_DIR = SCRIPTS_DIR.parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+from db_helper import conn_open, reconnect  # noqa: E402
+from http_retry import get_with_retry  # noqa: E402
+from log_setup import get_logger  # noqa: E402
 
 log = get_logger("enrich_person_ids")
 
 # ---------- Environment ----------
-SCRIPT_DIR = Path(__file__).resolve().parent
-DB_DIR = SCRIPT_DIR.parent
 ENV_PATH = DB_DIR / ".env"
 
 if not ENV_PATH.exists():

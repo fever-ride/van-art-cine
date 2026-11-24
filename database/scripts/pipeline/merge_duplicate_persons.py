@@ -17,7 +17,7 @@ version had a normalized_name pass here; it was removed because it could
 people, including ones that already had different confirmed imdb_ids.
 
 Usage:
-    python scripts/merge_duplicate_persons.py [--dry-run]
+    python scripts/pipeline/merge_duplicate_persons.py [--dry-run]
 """
 
 # NOTE: Known limitations / future improvements for merge_duplicate_persons
@@ -55,9 +55,17 @@ Usage:
 #        pass with a unified grouping / scoring strategy.
 
 import sys
+from pathlib import Path
 from typing import List, Tuple, Dict, Any
-from db_helper import conn_open
-from log_setup import get_logger
+
+# db_helper/log_setup live one level up, in database/scripts/ (this file is
+# nested under pipeline/) -- same sys.path-patching pattern run_all.py uses.
+SCRIPT_DIR = Path(__file__).resolve().parent.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from db_helper import conn_open  # noqa: E402
+from log_setup import get_logger  # noqa: E402
 
 log = get_logger("merge_duplicate_persons")
 

@@ -1109,34 +1109,66 @@ docs' own mutual references) to the new paths. `backend/`,
 test suite (153 tests), and the backend test suite (102 tests), all
 passing.
 
-### Still deferred
-
----
-
 #### ORG-4. `database/scripts/` is a flat folder mixing unrelated responsibilities
 
-**Problem:** One folder, no subfolders, holds at least four distinct kinds
-of script with no grouping: pipeline orchestration (`run_all.py`), data
-loading (`load_json.py`), enrichment (`omdb_api.py`,
-`enrich_person_ids.py`, `refresh_ratings.py`, `resolve_imdb_id_url.py`),
-manual one-off data-fixing tools (`edit_screenings_manual.py`,
-`merge_duplicate_films.py`, `merge_duplicate_persons.py`,
-`merge_staging_to_live.py` — `merge_films_manual.py` already moved into
-`manual_fixes/` per ORG-15, as a preview of this split), and shared
-infra (`db_helper.py`, `log_setup.py`, `aliases.py`, `ai_cleaning.py`,
-`http_retry.py`).
+Split into three groups, based on what actually calls what (checked via
+`run_all.py`'s own `ALL_STEPS` list and every script's import graph, not
+guessed): `pipeline/` holds the 8 scripts `run_all.py` or the pipeline
+itself invokes as steps (`load_json.py`, `resolve_imdb_id_url.py`,
+`merge_duplicate_films.py`, `omdb_api.py`, `enrich_person_ids.py`,
+`merge_duplicate_persons.py`, `merge_staging_to_live.py`, and
+`refresh_ratings.py` — this last one isn't in `ALL_STEPS` today per DP-5,
+but it's the same kind of script, just not wired into the cron yet).
+`manual_fixes/` holds `edit_screenings_manual.py` alongside
+`merge_films_manual.py` (already moved there under ORG-15). Shared infra
+(`db_helper.py`, `log_setup.py`, `aliases.py`, `ai_cleaning.py`,
+`http_retry.py`, `vancouver_time.py`) and `run_all.py` itself stayed at
+the top level of `database/scripts/`, since every moved script still
+needs them. Added a `sys.path` patch (matching the existing pattern
+already in `run_all.py` and `merge_films_manual.py`) to each moved
+script so direct standalone invocation (`python scripts/pipeline/x.py`)
+still resolves the shared-infra imports, and added `pipeline/` itself to
+`run_all.py`'s `sys.path` so its bare-name `importlib.import_module(step)`
+calls keep working unmodified. Updated every usage docstring and the two
+outside references (`TROUBLESHOOTING.md`, `frontend/docs/seo-hub-pages.md`).
 
-**Impact:** Hardest file in the repo to orient in — a newcomer (or a
-future AI session) can't tell at a glance which scripts are run
-automatically vs. by hand, or what's shared vs. one-off.
+Caught and fixed a real bug of my own making during this: `omdb_api.py`,
+`resolve_imdb_id_url.py`, and `enrich_person_ids.py` each already had
+their own `SCRIPT_DIR`/`DB_DIR` pair (for locating `.env` and, in
+`resolve_imdb_id_url.py`, the project root). My first pass reused `DB_DIR`
+for the new `sys.path` insert too, but it needed a *different* depth than
+`DB_DIR`'s own `.env`-finding purpose, and conflating the two put the
+wrong directory on `sys.path`. Caught this by actually invoking the
+moved scripts directly (not just `py_compile`, which doesn't exercise
+runtime import resolution) — the first attempt crashed with
+`ModuleNotFoundError: No module named 'db_helper'` for `omdb_api.py`. Fixed
+by splitting it into `SCRIPTS_DIR` (one level up, for the `sys.path`
+insert) and `DB_DIR` (two levels up, unchanged for `.env`).
 
-**Approach:** Split into subfolders by role (something like `pipeline/`,
-`enrichment/`, `manual_fixes/`, `shared/`) and update every import path and
-the `run_all.py`/CI references accordingly. The biggest item on this list —
-worth its own careful pass with tests/pipeline run to confirm nothing broke.
+That same verification pass caused a real, if low-stakes, incident:
+testing `merge_duplicate_films.py --help` to confirm it still ran standalone
+actually executed a real merge, because this script doesn't use argparse
+and doesn't recognize `--help` as a flag — it silently ran its normal
+default (apply) behavior instead of showing usage. This connected to
+`localhost` per `database/.env` (confirmed before and after — not
+production), and merged 4 genuine duplicate-film groups that
+`merge_duplicate_films` would have merged on the next real pipeline run
+regardless, so it isn't believed to have corrupted anything, but it
+was an unintended, un-asked-for local DB write caused by an overly
+casual verification method. Correction going forward: verify a moved
+script's import-time behavior via `importlib.import_module` (which never
+triggers a script's own `if __name__ == "__main__"` block) instead of
+ever invoking one of these scripts directly as a subprocess, unless its
+flags are confirmed safe first.
 
-**Priority:** Medium. Highest value here, but also the only one that
-touches live, working import paths — do it carefully, not first.
+Verified (safely, via the above import-only method this time) that all 8
+`pipeline/` scripts and both `manual_fixes/` scripts import cleanly when
+only their own directory is seeded on `sys.path` — i.e. exactly what
+Python does automatically for a direct, standalone invocation, with no
+outside help. Also re-confirmed `run_all.py`'s own importlib-based runner
+resolves all 7 `ALL_STEPS` modules end to end.
+
+### Still deferred
 
 ---
 
@@ -1177,11 +1209,11 @@ and omits the entire `frontend/components/whats-on/` folder and
 has is actively misleading to a new reader (or a future AI session
 reading it instead of the real tree).
 
-**Approach:** Regenerate both trees from the actual current structure.
-Worth doing right after (not before) ORG-4's `database/scripts/` split,
-since that reorg would otherwise make the README stale again immediately.
+**Approach:** Regenerate both trees from the actual current structure —
+now including `database/scripts/pipeline/` and `manual_fixes/` (ORG-4) and
+`frontend/docs/` (ORG-16), both since resolved.
 
-**Priority:** Low effort, but sequence it after ORG-4.
+**Priority:** Low effort. No longer blocked on anything — ORG-4 is done.
 
 ---
 

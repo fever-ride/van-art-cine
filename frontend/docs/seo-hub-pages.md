@@ -171,8 +171,8 @@ week" ranking would reflect real signal instead of noise.
   grouping above should live in code, in a config file, or in the
   database.
 - Whether genre parsing and cleanup should happen at ingest time in
-  `database/scripts/load_json.py`, or stay a frontend concern applied at
-  read time.
+  `database/scripts/pipeline/load_json.py`, or stay a frontend concern
+  applied at read time.
 - Whether the homepage's server rendering conversion should keep the
   existing filter UI behavior exactly as is, or whether filters should
   become URL driven query parameters that also work without JavaScript.

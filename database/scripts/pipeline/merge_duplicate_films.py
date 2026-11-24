@@ -25,7 +25,7 @@ Strategy (high-level):
   4) Delete the merged-away film rows.
 
 Usage:
-    python scripts/merge_duplicate_films.py [--dry-run]
+    python scripts/pipeline/merge_duplicate_films.py [--dry-run]
 
 Notes:
   - This script is explicitly aware of all tables that reference film.id:
@@ -50,9 +50,17 @@ Notes:
 """
 
 import sys
+from pathlib import Path
 from typing import List, Tuple, Dict, Any
-from db_helper import conn_open
-from log_setup import get_logger
+
+# db_helper/log_setup live one level up, in database/scripts/ (this file is
+# nested under pipeline/) -- same sys.path-patching pattern run_all.py uses.
+SCRIPT_DIR = Path(__file__).resolve().parent.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from db_helper import conn_open  # noqa: E402
+from log_setup import get_logger  # noqa: E402
 
 log = get_logger("merge_duplicate_films")
 

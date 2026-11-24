@@ -8,7 +8,7 @@ needs a hand-tuned correction.
 Examples:
 
   # Create a screening
-  python edit_screenings_manual.py create \
+  python scripts/manual_fixes/edit_screenings_manual.py create \
     --film-id 42 \
     --cinema-id 3 \
     --start "2025-11-25T19:30" \
@@ -17,26 +17,35 @@ Examples:
     --notes "Special one-off screening"
 
   # Update time + notes
-  # Note: updating start_at_utc does not auto-adjust end_at_utc; 
+  # Note: updating start_at_utc does not auto-adjust end_at_utc;
   # update both fields together if needed.
-  python edit_screenings_manual.py update \
+  python scripts/manual_fixes/edit_screenings_manual.py update \
     --id 123 \
     --start "2025-11-25T20:00" \
     --runtime 110 \
     --notes "Time changed"
 
   # Deactivate (soft delete)
-  python edit_screenings_manual.py deactivate --id 123
+  python scripts/manual_fixes/edit_screenings_manual.py deactivate --id 123
 
   # Hard delete (watchlist_screening rows are removed via ON DELETE CASCADE)
-  python edit_screenings_manual.py delete --id 123
+  python scripts/manual_fixes/edit_screenings_manual.py delete --id 123
 """
 
 import argparse
+import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 
-from db_helper import conn_open
-from log_setup import get_logger
+# db_helper/log_setup live one level up, in database/scripts/ (this file is
+# nested under manual_fixes/) -- same sys.path-patching pattern run_all.py
+# and merge_films_manual.py (this file's sibling) use.
+SCRIPT_DIR = Path(__file__).resolve().parent.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from db_helper import conn_open  # noqa: E402
+from log_setup import get_logger  # noqa: E402
 
 log = get_logger("edit_screenings_manual")
 

@@ -12,7 +12,7 @@ cinephilesvan.com).
 - Maintains data integrity through careful deduplication
 
 Usage:
-    python scripts/load_json.py [file1.json file2.json ...]
+    python scripts/pipeline/load_json.py [file1.json file2.json ...]
 
 If no files specified, processes default set:
 - cinematheque_screenings_latest.json
@@ -26,12 +26,21 @@ import re
 import sys
 import hashlib
 from datetime import datetime, timedelta, timezone
-from vancouver_time import to_utc_naive, vancouver_now
-from aliases import resolve_cinema_alias
+from pathlib import Path
+
+# vancouver_time/aliases/db_helper/ai_cleaning/log_setup live one level up,
+# in database/scripts/ (this file is nested under pipeline/) -- same
+# sys.path-patching pattern run_all.py uses.
+SCRIPT_DIR = Path(__file__).resolve().parent.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from vancouver_time import to_utc_naive, vancouver_now  # noqa: E402
+from aliases import resolve_cinema_alias  # noqa: E402
 
 from dateutil import parser as dtparser
 
-from db_helper import (
+from db_helper import (  # noqa: E402
     conn_open,
     norm_space,
     norm_title,
@@ -39,8 +48,8 @@ from db_helper import (
     normalize_person_name,
 )
 
-from ai_cleaning import ai_clean_title_and_tags
-from log_setup import get_logger
+from ai_cleaning import ai_clean_title_and_tags  # noqa: E402
+from log_setup import get_logger  # noqa: E402
 
 log = get_logger("load_json")
 
