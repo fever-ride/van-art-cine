@@ -14,14 +14,14 @@
  *
  * Kept separate from `useScreeningsUI` so both directions can be unit
  * tested in isolation before being wired into any component or hook. See
- * docs/specs/url-driven-filters.md, task 1.
+ * frontend/docs/feature-notes/url-driven-filters.md, task 1.
  *
  * `page` is deliberately not handled here. It already has its own working
  * URL round trip in `frontend/app/page.tsx`, and this module only extends
  * the same pattern to the other filter fields.
  */
 
-import type { SortKey, Order, ScreeningsQuery } from '@/app/lib/screenings';
+import type { SortKey, Order, ScreeningsQuery } from '@/lib/screenings';
 
 export type Mode = 'single' | 'range';
 export type View = 'table' | 'film';

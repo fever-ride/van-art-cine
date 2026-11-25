@@ -1,12 +1,12 @@
-import type { Film, UpcomingScreening } from '@/app/lib/films';
+import type { Film, UpcomingScreening } from '@/lib/films';
 import {
   cleanDisplayText,
   formatPeopleLine,
   isValidRtRating,
   parseImdbRating,
-} from '@/app/lib/displayText';
-import { formatGenre } from '@/app/lib/formatGenre';
-import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
+} from '@/lib/displayText';
+import { formatGenre } from '@/lib/formatGenre';
+import { formatScreeningDate, formatScreeningTime } from '@/lib/formatDate';
 import { RatedBadge } from '@/components/ui';
 import HeroGlow from '@/components/HeroGlow';
 import SiteIntroBar from '@/components/SiteIntroBar';

@@ -3,7 +3,7 @@ import {
   formatScreeningDateTime,
   todayYmdInDisplayTimezone,
   displayTimeZoneFor,
-} from '@/app/lib/formatDate';
+} from '@/lib/formatDate';
 
 // BC moved to permanent UTC-7 on 2026-11-01. Output must not depend on the
 // runtime's tzdata (Node 24 ships 2025b, which still says UTC-8).

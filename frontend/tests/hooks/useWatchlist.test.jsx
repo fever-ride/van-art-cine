@@ -1,17 +1,17 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { AuthProvider, useAuth } from '@/components/auth/AuthProvider';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
-import { apiMe, apiLogin, apiLogout } from '@/app/lib/auth';
-import { apiListWatchlist } from '@/app/lib/watchlist';
-import { GUEST_KEY } from '@/app/lib/guestWatchlist';
+import { apiMe, apiLogin, apiLogout } from '@/lib/auth';
+import { apiListWatchlist } from '@/lib/watchlist';
+import { GUEST_KEY } from '@/lib/guestWatchlist';
 
-jest.mock('@/app/lib/auth', () => ({
+jest.mock('@/lib/auth', () => ({
   apiMe: jest.fn(),
   apiLogin: jest.fn(),
   apiLogout: jest.fn(),
   apiRegister: jest.fn(),
 }));
-jest.mock('@/app/lib/watchlist', () => ({ apiListWatchlist: jest.fn() }));
+jest.mock('@/lib/watchlist', () => ({ apiListWatchlist: jest.fn() }));
 
 function Probe() {
   const { savedIds } = useWatchlist();

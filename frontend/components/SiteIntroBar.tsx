@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { INTRO_DISMISSED_COOKIE } from '@/app/lib/siteIntro';
+import { INTRO_DISMISSED_COOKIE } from '@/lib/siteIntro';
 
 /**
  * One-line "what is this site" note for visitors who land on a film page from

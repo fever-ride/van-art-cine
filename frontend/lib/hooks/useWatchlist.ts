@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { GUEST_KEY, getGuestSet } from '@/app/lib/guestWatchlist';
-import { apiListWatchlist } from '@/app/lib/watchlist';
+import { GUEST_KEY, getGuestSet } from '@/lib/guestWatchlist';
+import { apiListWatchlist } from '@/lib/watchlist';
 import { useAuth } from '@/components/auth/AuthProvider';
 
 /**

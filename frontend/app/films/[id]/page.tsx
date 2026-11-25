@@ -4,14 +4,14 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { cookies, headers } from 'next/headers';
-import { getFilmDetail } from '@/app/lib/films';
-import type { Screening } from '@/app/lib/screenings';
-import { ItemListStructuredData, safeJsonLd } from '@/app/lib/structuredData';
+import { getFilmDetail } from '@/lib/films';
+import type { Screening } from '@/lib/screenings';
+import { ItemListStructuredData, safeJsonLd } from '@/lib/structuredData';
 import FilmHero from '@/components/films/FilmHero';
 import FilmMeta from '@/components/films/FilmMeta';
 import FilmShowtimes from '@/components/films/FilmShowtimes';
 import PosterCarousel from '@/components/whats-on/PosterCarousel';
-import { INTRO_DISMISSED_COOKIE } from '@/app/lib/siteIntro';
+import { INTRO_DISMISSED_COOKIE } from '@/lib/siteIntro';
 
 
 
@@ -91,8 +91,8 @@ function StructuredData({
   film,
   upcoming,
 }: {
-  film: import('@/app/lib/films').Film;
-  upcoming: import('@/app/lib/films').UpcomingScreening[];
+  film: import('@/lib/films').Film;
+  upcoming: import('@/lib/films').UpcomingScreening[];
 }) {
   const filmUrl = `https://www.cinephilesvan.com/films/${film.id}`;
   const ratingNum = film.imdb_rating ? Number(film.imdb_rating) : null;
@@ -238,7 +238,7 @@ async function FilmContent({ id, showIntro }: { id: number; showIntro: boolean }
 }
 
 /** Other currently screening films sharing a director, genre, or cinema
- * with this one (see docs/specs/related-films.md). Omitted entirely when
+ * with this one (see docs/feature-notes/related-films.md). Omitted entirely when
  * there are no matches, rather than showing an empty heading. Styled as
  * the same bordered/banded card as FilmMeta and FilmShowtimes above it,
  * rather than a bare heading, so the page reads as one consistent set of

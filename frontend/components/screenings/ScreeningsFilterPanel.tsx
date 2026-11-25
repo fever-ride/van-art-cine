@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { UIState, SetFilters } from '@/lib/hooks/useScreeningsUI';
-import type { ScreeningFacets, ScreeningFacetValue, RatingThresholdValue } from '@/app/lib/screenings';
+import type { ScreeningFacets, ScreeningFacetValue, RatingThresholdValue } from '@/lib/screenings';
 
 
 const VISIBLE_COUNT = 5;

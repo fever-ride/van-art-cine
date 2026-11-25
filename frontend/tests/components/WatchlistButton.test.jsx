@@ -1,15 +1,15 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
-import { apiToggleWatchlist } from '@/app/lib/watchlist';
-import { getGuestSet, saveGuestSet } from '@/app/lib/guestWatchlist';
+import { apiToggleWatchlist } from '@/lib/watchlist';
+import { getGuestSet, saveGuestSet } from '@/lib/guestWatchlist';
 
 // Mock API module
-jest.mock('@/app/lib/watchlist', () => ({
+jest.mock('@/lib/watchlist', () => ({
   apiToggleWatchlist: jest.fn(),
 }));
 
 // Mock guest watchlist helper module
-jest.mock('@/app/lib/guestWatchlist', () => ({
+jest.mock('@/lib/guestWatchlist', () => ({
   getGuestSet: jest.fn(),
   saveGuestSet: jest.fn(),
 }));

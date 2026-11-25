@@ -1,7 +1,7 @@
 /** `/` — server-rendered. Fetches the current, filtered screening list on
  * the server so the default and any filtered view are both present in the
  * first HTML response, not only after client side JavaScript runs. See
- * docs/specs/url-driven-filters.md and docs/specs/homepage-ssr.md. */
+ * frontend/docs/feature-notes/url-driven-filters.md and frontend/docs/feature-notes/homepage-ssr.md. */
 
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
@@ -10,9 +10,9 @@ import {
   getFilmsServerSide,
   buildSearchParams,
   type Screening,
-} from '@/app/lib/screenings';
-import { getCinemasServerSide } from '@/app/lib/cinemas';
-import { ItemListStructuredData, type MovieEntitySource } from '@/app/lib/structuredData';
+} from '@/lib/screenings';
+import { getCinemasServerSide } from '@/lib/cinemas';
+import { ItemListStructuredData, type MovieEntitySource } from '@/lib/structuredData';
 import {
   parseUIStateFromSearchParams,
   serializeUIStateToSearchParams,
@@ -259,7 +259,7 @@ function dedupeByFilm(items: Screening[]): Screening[] {
 /**
  * `ItemList` structured data for the current page's film list, reusing
  * whichever fetch `ScreeningsPageContent` already made — no separate fetch.
- * Schema building itself lives in `frontend/app/lib/structuredData.tsx`,
+ * Schema building itself lives in `frontend/lib/structuredData.tsx`,
  * shared with `frontend/app/whats-on/top-rated/page.tsx`.
  */
 function NowPlayingStructuredData({ films }: { films: MovieEntitySource[] }) {

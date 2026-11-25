@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { apiLogin, apiLogout, apiMe, apiRegister } from '@/app/lib/auth';
+import { apiLogin, apiLogout, apiMe, apiRegister } from '@/lib/auth';
 
 /**
  * The one place the app knows who is signed in.

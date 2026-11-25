@@ -76,7 +76,7 @@ function buildScreeningWhere(opts = {}) {
   // Genre and language are each an explicit, user-chosen "show me anything
   // tagged X or Y" facet — unlike the related-films scoring model (which
   // deliberately avoids "any shared token" for a passive recommendation,
-  // see docs/specs/related-films.md), checking two genre boxes is supposed
+  // see docs/feature-notes/related-films.md), checking two genre boxes is supposed
   // to widen the result set, not narrow it. Each facet's own checked values
   // OR together; the two facets then AND against each other. Built as a
   // Prisma `AND` array (not a second `OR` key) — Prisma's `where` is a

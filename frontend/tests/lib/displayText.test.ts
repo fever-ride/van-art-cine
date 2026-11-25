@@ -3,9 +3,9 @@ import {
   formatPeopleLine,
   parseImdbRating,
   splitAndClean,
-} from '@/app/lib/displayText';
-import { formatGenre } from '@/app/lib/formatGenre';
-import { isMissingText } from '@/app/lib/typeGuards';
+} from '@/lib/displayText';
+import { formatGenre } from '@/lib/formatGenre';
+import { isMissingText } from '@/lib/typeGuards';
 
 describe('isMissingText', () => {
   test.each(['N/A', 'n/a', 'NA', 'unknown', '—', '-', ''])(

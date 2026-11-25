@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Now Playing at FLC — Films &amp; Filters demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #000000;
+    --ink-soft: #333333;
+    --muted: #6f6f6f;
+    --rule: #000000;
+    --panel: #ffffff;
+    --showtimes: #dcdcdc;
+    --salmon: #e98f76;
+    --salmon-ink: #1a1a1a;
+    --purple: #5b3ee6;
+    --chat: #7a4cff;
+    --hero-ink: #ffffff;
+    --nav-h: 76px;
+    --pad: 60px;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101010; --ink: #f3f3f3; --ink-soft: #d8d8d8; --muted: #9a9a9a; --rule: #f3f3f3;
+      --panel: #1a1a1a; --showtimes: #262626;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101010; --ink: #f3f3f3; --ink-soft: #d8d8d8; --muted: #9a9a9a; --rule: #f3f3f3;
+    --panel: #1a1a1a; --showtimes: #262626;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  .display { font-family: "Archivo", "Helvetica Neue", Arial, sans-serif; }
+
+  /* ---------- Header (sits on the hero, scrolls away) ---------- */
+  header.site {
+    position: absolute; inset: 0 0 auto 0; z-index: 10;
+    height: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
+    padding: env(safe-area-inset-top, 0px) var(--pad) 0;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; color: var(--hero-ink);
+  }
+  .nav-left, .nav-right { display: flex; align-items: center; gap: 28px; }
+  .nav-right { justify-content: flex-end; gap: 24px; }
+  .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+  .sunburst {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: repeating-conic-gradient(currentColor 0 3.2deg, transparent 3.2deg 7.5deg);
+    -webkit-mask: radial-gradient(circle, transparent 0 7px, #000 8px);
+            mask: radial-gradient(circle, transparent 0 7px, #000 8px);
+  }
+  .brand-name { font-family: "Archivo", sans-serif; font-weight: 400; font-size: 20px; line-height: .98; letter-spacing: -.01em; }
+  .nav-item {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-family: "Archivo", sans-serif; font-stretch: 112%; font-weight: 450;
+    font-size: 15px; text-transform: uppercase; color: inherit; text-decoration: none;
+    background: none; border: 0; padding: 0; cursor: pointer;
+  }
+  .nav-item svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+  .nav-item svg.solid-fill { fill: currentColor; stroke: none; }
+  :focus-visible { outline: 2px solid var(--purple); outline-offset: 3px; border-radius: 4px; }
+
+  /* ---------- Hero ---------- */
+  .hero { position: relative; height: 330px; overflow: hidden; color: var(--hero-ink); background: #2a241c; }
+  .hero svg.art { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero .wrap { position: absolute; left: 0; right: 0; bottom: 40px; margin: 0 auto; }
+  .hero h1 {
+    margin: 0 0 14px; font-weight: 600; font-stretch: 118%;
+    font-size: clamp(36px, 6vw, 68px); line-height: 1; letter-spacing: -.02em;
+  }
+  .hero p { margin: 0; font-size: 18px; }
+  .hero p a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar { display: flex; align-items: center; gap: 24px; padding-top: 52px; }
+  .seg { display: inline-flex; border: 1px solid var(--ink); border-radius: 4px; overflow: hidden; }
+  .tab {
+    font-family: "Archivo", sans-serif; font-stretch: 105%; font-weight: 450; font-size: 19px;
+    padding: 6px 16px; background: transparent; color: var(--ink); border: 0; cursor: pointer;
+  }
+  .tab[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+  .filter-btn { text-transform: none; font-size: 17px; font-stretch: 100%; gap: 10px; }
+  .filter-btn svg { width: 22px; height: 22px; }
+
+  /* ---------- Filter panel ---------- */
+  .panel {
+    position: relative; margin-top: 16px; padding: 26px 26px 34px;
+    background: var(--panel); border-radius: 8px;
+    box-shadow: 0 1px 10px rgba(0,0,0,.14);
+    display: grid; grid-template-columns: 1.55fr 1fr 1fr 1fr 1.3fr; gap: 18px 0;
+  }
+  .panel[hidden] { display: none; }
+  .close { position: absolute; top: 12px; right: 14px; width: 28px; height: 28px; background: none; border: 0; color: var(--ink); cursor: pointer; }
+  .close svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.4; fill: none; }
+  .group h3 {
+    margin: 0 0 12px; font-family: "Archivo", sans-serif; font-stretch: 105%;
+    font-weight: 400; font-size: 18px; text-transform: uppercase; color: var(--ink-soft); letter-spacing: .005em;
+  }
+  .opt { display: flex; align-items: center; gap: 8px; margin: 0 0 11px; font-size: 14px; line-height: 1.2; cursor: pointer; }
+  .opt input { width: 13px; height: 13px; margin: 0; accent-color: #000; flex: none; }
+  .opt span.n { color: var(--muted); }
+  .more { font-size: 14px; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+
+  /* ---------- Film rows ---------- */
+  .list { margin-top: 56px; }
+  .film { display: grid; grid-template-columns: 1.78fr 1fr; gap: 0 9%; padding: 0 0 48px; margin-bottom: 40px; border-bottom: 1px solid var(--rule); }
+  .film:last-child { border-bottom: 0; }
+  .film-head h2 {
+    margin: 0; font-weight: 700; font-stretch: 106%; font-size: 40px; line-height: 1;
+    letter-spacing: -.015em; text-transform: uppercase;
+  }
+  .film-head p { margin: 4px 0 0; font-size: 19px; font-weight: 400; line-height: 1.1; }
+  .media { display: grid; grid-template-columns: 1.5fr 1fr; margin-top: 18px; }
+  .still { display: flex; flex-direction: column; }
+  .still .img { position: relative; aspect-ratio: 496 / 280; overflow: hidden; background: #ccc; }
+  .still .img svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .festival {
+    background: var(--salmon); color: var(--salmon-ink); height: 30px; padding: 0 12px;
+    display: flex; align-items: center; font-family: "Archivo", sans-serif; font-weight: 400;
+    font-size: 13.5px; text-transform: uppercase;
+  }
+  .festival.blank { background: transparent; }
+  .showtimes { background: var(--showtimes); padding: 20px 24px 20px 20px; min-width: 0; }
+  .showtimes h3 { margin: 0 0 12px; font-family: "Archivo", sans-serif; font-weight: 400; font-size: 24px; letter-spacing: -.01em; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
+  .showtimes .d { margin: 0 0 8px; font-size: 14px; }
+  .showtimes .day { padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--rule); }
+  .showtimes .day:last-child { border-bottom: 0; margin-bottom: 0; }
+  .showtimes .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 500; line-height: 1;
+    border: 1px solid var(--purple); color: var(--ink); border-radius: 999px;
+    padding: 7px 10px; text-decoration: none; background: transparent; white-space: nowrap;
+  }
+  .pill b { font-weight: 500; color: var(--purple); }
+  a.pill:hover { background: color-mix(in srgb, var(--purple) 12%, transparent); }
+  .pill.gone { border-color: var(--muted); color: var(--muted); }
+  .pill.gone b { color: var(--muted); }
+
+  .info { padding-top: 6px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag { font-size: 13px; font-weight: 500; text-transform: uppercase; line-height: 1; border: 1px solid var(--ink); border-radius: 3px; padding: 11px 9px; }
+  .info .meta { margin: 34px 0 0; font-size: 13.5px; }
+  .info .desc { margin: 14px 0 0; font-size: 20px; line-height: 1.28; letter-spacing: -.005em; }
+  .readmore {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 28px; padding-bottom: 6px;
+    font-family: "Archivo", sans-serif; font-stretch: 105%; font-weight: 400; font-size: 17px; text-transform: uppercase;
+    color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--ink);
+  }
+  .readmore svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+  .empty { padding: 60px 0; font-size: 18px; color: var(--muted); }
+
+  /* ---------- Chat ---------- */
+  .chat {
+    position: fixed; right: 24px; bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    width: 50px; height: 50px; border-radius: 50%; border: 0; z-index: 40; background: var(--chat);
+    box-shadow: 0 4px 14px rgba(40,20,120,.35); cursor: pointer; display: grid; place-items: center;
+  }
+  .chat span { width: 20px; height: 17px; background: #fff; border-radius: 10px; }
+  main { padding-bottom: 120px; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1000px) {
+    :root { --pad: 24px; }
+    .nav-center { display: none; }
+    header.site { grid-template-columns: 1fr auto; }
+    .panel { grid-template-columns: 1fr 1fr; gap: 26px 24px; }
+    .film { grid-template-columns: 1fr; gap: 28px 0; }
+  }
+  @media (max-width: 640px) {
+    :root { --pad: 16px; --nav-h: 64px; }
+    .wrap { padding: 0 16px; }
+    .brand-name, .hide-sm { display: none; }
+    .hero { height: 280px; }
+    .toolbar { padding-top: 28px; gap: 14px; }
+    .tab { font-size: 16px; padding: 6px 11px; }
+    .panel { grid-template-columns: 1fr; }
+    .film-head h2 { font-size: 30px; }
+    .media { grid-template-columns: 1fr; }
+    .info .desc { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="nav-left">
+    <a class="brand" href="#" aria-label="Film at Lincoln Center">
+      <span class="sunburst" aria-hidden="true"></span>
+      <span class="brand-name">Film at<br>Lincoln<br>Center</span>
+    </a>
+    <button class="nav-item" type="button"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg><span class="hide-sm">Menu</span></button>
+  </div>
+  <a class="nav-item nav-center" href="#">
+    <svg class="solid-fill" viewBox="0 0 24 24"><path d="M12 5C6.5 5 2.5 9.2 1 12c1.5 2.8 5.5 7 11 7s9.5-4.2 11-7c-1.5-2.8-5.5-7-11-7Zm0 10.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg>Now Playing
+  </a>
+  <div class="nav-right">
+    <button class="nav-item" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span class="hide-sm">Log in</span></button>
+    <button class="nav-item" type="button"><svg viewBox="0 0 24 24"><path d="M2 3h3l2.5 12h11L21 7H6"/><circle cx="9" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg><span class="hide-sm">Cart</span></button>
+    <button class="nav-item" type="button"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="hide-sm">Search</span></button>
+  </div>
+</header>
+
+<section class="hero">
+  <svg class="art" viewBox="0 0 1190 330" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
+      <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .09 0"/></filter>
+      <linearGradient id="reel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8f8a76"/><stop offset=".6" stop-color="#5c5746"/><stop offset="1" stop-color="#3a3528"/></linearGradient>
+      <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".2"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></linearGradient>
+    </defs>
+    <rect width="1190" height="330" fill="#2e271c"/>
+    <g filter="url(#soft)">
+      <circle cx="300" cy="150" r="250" fill="url(#reel)"/>
+      <ellipse cx="300" cy="-20" rx="60" ry="75" fill="#1c1812"/>
+      <ellipse cx="160" cy="210" rx="58" ry="72" fill="#1c1812" transform="rotate(40 160 210)"/>
+      <ellipse cx="450" cy="230" rx="58" ry="72" fill="#1c1812" transform="rotate(-30 450 230)"/>
+      <rect x="880" y="0" width="320" height="330" fill="#44464d"/>
+      <path d="M900 40 C1000 90 1100 70 1190 20 L1190 120 C1100 170 1000 160 900 110Z" fill="#2a2e3a"/>
+      <path d="M900 200 C1000 250 1100 230 1190 180 L1190 300 C1100 330 1000 330 900 290Z" fill="#232733"/>
+    </g>
+    <path d="M620 0 C 760 120 860 220 980 330" stroke="#14110c" stroke-width="12" fill="none" filter="url(#soft)" opacity=".8"/>
+    <rect width="1190" height="330" fill="url(#shade)"/>
+    <rect width="1190" height="330" filter="url(#grain)"/>
+  </svg>
+  <div class="wrap">
+    <h1 class="display">Now Playing at FLC</h1>
+    <p>Explore showtimes below and see what's coming soon <a href="#">here</a>.</p>
+  </div>
+</section>
+
+<main class="wrap">
+  <div class="toolbar">
+    <div class="seg" role="tablist" aria-label="View">
+      <button class="tab" role="tab" aria-selected="false">Schedule</button>
+      <button class="tab" role="tab" aria-selected="true">Films</button>
+      <button class="tab" role="tab" aria-selected="false">Calendar</button>
+    </div>
+    <button class="nav-item filter-btn" id="filterBtn" type="button" aria-expanded="true" aria-controls="panel">
+      <svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h18"/><circle cx="8" cy="7" r="2" fill="var(--bg)"/><circle cx="16" cy="12" r="2" fill="var(--bg)"/><circle cx="10" cy="17" r="2" fill="var(--bg)"/></svg>FILTER
+    </button>
+  </div>
+
+  <form class="panel" id="panel" onsubmit="return false">
+    <button class="close" type="button" id="closeBtn" aria-label="Close filters"><svg viewBox="0 0 14 14"><path d="M1 1l12 12M13 1 1 13"/></svg></button>
+    <fieldset class="group" data-key="prog" style="border:0;padding:0;margin:0;min-width:0">
+      <h3>Programs</h3>
+    </fieldset>
+    <fieldset class="group" data-key="format" style="border:0;padding:0;margin:0;min-width:0"><h3>Format</h3></fieldset>
+    <fieldset class="group" data-key="lang" style="border:0;padding:0;margin:0;min-width:0"><h3>Languages</h3></fieldset>
+    <fieldset class="group" data-key="access" style="border:0;padding:0;margin:0;min-width:0"><h3>Accessibility</h3></fieldset>
+    <fieldset class="group" data-key="ticket" style="border:0;padding:0;margin:0;min-width:0"><h3>Ticket Options</h3></fieldset>
+  </form>
+
+  <div class="list" id="list" aria-live="polite"></div>
+</main>
+
+<button class="chat" type="button" aria-label="Open chat"><span></span></button>
+
+<script>
+  /* ---------- Filter definitions (counts are static, copied from the screenshot) ---------- */
+  const FILTERS = {
+    prog:   [['nyff','64th New York Film Festival',65],['new','New Releases',8],['met','The Met: Live in HD 2026 Through 2027',8]],
+    format: [['16mm','16mm',1],['35mm','35mm',4],['dcp','DCP',54],['resto','Restoration',10]],
+    lang:   [['english','English',28],['bambara','Bambara',1],['bulgarian','Bulgarian',1],['farsi','Farsi',1],['french','French',14]],
+    access: [['ad','Audio Description',7],['cc','Closed Captions',14]],
+    ticket: [['avail','Available Tickets',36],['event','Event',1],['free','Free',6],['intro','Intro',3],['limited','Limited Availability',27],['qa','Q&A',21],['rush','Rush',4],['standby','Standby Only',49],['talk','Talk',6]]
+  };
+  document.querySelectorAll('.group').forEach(g => {
+    const key = g.dataset.key;
+    FILTERS[key].forEach(([val, label, n]) => {
+      const l = document.createElement('label');
+      l.className = 'opt';
+      l.innerHTML = '<input type="checkbox" name="' + key + '" value="' + val + '"><span>' + label + ' <span class="n">(' + n + ')</span></span>';
+      g.appendChild(l);
+    });
+    if (key === 'lang') {
+      const a = document.createElement('a');
+      a.className = 'more'; a.href = '#'; a.textContent = 'See more (20 more)';
+      a.addEventListener('click', e => e.preventDefault());
+      g.appendChild(a);
+    }
+  });
+
+  /* ---------- Placeholder artwork (no real stills) ---------- */
+  const A = {
+    t14: '<svg viewBox="0 0 496 280" preserveAspectRatio="xMidYMid slice"><defs><pattern id="st" width="10" height="20" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#b23a3a"/><rect y="10" width="10" height="10" fill="#ebe7df"/></pattern><linearGradient id="cur" x1="0" x2="1"><stop offset="0" stop-color="#d7dde0"/><stop offset="1" stop-color="#9aa3a8"/></linearGradient></defs><rect width="496" height="280" fill="#6a4932"/><rect width="165" height="215" fill="#3a281b"/><g fill="#a68560"><rect x="8" y="42" width="150" height="4"/><rect x="8" y="95" width="150" height="4"/><rect x="8" y="148" width="150" height="4"/></g><g fill="#c9ae85" opacity=".85"><rect x="14" y="14" width="9" height="28"/><rect x="26" y="18" width="9" height="24"/><rect x="40" y="12" width="9" height="30"/><rect x="60" y="66" width="9" height="29"/><rect x="74" y="70" width="9" height="25"/><rect x="20" y="120" width="9" height="28"/><rect x="100" y="122" width="9" height="26"/></g><rect x="195" y="0" width="120" height="190" fill="url(#st)"/><rect x="195" y="0" width="56" height="95" fill="#27376e"/><g fill="#fff" opacity=".8"><circle cx="208" cy="14" r="2"/><circle cx="226" cy="14" r="2"/><circle cx="240" cy="14" r="2"/><circle cx="217" cy="32" r="2"/><circle cx="235" cy="32" r="2"/><circle cx="208" cy="50" r="2"/><circle cx="226" cy="50" r="2"/><circle cx="240" cy="50" r="2"/><circle cx="217" cy="68" r="2"/><circle cx="235" cy="68" r="2"/></g><rect x="335" y="0" width="161" height="215" fill="url(#cur)"/><rect x="0" y="215" width="496" height="65" fill="#4e321f"/><rect x="40" y="195" width="420" height="26" fill="#8a5c3a"/><path d="M60 215 C 70 130 120 100 150 110 C 175 120 170 200 160 215Z" fill="#2b2420"/><circle cx="110" cy="92" r="24" fill="#8a5b3f"/><path d="M290 215 C 295 160 340 140 380 150 C 420 160 425 200 420 215Z" fill="#1d2f7a"/><circle cx="365" cy="132" r="22" fill="#5e3d2b"/><path d="M345 120c4-18 40-18 44 2" fill="#d9d4cc"/></svg>',
+    t9:  '<svg viewBox="0 0 496 280" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="nt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14243a"/><stop offset=".7" stop-color="#6a4a52"/><stop offset="1" stop-color="#d49a68"/></linearGradient></defs><rect width="496" height="280" fill="url(#nt)"/><circle cx="380" cy="70" r="26" fill="#f2dcb0" opacity=".9"/><g fill="#0d1018"><path d="M60 280 L60 170 L90 150 L120 170 L120 280Z"/><path d="M170 280 L170 120 L215 90 L260 120 L260 280Z"/><path d="M200 120 L215 70 L230 120Z"/><path d="M310 280 L310 160 L345 138 L380 160 L380 280Z"/><path d="M420 280 L420 190 L445 175 L470 190 L470 280Z"/></g><rect y="258" width="496" height="22" fill="#0d1018"/></svg>',
+    one: '<svg viewBox="0 0 496 280" preserveAspectRatio="xMidYMid slice"><rect width="496" height="280" fill="#ece9e1"/><rect x="30" y="16" width="110" height="95" fill="#dce4df"/><rect x="340" y="22" width="120" height="86" fill="#e3ddcf"/><rect y="185" width="496" height="95" fill="#7b4a3a"/><ellipse cx="240" cy="190" rx="140" ry="22" fill="#efe9dc"/><rect x="40" y="130" width="96" height="150" rx="30" fill="#8c8f94"/><circle cx="88" cy="96" r="31" fill="#d9b9a0"/><path d="M58 92c0-26 60-26 60 0" fill="#d7d3cc"/><rect x="190" y="122" width="108" height="158" rx="32" fill="#6e1d34"/><circle cx="244" cy="86" r="32" fill="#dcbca3"/><path d="M212 80c4-24 56-24 62 0" fill="#e5e1da"/><rect x="350" y="126" width="116" height="154" rx="30" fill="#e8e6e1"/><circle cx="408" cy="92" r="29" fill="#d7b79f"/><path d="M380 86c2-20 50-20 54 3" fill="#e1ddd5"/></svg>',
+    nit: '<svg viewBox="0 0 496 280" preserveAspectRatio="xMidYMid slice"><defs><radialGradient id="bw" cx=".5" cy=".5" r=".6"><stop offset="0" stop-color="#cfcfcf"/><stop offset=".6" stop-color="#7a7a7a"/><stop offset="1" stop-color="#2a2a2a"/></radialGradient><filter id="bl"><feGaussianBlur stdDeviation="2.5"/></filter></defs><rect width="496" height="280" fill="#000"/><rect x="64" width="368" height="280" fill="url(#bw)"/><g filter="url(#bl)"><path d="M86 280 C 94 180 144 100 214 86 C 250 80 272 108 258 144 C 244 180 236 215 258 280Z" fill="#1c1c1c"/><path d="M236 280 C 244 215 258 165 294 136 C 336 108 388 122 402 165 C 412 208 408 244 416 280Z" fill="#e3e3e3"/><g fill="#f5f5f5"><circle cx="283" cy="205" r="5"/><circle cx="294" cy="216" r="4"/><circle cx="306" cy="224" r="4"/></g></g></svg>',
+    talk:'<svg viewBox="0 0 496 280" preserveAspectRatio="xMidYMid slice"><rect width="496" height="280" fill="#3b6b7e"/><g fill="#98b878"><rect width="13" height="28"/><rect y="65" width="13" height="28"/><rect y="130" width="13" height="28"/><rect y="195" width="13" height="28"/><rect x="483" y="20" width="13" height="28"/><rect x="483" y="85" width="13" height="28"/><rect x="483" y="150" width="13" height="28"/><rect x="483" y="215" width="13" height="28"/></g><path d="M28 280 C 36 215 80 188 122 188 C 164 188 200 215 208 280Z" fill="#2d2f33"/><circle cx="118" cy="136" r="40" fill="#b7835f"/><path d="M80 128c-4-44 72-50 80-8-14-12-42-18-80 8Z" fill="#2a2018"/><path d="M180 280 C 188 215 224 188 262 188 C 300 188 338 215 346 280Z" fill="#e9e5dd"/><circle cx="262" cy="136" r="38" fill="#6a4630"/><path d="M224 122c3-28 72-28 76 0-22-10-50-10-76 0Z" fill="#17120d"/><path d="M316 280 C 324 215 360 188 398 188 C 436 188 474 215 482 280Z" fill="#2f7a4a"/><circle cx="398" cy="134" r="37" fill="#5b3b29"/><path d="M366 118c0-36 64-36 64 0 0-12-64-12-64 0Z" fill="#0e0b08"/></svg>'
+  };
+
+  /* ---------- Films ---------- */
+  const FILMS = [
+    { id:'14th', title:'14th', by:'Ava DuVernay', art:A.t14, festival:true,
+      tags:['Closing Night','World Premiere','Main Slate'], meta:'2026 | U.S. | 100 minutes',
+      desc:'Ava DuVernay follows her epochal 2016 documentary <em>13th</em> with a thrillingly expansive sequel of sorts, which passionately and persuasively details how the tenets of the 14th Amendment, ratified post–Civil War, are now under systematic attack.',
+      shows:[{d:'Fri, Oct 9', t:[['6:00 PM','Q&A'],['6:30 PM','INTRO','gone'],['8:45 PM','INTRO']]},{d:'Sun, Oct 11', t:[['9:15 PM','']]}],
+      attr:{prog:['nyff'],format:['dcp'],lang:['english'],access:['cc'],ticket:['qa','intro','limited']} },
+    { id:'temples', title:'9 Temples to Heaven', by:'Sompot Chidgasornpongse', art:A.t9, festival:true,
+      tags:['North American Premiere','Main Slate'], meta:'2026 | Thailand | — minutes',
+      desc:'Placeholder synopsis for this demo. Replace with the real programme note.',
+      shows:[{d:'Sat, Oct 10', t:[['4:30 PM','']]}],
+      attr:{prog:['nyff'],format:['dcp'],lang:['english'],access:[],ticket:['avail']} },
+    { id:'one', title:'One More Time', by:'Cindy Kleine and André Gregory', art:A.one, festival:true,
+      tags:['New York Premiere','Spotlight'], meta:'2026 | 88 minutes',
+      desc:'New York avant-garde legend André Gregory, now in his nineties, teams up with actors Larry Pine and Gerry Bamman to film a reading of Samuel Beckett’s <em>Endgame</em> in this enormously moving document of an inextinguishable creative spark, executive produced by Martin Scorsese.',
+      shows:[{d:'Mon, Oct 5', t:[['6:00 PM','']]}],
+      attr:{prog:['nyff'],format:['dcp'],lang:['english'],access:['ad'],ticket:['avail']} },
+    { id:'nitrate', title:'Nitrate Kisses', by:'Barbara Hammer', art:A.nit, festival:true,
+      tags:['World Premiere of New 4K Restoration','Revivals'], meta:'1992 | 65 minutes',
+      desc:'A dizzying mix of archival and original footage, Barbara Hammer’s provocative and pioneering first feature boldly pulls back the curtain on the queer experience.',
+      shows:[{d:'Mon, Oct 5', t:[['7:00 PM','INTRO','gone']]}],
+      attr:{prog:['nyff'],format:['resto','dcp'],lang:['english'],access:[],ticket:['intro']} },
+    { id:'talk', title:'Free Talk: Alain Gomis & Arie and Chuko Esiri', by:'', art:A.talk, festival:true,
+      tags:['Talk'], meta:'',
+      desc:'NYFF64 directors Alain Gomis (<em>Dao</em>) and Arie and Chuko Esiri (<em>Clarissa</em>) discuss their latest films, both of which surface the political within the personal and grapple with the legacies of colonialism.',
+      shows:[{d:'Mon, Oct 5', t:[['7:00 PM','FREE TALK']]}],
+      attr:{prog:['nyff'],format:[],lang:['english'],access:[],ticket:['free','talk']} }
+  ];
+
+  const esc = s => s.replace(/&/g, '&amp;');
+  const chev = '<svg viewBox="0 0 12 12"><path d="M1.500 1.500 5.500 6l-4 4.500M6.500 1.500 10.500 6l-4 4.500"/></svg>';
+
+  function filmHTML(f) {
+    const chips = f.shows.map(s =>
+      '<div class="day"><p class="d">' + s.d + '</p><div class="chips">' +
+      s.t.map(([time, label, gone]) => {
+        const inner = gone ? '<s>' + time + '</s> ' + esc(label) : time + (label ? ' <b>' + esc(label) + '</b>' : '');
+        return gone ? '<span class="pill gone" aria-label="Sold out">' + inner + '</span>'
+                    : '<a class="pill" href="#">' + inner + '</a>';
+      }).join('') + '</div></div>').join('');
+    return '<article class="film" id="' + f.id + '">' +
+      '<div><div class="film-head"><h2 class="display">' + esc(f.title) + '</h2>' + (f.by ? '<p>' + f.by + '</p>' : '') + '</div>' +
+      '<div class="media"><div class="still"><div class="img" role="img" aria-label="Placeholder artwork for ' + esc(f.title) + '">' + f.art + '</div>' +
+      '<div class="festival">64th New York Film Festival</div></div>' +
+      '<div class="showtimes"><h3>Showtimes</h3>' + chips + '</div></div></div>' +
+      '<div class="info"><div class="tags">' + f.tags.map(t => '<span class="tag">' + esc(t) + '</span>').join('') + '</div>' +
+      (f.meta ? '<p class="meta">' + f.meta + '</p>' : '<p class="meta"></p>') +
+      '<p class="desc">' + f.desc + '</p>' +
+      '<a class="readmore" href="#">Read more ' + chev + '</a></div></article>';
+  }
+
+  const list = document.getElementById('list');
+  const panel = document.getElementById('panel');
+
+  function render() {
+    const checked = {};
+    panel.querySelectorAll('input:checked').forEach(i => (checked[i.name] = checked[i.name] || []).push(i.value));
+    const shown = FILMS.filter(f => Object.entries(checked).every(([k, vals]) => vals.some(v => f.attr[k].includes(v))));
+    list.innerHTML = shown.length ? shown.map(filmHTML).join('') :
+      '<p class="empty">No films match these filters. Clear a checkbox to see more.</p>';
+  }
+  panel.addEventListener('change', render);
+  render();
+
+  /* ---------- Panel open / close ---------- */
+  const btn = document.getElementById('filterBtn');
+  function setOpen(open) { panel.hidden = !open; btn.setAttribute('aria-expanded', open); }
+  btn.addEventListener('click', () => setOpen(panel.hidden));
+  document.getElementById('closeBtn').addEventListener('click', () => setOpen(false));
+
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x === t));
+  }));
+  document.addEventListener('click', e => { if (e.target.closest('a[href="#"]')) e.preventDefault(); });
+</script>
+</body>
+</html>

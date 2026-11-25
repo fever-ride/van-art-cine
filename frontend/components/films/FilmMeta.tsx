@@ -1,7 +1,7 @@
 'use client';
 
-import type { Film } from '@/app/lib/films';
-import { isMissingText } from '@/app/lib/typeGuards';
+import type { Film } from '@/lib/films';
+import { isMissingText } from '@/lib/typeGuards';
 import { COL_LABEL } from '@/components/screenings/ScreeningRowParts';
 
 type Props = {

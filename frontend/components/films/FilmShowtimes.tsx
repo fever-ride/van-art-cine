@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { UpcomingScreening } from '@/app/lib/films';
+import type { UpcomingScreening } from '@/lib/films';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import {

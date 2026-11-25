@@ -1,4 +1,4 @@
-import type { Screening } from '@/app/lib/screenings';
+import type { Screening } from '@/lib/screenings';
 import FilmPosterCard from './FilmPosterCard';
 
 /** A wrapping grid of poster cards ("this month's" full list on the Top

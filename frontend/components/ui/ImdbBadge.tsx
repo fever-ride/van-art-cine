@@ -1,4 +1,4 @@
-import { parseImdbRating } from '@/app/lib/displayText';
+import { parseImdbRating } from '@/lib/displayText';
 
 /**
  * IMDb's own badge treatment (yellow chip + rating number) — reused

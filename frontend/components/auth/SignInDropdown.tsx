@@ -3,7 +3,7 @@
 import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { isErrorLike } from '@/app/lib/typeGuards';
+import { isErrorLike } from '@/lib/typeGuards';
 import { Input, Button } from '@/components/ui';
 
 type Props = {

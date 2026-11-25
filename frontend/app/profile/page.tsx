@@ -8,7 +8,7 @@ import {
   apiUpdateMyPassword, 
   apiDeleteMyAccount,
   User
-} from '@/app/lib/profile';
+} from '@/lib/profile';
 import { Card, Input, Button } from '@/components/ui';
 import { useAuth } from '@/components/auth/AuthProvider';
 

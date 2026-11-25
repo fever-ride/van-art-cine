@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import SiteIntroBar from '@/components/SiteIntroBar';
-import { INTRO_DISMISSED_COOKIE } from '@/app/lib/siteIntro';
+import { INTRO_DISMISSED_COOKIE } from '@/lib/siteIntro';
 
 jest.mock('next/link', () => {
   return function MockLink({ href, children, ...rest }) {

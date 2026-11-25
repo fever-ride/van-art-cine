@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useLayoutEffect, useRef, useTransition } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { apiScreeningFacets, type Screening, type ScreeningFacets, type FilmListItem } from '@/app/lib/screenings';
+import { apiScreeningFacets, type Screening, type ScreeningFacets, type FilmListItem } from '@/lib/screenings';
 import { useScreeningsUI } from '@/lib/hooks/useScreeningsUI';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
-import { apiListCinemas, type Cinema } from '@/app/lib/cinemas';
+import { apiListCinemas, type Cinema } from '@/lib/cinemas';
 import Filters from '@/components/screenings/Filters';
 import ScreeningList from '@/components/screenings/ScreeningList';
 import ViewTabs from '@/components/screenings/ViewTabs';
@@ -53,7 +53,7 @@ type Props = {
  * not run its own fetch: navigating to a new URL (from `setSearch`/`setFilters`/`setView` or
  * `goToPage` below) re-runs the Server Component, which sends this
  * component fresh props for the new URL, the same way any other Next.js
- * App Router navigation works. See docs/specs/url-driven-filters.md.
+ * App Router navigation works. See frontend/docs/feature-notes/url-driven-filters.md.
  */
 export default function ScreeningsPageClient({
   initialItems,

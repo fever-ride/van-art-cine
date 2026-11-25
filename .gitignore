@@ -28,6 +28,8 @@ database/logs/
 *.swp
 .idea/
 .vscode/
+*.iml
+.VSCodeCounter/
 
 # Local Claude Code dev-server launch config
 .claude/launch.json

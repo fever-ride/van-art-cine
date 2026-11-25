@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import NavBar from '@/components/NavBar';
 import { AuthProvider } from '@/components/auth/AuthProvider';
-import { apiMe, apiLogout } from '@/app/lib/auth';
+import { apiMe, apiLogout } from '@/lib/auth';
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -33,7 +33,7 @@ jest.mock('next/image', () => {
 });
 
 // Mock auth API
-jest.mock('@/app/lib/auth', () => ({
+jest.mock('@/lib/auth', () => ({
   apiMe: jest.fn(),
   apiLogout: jest.fn(),
   apiLogin: jest.fn(),
