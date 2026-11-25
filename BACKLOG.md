@@ -1188,29 +1188,37 @@ filled in `utils/` (previously just "..."), and removed `prisma/migrations/`
 and `seed.ts`, neither of which exist — the real file is `seed.js`, with no
 migrations folder.
 
-### Still deferred
-
 ---
 
 #### ORG-6. Two parallel, undifferentiated "lib" folders in the frontend
 
-**Problem:** `frontend/app/lib/` (14 files — `auth.ts`, `cinemas.ts`,
-`films.ts`, `screenings.ts`, `watchlist.ts`, etc.) and `frontend/lib/` (5
-files, plus `lib/hooks/`) both hold non-React helper code for overlapping
-domains, with no documented rule for which goes where — e.g. watchlist
-logic lives in `frontend/app/lib/watchlist.ts` while the watchlist hook
-lives in `frontend/lib/hooks/useWatchlist.ts`.
+Investigated whether there was ever a real client/server split rule behind
+`frontend/app/lib/` vs `frontend/lib/` before touching anything: checked
+every file's actual importers (12 of 14 `app/lib/` files were imported from
+both Server and `'use client'` Components), checked for the `server-only`
+package (never installed) and for genuine server-only dependencies (none —
+no DB access, no un-prefixed secrets), and found `app/lib/siteIntro.ts`
+itself carries `'use client'` while supposedly living in the "server" folder.
+No rule existed anywhere, written or implied — confirmed arbitrary historical
+accumulation (e.g. watchlist logic was split three ways: `app/lib/watchlist.ts`,
+`app/lib/guestWatchlist.ts`, `lib/hooks/useWatchlist.ts`, for no architectural
+reason).
 
-**Impact:** Every new helper file is a coin flip for where it should go;
-makes the import graph harder to follow.
+Consolidated into `frontend/lib/` (not `app/lib/`) since routes under `app/`
+should hold routing concerns, not general-purpose helpers — the more
+conventional Next.js layout. Moved all 14 files from `app/lib/` via `git mv`
+(no content changes), which let git track them as renames rather than
+delete+add. All imports used the `@/app/lib/...` alias consistently (no
+relative imports crossed file boundaries, confirmed by grep first), so every
+reference was mechanically rewritten to `@/lib/...` across `app/`,
+`components/`, `lib/`, and `tests/`; 3 prose comments referencing
+`frontend/app/lib/...` paths were fixed too. `app/lib/` is now gone (git
+doesn't track empty directories). Verified with `tsc --noEmit` (clean) and
+the full Jest suite (20 suites / 153 tests, all passing) before considering
+this done. Updated `README.md`'s frontend tree to show the single `lib/`
+folder.
 
-**Approach:** Figure out if there was ever an intended split (e.g.
-"app/lib is server-only, lib is client-only") by checking which files are
-actually imported from Server vs Client Components; either document the
-real rule or consolidate into one folder.
-
-**Priority:** Medium. Touches imports across much of the frontend —
-worth a deliberate pass, not a quick rename.
+### Still deferred
 
 ---
 

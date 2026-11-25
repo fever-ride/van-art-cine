@@ -4,14 +4,14 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { cookies, headers } from 'next/headers';
-import { getFilmDetail } from '@/app/lib/films';
-import type { Screening } from '@/app/lib/screenings';
-import { ItemListStructuredData, safeJsonLd } from '@/app/lib/structuredData';
+import { getFilmDetail } from '@/lib/films';
+import type { Screening } from '@/lib/screenings';
+import { ItemListStructuredData, safeJsonLd } from '@/lib/structuredData';
 import FilmHero from '@/components/films/FilmHero';
 import FilmMeta from '@/components/films/FilmMeta';
 import FilmShowtimes from '@/components/films/FilmShowtimes';
 import PosterCarousel from '@/components/whats-on/PosterCarousel';
-import { INTRO_DISMISSED_COOKIE } from '@/app/lib/siteIntro';
+import { INTRO_DISMISSED_COOKIE } from '@/lib/siteIntro';
 
 
 
@@ -91,8 +91,8 @@ function StructuredData({
   film,
   upcoming,
 }: {
-  film: import('@/app/lib/films').Film;
-  upcoming: import('@/app/lib/films').UpcomingScreening[];
+  film: import('@/lib/films').Film;
+  upcoming: import('@/lib/films').UpcomingScreening[];
 }) {
   const filmUrl = `https://www.cinephilesvan.com/films/${film.id}`;
   const ratingNum = film.imdb_rating ? Number(film.imdb_rating) : null;

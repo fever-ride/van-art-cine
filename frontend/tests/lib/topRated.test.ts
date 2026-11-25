@@ -1,5 +1,5 @@
 import { selectTopRated, TOP_RATED_MIN_RATING, TOP_RATED_MAX_FILMS } from '@/lib/topRated';
-import type { Screening } from '@/app/lib/screenings';
+import type { Screening } from '@/lib/screenings';
 
 const NOW = new Date('2026-09-29T00:00:00.000Z');
 

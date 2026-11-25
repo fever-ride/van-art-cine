@@ -188,7 +188,7 @@ export function buildSearchParams(params: ScreeningsQuery = {}): URLSearchParams
  *
  * The cache() wrapper means a page's generateMetadata and its body can both
  * request the same query without triggering a duplicate network request,
- * the same reasoning frontend/app/lib/films.ts's getFilmDetail uses.
+ * the same reasoning frontend/lib/films.ts's getFilmDetail uses.
  */
 export const getScreeningsServerSide = cache(
   async (queryString: string): Promise<ScreeningsResponse> => {
@@ -236,7 +236,7 @@ export const getScreeningFacets = cache(async (): Promise<ScreeningFacets> => {
 });
 
 /** Client side fetch, same reasoning/fallback as `apiListCinemas`
- * (`frontend/app/lib/cinemas.ts`): a relative URL works here since this
+ * (`frontend/lib/cinemas.ts`): a relative URL works here since this
  * runs from the browser, not during server rendering. */
 export async function apiScreeningFacets(): Promise<ScreeningFacets> {
   const res = await fetch('/api/screenings/facets', { credentials: 'include' });

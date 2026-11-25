@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiToggleWatchlist } from '@/app/lib/watchlist';
-import { getGuestSet, saveGuestSet } from '@/app/lib/guestWatchlist';
-import { hasNumberStatus, hasResponseStatus } from '@/app/lib/typeGuards';
+import { apiToggleWatchlist } from '@/lib/watchlist';
+import { getGuestSet, saveGuestSet } from '@/lib/guestWatchlist';
+import { hasNumberStatus, hasResponseStatus } from '@/lib/typeGuards';
 
 type Props = {
   readonly screeningId: number;

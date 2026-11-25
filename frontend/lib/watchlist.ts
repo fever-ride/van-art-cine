@@ -7,7 +7,7 @@
  *
  * For guest (unauthenticated) watchlist operations, see `guestWatchlist.ts`.
  */
-import { fetchWithAuth } from '@/app/lib/auth';
+import { fetchWithAuth } from '@/lib/auth';
 
 export type WatchStatus = 'upcoming' | 'past' | 'unavailable';
 

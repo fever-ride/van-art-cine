@@ -1,8 +1,8 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { AuthProvider, useAuth } from '@/components/auth/AuthProvider';
-import { apiMe, apiLogout } from '@/app/lib/auth';
+import { apiMe, apiLogout } from '@/lib/auth';
 
-jest.mock('@/app/lib/auth', () => ({
+jest.mock('@/lib/auth', () => ({
   apiMe: jest.fn(),
   apiLogin: jest.fn(),
   apiLogout: jest.fn(),

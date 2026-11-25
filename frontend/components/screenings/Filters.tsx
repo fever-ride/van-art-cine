@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { UIState, SetFilters } from '@/lib/hooks/useScreeningsUI';
-import { todayYmdInDisplayTimezone } from '@/app/lib/formatDate';
+import { todayYmdInDisplayTimezone } from '@/lib/formatDate';
 import ScreeningDateInput from '@/components/screenings/ScreeningDateInput';
 import { Card, Button } from '@/components/ui';
 

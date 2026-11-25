@@ -6,8 +6,8 @@
  * (the fuller ranked list). Kept free of React/Next so it's directly unit
  * testable — see frontend/tests/lib/topRated.test.ts.
  */
-import { parseImdbRating } from '@/app/lib/displayText';
-import type { Screening } from '@/app/lib/screenings';
+import { parseImdbRating } from '@/lib/displayText';
+import type { Screening } from '@/lib/screenings';
 
 export const TOP_RATED_MIN_RATING = 8.0;
 export const TOP_RATED_MAX_FILMS = 20;

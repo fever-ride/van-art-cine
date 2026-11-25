@@ -1,4 +1,4 @@
-import { isValidRtRating } from '@/app/lib/displayText';
+import { isValidRtRating } from '@/lib/displayText';
 
 /**
  * Rotten Tomatoes's own badge treatment (red chip + percentage) — see

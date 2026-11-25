@@ -1,4 +1,4 @@
-import { isMissingText } from '@/app/lib/typeGuards';
+import { isMissingText } from '@/lib/typeGuards';
 
 /**
  * Genre string normalization.

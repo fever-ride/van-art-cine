@@ -15,7 +15,7 @@ export async function apiListCinemas(): Promise<Cinema[]> {
 
 /**
  * Server side only. Same reasoning as `getScreeningsServerSide` in
- * `frontend/app/lib/screenings.ts`: a relative URL only resolves for a real
+ * `frontend/lib/screenings.ts`: a relative URL only resolves for a real
  * incoming HTTP request, not a fetch() made during Server Component
  * rendering, so this needs an absolute URL instead of `apiListCinemas`'s.
  * Wrapped in cache() so a page that calls this from both generateMetadata

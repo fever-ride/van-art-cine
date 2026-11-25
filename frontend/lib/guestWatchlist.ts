@@ -6,7 +6,7 @@
  * authenticated user's watchlist and clears the local copy.
  * Changes are broadcast via StorageEvent so other open tabs stay in sync.
  */
-import { apiImportWatchlist } from '@/app/lib/watchlist';
+import { apiImportWatchlist } from '@/lib/watchlist';
 
 /** Key used for guest watchlist in localStorage */
 export const GUEST_KEY = 'guest_watchlist';

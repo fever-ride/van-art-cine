@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, type MouseEvent } from 'react';
-import type { Screening } from '@/app/lib/screenings';
-import { formatScreeningDateTime } from '@/app/lib/formatDate';
-import { cleanDisplayText, formatPeopleLine } from '@/app/lib/displayText';
-import { formatGenre } from '@/app/lib/formatGenre';
+import type { Screening } from '@/lib/screenings';
+import { formatScreeningDateTime } from '@/lib/formatDate';
+import { cleanDisplayText, formatPeopleLine } from '@/lib/displayText';
+import { formatGenre } from '@/lib/formatGenre';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import { RatedBadge, ImdbBadge, RtBadge } from '@/components/ui';
 import {

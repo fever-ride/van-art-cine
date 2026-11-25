@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import Filters from '@/components/screenings/Filters';
 
-jest.mock('@/app/lib/formatDate', () => ({
+jest.mock('@/lib/formatDate', () => ({
   todayYmdInDisplayTimezone: () => '2026-06-06',
 }));
 

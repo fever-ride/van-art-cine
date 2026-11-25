@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useLayoutEffect, useRef, useTransition } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { apiScreeningFacets, type Screening, type ScreeningFacets, type FilmListItem } from '@/app/lib/screenings';
+import { apiScreeningFacets, type Screening, type ScreeningFacets, type FilmListItem } from '@/lib/screenings';
 import { useScreeningsUI } from '@/lib/hooks/useScreeningsUI';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
-import { apiListCinemas, type Cinema } from '@/app/lib/cinemas';
+import { apiListCinemas, type Cinema } from '@/lib/cinemas';
 import Filters from '@/components/screenings/Filters';
 import ScreeningList from '@/components/screenings/ScreeningList';
 import ViewTabs from '@/components/screenings/ViewTabs';

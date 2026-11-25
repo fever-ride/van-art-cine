@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { isErrorLike } from '@/app/lib/typeGuards';
+import { isErrorLike } from '@/lib/typeGuards';
 import { Card, Input, Button } from '@/components/ui';
 
 export default function RegisterPage() {

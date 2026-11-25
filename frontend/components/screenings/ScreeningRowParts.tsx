@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
+import { formatScreeningDate, formatScreeningTime } from '@/lib/formatDate';
 
 /*
  * Building blocks shared by the adaptive screening lists — the homepage

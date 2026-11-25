@@ -21,7 +21,7 @@
  * the same pattern to the other filter fields.
  */
 
-import type { SortKey, Order, ScreeningsQuery } from '@/app/lib/screenings';
+import type { SortKey, Order, ScreeningsQuery } from '@/lib/screenings';
 
 export type Mode = 'single' | 'range';
 export type View = 'table' | 'film';

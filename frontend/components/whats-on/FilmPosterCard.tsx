@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { parseImdbRating } from '@/app/lib/displayText';
-import type { Screening } from '@/app/lib/screenings';
+import { parseImdbRating } from '@/lib/displayText';
+import type { Screening } from '@/lib/screenings';
 
 const FALLBACK_POSTER =
   'https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?q=80&w=600&auto=format&fit=crop';

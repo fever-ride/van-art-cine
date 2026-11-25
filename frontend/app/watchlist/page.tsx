@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiListWatchlist } from '@/app/lib/watchlist';
-import { getGuestSet } from '@/app/lib/guestWatchlist';
-import { isErrorLike } from '@/app/lib/typeGuards';
+import { apiListWatchlist } from '@/lib/watchlist';
+import { getGuestSet } from '@/lib/guestWatchlist';
+import { isErrorLike } from '@/lib/typeGuards';
 import { useAuth } from '@/components/auth/AuthProvider';
 import WatchlistList, { type WatchlistRow } from '@/components/watchlist/WatchlistList';
 import { LIST_FRAME } from '@/components/screenings/ScreeningRowParts';

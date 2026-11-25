@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import type { FilmListItem } from '@/app/lib/screenings';
-import { formatScreeningDate, formatScreeningTime } from '@/app/lib/formatDate';
-import { formatGenre } from '@/app/lib/formatGenre';
-import { parseImdbRating, isValidRtRating } from '@/app/lib/displayText';
+import type { FilmListItem } from '@/lib/screenings';
+import { formatScreeningDate, formatScreeningTime } from '@/lib/formatDate';
+import { formatGenre } from '@/lib/formatGenre';
+import { parseImdbRating, isValidRtRating } from '@/lib/displayText';
 import { RatedBadge, ImdbBadge, RtBadge } from '@/components/ui';
 
 

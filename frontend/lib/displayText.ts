@@ -1,4 +1,4 @@
-import { isMissingText } from '@/app/lib/typeGuards';
+import { isMissingText } from '@/lib/typeGuards';
 
 /** Trim and return empty string for placeholders like "N/A". */
 export function cleanDisplayText(value?: string | null): string {

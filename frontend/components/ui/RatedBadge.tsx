@@ -1,4 +1,4 @@
-import { isDisplayableRating } from '@/app/lib/displayText';
+import { isDisplayableRating } from '@/lib/displayText';
 
 /**
  * A film's content rating (PG-13, R, ...), styled after the classic

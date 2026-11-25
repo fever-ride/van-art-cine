@@ -6,8 +6,8 @@
  * entirely from one venue, so it was dropped in favor of this direction). */
 
 import type { Metadata } from 'next';
-import { getScreeningsServerSide, buildSearchParams } from '@/app/lib/screenings';
-import { ItemListStructuredData } from '@/app/lib/structuredData';
+import { getScreeningsServerSide, buildSearchParams } from '@/lib/screenings';
+import { ItemListStructuredData } from '@/lib/structuredData';
 import { selectTopRated } from '@/lib/topRated';
 import PosterCarousel from '@/components/whats-on/PosterCarousel';
 import PosterGrid from '@/components/whats-on/PosterGrid';

@@ -120,9 +120,6 @@ frontend/
 │   ├── about/               # About page
 │   ├── auth/                # Login + Register pages
 │   ├── films/[id]/          # Film detail page (+ error/not-found states)
-│   ├── lib/                 # Helpers called from Server Components — API/data
-│   │                        # fetchers, SEO structured data, etc. (see BACKLOG.md
-│   │                        # ORG-6 re: how this differs from the top-level lib/)
 │   ├── profile/             # User profile page
 │   ├── watchlist/           # Watchlist page
 │   ├── whats-on/            # SEO hub pages (e.g. /whats-on/top-rated)
@@ -183,14 +180,18 @@ frontend/
 │   ├── frontend-redesign-plan.md
 │   └── seo-hub-pages.md
 │
-├── lib/                     # Non-React utilities and custom hooks — see
-│   │                        # BACKLOG.md ORG-6 re: how this differs from app/lib/
+├── lib/                     # All non-React helpers in one shared location:
+│   │                        # API/data fetchers, SEO structured data,
+│   │                        # formatting, auth, watchlist logic, and hooks
+│   │                        # (see BACKLOG.md ORG-6)
 │   ├── hooks/
 │   │   ├── screeningsUrlState.ts
 │   │   ├── useScreeningsUI.ts
 │   │   └── useWatchlist.ts
-│   ├── pagination.ts
-│   └── topRated.ts
+│   ├── auth.ts, cinemas.ts, constants.ts, displayText.ts
+│   ├── films.ts, formatDate.ts, formatGenre.ts, guestWatchlist.ts
+│   ├── pagination.ts, profile.ts, screenings.ts, siteIntro.ts
+│   └── structuredData.tsx, topRated.ts, typeGuards.ts, watchlist.ts
 │
 ├── public/                  # Static files (images, icons)
 │

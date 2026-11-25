@@ -8,7 +8,7 @@
  * - After a successful login or register, guest watchlist items are
  *   automatically merged into the new/existing account.
  */
-import { getGuestSet, clearGuestSet } from '@/app/lib/guestWatchlist';
+import { getGuestSet, clearGuestSet } from '@/lib/guestWatchlist';
 
 /** 
  * Single-flight guard for token refresh.

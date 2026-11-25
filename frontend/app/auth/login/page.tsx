@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { isErrorLike } from '@/app/lib/typeGuards';
+import { isErrorLike } from '@/lib/typeGuards';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, Input, Button } from '@/components/ui';
