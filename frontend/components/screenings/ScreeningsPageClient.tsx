@@ -53,7 +53,7 @@ type Props = {
  * not run its own fetch: navigating to a new URL (from `setSearch`/`setFilters`/`setView` or
  * `goToPage` below) re-runs the Server Component, which sends this
  * component fresh props for the new URL, the same way any other Next.js
- * App Router navigation works. See frontend/docs/specs/url-driven-filters.md.
+ * App Router navigation works. See frontend/docs/feature-notes/url-driven-filters.md.
  */
 export default function ScreeningsPageClient({
   initialItems,

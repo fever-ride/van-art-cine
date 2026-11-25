@@ -173,7 +173,7 @@ function personIdsByRole(filmPerson, role) {
  * earlier director > genre > cinema priority-bucket design, which let a
  * single shared bucket (e.g. a common genre tag) fully decide the result
  * regardless of how many other signals two films actually shared. See
- * docs/specs/related-films.md for the full reasoning.
+ * docs/feature-notes/related-films.md for the full reasoning.
  *
  * @returns {Promise<object[]>} Up to `limit` rows in the same flat shape
  *   `fetchScreenings` returns (frontend's `Screening` type) — each row is

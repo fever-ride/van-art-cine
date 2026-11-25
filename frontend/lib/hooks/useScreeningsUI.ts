@@ -15,7 +15,7 @@ import {
  * Reads and writes filter, sort, and display state for the screenings page
  * through the URL, so that a given filtered view has its own address: it can
  * be bookmarked, shared, and stepped through with the browser's back and
- * forward buttons. See frontend/docs/specs/url-driven-filters.md for the full
+ * forward buttons. See frontend/docs/feature-notes/url-driven-filters.md for the full
  * reasoning; `page` (pagination) already worked this way before this hook
  * did and is unaffected here.
  *

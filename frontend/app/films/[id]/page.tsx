@@ -238,7 +238,7 @@ async function FilmContent({ id, showIntro }: { id: number; showIntro: boolean }
 }
 
 /** Other currently screening films sharing a director, genre, or cinema
- * with this one (see docs/specs/related-films.md). Omitted entirely when
+ * with this one (see docs/feature-notes/related-films.md). Omitted entirely when
  * there are no matches, rather than showing an empty heading. Styled as
  * the same bordered/banded card as FilmMeta and FilmShowtimes above it,
  * rather than a bare heading, so the page reads as one consistent set of

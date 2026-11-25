@@ -639,7 +639,7 @@ then cinema, each ranked by soonest upcoming screening — not a general
 recommendation engine; the catalog size (236 active films) doesn't
 justify embeddings or collaborative filtering. Full data investigation,
 design decisions, and task breakdown are in
-`docs/specs/related-films.md`.
+`docs/feature-notes/related-films.md`.
 
 **Priority:** Medium.
 
@@ -785,7 +785,7 @@ SEO-4's related-films feature on. Data quality is no longer the blocker.
 
 **Impact:** Same category of idea as genre pages ("Japanese films playing
 in Vancouver"), and the volume distribution has the same shape genre's did
-(see SEO-4/`docs/specs/related-films.md`'s Jaccard-similarity story): the
+(see SEO-4/`docs/feature-notes/related-films.md`'s Jaccard-similarity story): the
 most common values are too common to be a distinctive hub page, and most
 other values are too thin to justify one at all. By language: English 76
 (too broad), French 19, Japanese 11, Spanish 11, German 10 (viable), then
@@ -1218,30 +1218,34 @@ the full Jest suite (20 suites / 153 tests, all passing) before considering
 this done. Updated `README.md`'s frontend tree to show the single `lib/`
 folder.
 
-### Still deferred
-
 ---
 
 #### ORG-14. "Specs" means unrelated things across three different doc trees
 
-**Problem:** Originally two ad-hoc, hand-written feature-spec trees vs.
-OpenSpec's own formal one; after the docs reorg below (see "Sort
-documentation by which part of the repo it actually belongs to"), it's
-now three: `docs/specs/` (root — just `related-films.md`, kept here
-because both backend and frontend code reference it), `frontend/docs/specs/`
-(`homepage-ssr.md`, `url-driven-filters.md` — frontend-only), and
-`openspec/specs/` (OpenSpec's formal capability-spec directory, currently
-empty, just set up). Same word, three locations.
+Renamed both hand-written trees to free up "specs" for OpenSpec alone:
+`docs/specs/` → `docs/feature-notes/` (root — just `related-films.md`) and
+`frontend/docs/specs/` → `frontend/docs/feature-notes/` (`homepage-ssr.md`,
+`url-driven-filters.md`). Did this now rather than waiting on OpenSpec
+actually having content, since a rename is cheap and reversible and the
+ambiguity was already real (two different "specs" meanings existed before
+OpenSpec's empty one was even added). Did not touch `openspec/specs/`
+itself or migrate any content into it — that's still future work, not part
+of this rename.
 
-**Impact:** Confusing once `openspec/specs/` actually has content — "check
-the specs" becomes ambiguous, more so now than with two trees.
-
-**Approach:** No fix prescribed here — options include renaming the
-hand-written ones to something like `*/docs/feature-notes/` to free up
-"specs" for OpenSpec alone, or migrating their contents into OpenSpec's
-structure over time (as already discussed when OpenSpec was set up).
-Worth deciding once OpenSpec actually has a few real specs in it, not
-before.
-
-**Priority:** Low, and arguably blocked on OpenSpec actually being used
+Updated every live reference to the old paths: `TROUBLESHOOTING.md`,
+`frontend/docs/seo-hub-pages.md`, the two renamed files' own internal
+cross-references, `README.md`'s project-structure trees, and source
+comments in `frontend/app/page.tsx`, `frontend/app/films/[id]/page.tsx`,
+`frontend/components/screenings/ScreeningsPageClient.tsx`,
+`frontend/lib/pagination.ts`, `frontend/lib/screenings.ts`,
+`frontend/lib/hooks/screeningsUrlState.ts`,
+`frontend/lib/hooks/useScreeningsUI.ts`, `backend/src/models/films.js`,
+`backend/src/models/screenings.js`. Also updated the two still-open
+backlog items that point at `related-films.md` as live future-work
+references (SEO-4, SEO-10). Left this category's own earlier "Done"
+write-ups (FE-1, SEO-3, ORG-13, ORG-16) referencing the old `docs/specs/...`
+paths as-is — those describe what was true at the time the work shipped,
+not a live pointer. Verified with `tsc --noEmit` and the full frontend
+(153 tests) and backend (102 tests) suites, all passing — this item only
+touched paths and comments, no logic.
 first.

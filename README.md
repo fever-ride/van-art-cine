@@ -32,10 +32,10 @@ project-root/
 │       ├── pipeline/      # Steps run_all.py actually runs (load, enrich, merge)
 │       └── manual_fixes/  # Admin scripts meant to be run by hand only
 │
-├── docs/                # Specs shared by backend + frontend (e.g. related films)
+├── docs/                # Feature notes shared by backend + frontend (e.g. related films)
 │
 ├── frontend/            # Next.js client application
-│   └── docs/            # Frontend-only specs, redesign plan, design references
+│   └── docs/            # Frontend-only feature notes, redesign plan, design references
 │
 ├── openspec/            # OpenSpec capability specs + change proposals
 │
@@ -173,9 +173,9 @@ frontend/
 │   │
 │   ├── Footer.tsx, NavBar.tsx, MustSeesMenu.tsx, HeroGlow.tsx, SiteIntroBar.tsx
 │
-├── docs/                    # Frontend-only specs, redesign plan, design
-│   │                        # references (see BACKLOG.md ORG-16)
-│   ├── specs/
+├── docs/                    # Frontend-only feature notes, redesign plan,
+│   │                        # design references (see BACKLOG.md ORG-16)
+│   ├── feature-notes/
 │   ├── design-refs/
 │   ├── frontend-redesign-plan.md
 │   └── seo-hub-pages.md

@@ -178,7 +178,7 @@ export function buildSearchParams(params: ScreeningsQuery = {}): URLSearchParams
  * through next.config.ts's rewrite rule for a real incoming HTTP request;
  * it does not resolve for a fetch() call made from a Server Component
  * during rendering, which has no "current page" origin to fill in. See
- * frontend/docs/specs/homepage-ssr.md and frontend/docs/specs/url-driven-filters.md.
+ * frontend/docs/feature-notes/homepage-ssr.md and frontend/docs/feature-notes/url-driven-filters.md.
  *
  * Takes an already built query string, not a ScreeningsQuery object, so that
  * wrapping this in React's cache() dedupes correctly: cache() keys on

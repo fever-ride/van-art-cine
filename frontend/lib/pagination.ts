@@ -2,7 +2,7 @@
  * Pure helper for numbered pagination UI: given the current page and total
  * page count, decide which page numbers to render and where to collapse a
  * run of pages into a single ellipsis. Kept free of React so it can be unit
- * tested directly. See docs/specs (BACKLOG.md SEO-12) and
+ * tested directly. See docs/feature-notes (BACKLOG.md SEO-12) and
  * frontend/components/screenings/Pagination.tsx, its only caller.
  */
 

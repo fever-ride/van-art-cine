@@ -48,7 +48,7 @@ Checked against the local database on 2026-07-31:
 
 The homepage renders its screening list entirely client side today, with
 no structured data of its own. Full technical detail is in
-`frontend/docs/specs/homepage-ssr.md`.
+`frontend/docs/feature-notes/homepage-ssr.md`.
 
 This matters because the homepage is the single highest authority page on
 the site, and it is already trying to do the job that a "this week in
@@ -84,7 +84,7 @@ The homepage already is that page. It needs to be built correctly, not
 duplicated.
 
 Full requirements, acceptance criteria, and task breakdown for this item
-live in `frontend/docs/specs/homepage-ssr.md`. That document is the source of truth
+live in `frontend/docs/feature-notes/homepage-ssr.md`. That document is the source of truth
 for this piece of work. This section only records why it was prioritized
 above the other hub page directions.
 
