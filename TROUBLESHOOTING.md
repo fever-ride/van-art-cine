@@ -339,7 +339,7 @@ This is a **layout-collapse + stale scroll coordinate** problem, not a routing p
 - `frontend/components/screenings/Filters.tsx` — debounced search without `onApply`
 - `frontend/components/screenings/Pagination.tsx` — button `blur()`
 - `frontend/components/screenings/ScreeningDateInput.tsx` — portaled date picker
-- `frontend/app/lib/formatDate.ts` — `todayYmdInDisplayTimezone`
+- `frontend/lib/formatDate.ts` — `todayYmdInDisplayTimezone`
 
 #### 1. Routing / search
 
@@ -612,7 +612,7 @@ A route segment's `loading.tsx` isn't just a nicer spinner — **its mere presen
 
 Deleted `app/films/[id]/loading.tsx`. The route's existing explicit `<Suspense fallback={<FilmPageSkeleton />}>` around the main content already covers "show something while this loads," without creating an outer Suspense boundary the page can't get in front of. Combined with:
 
-- `getFilmDetail` (`app/lib/films.ts`) attaching `.status` to the error it throws on a non-OK response, mirroring the backend's own `fetchJSON`/`err.status` convention (`backend/src/lib/*` / `app/lib/watchlist.ts`) — so callers can tell "doesn't exist" (404) apart from "backend unreachable" (anything else) instead of string-matching `error.message`.
+- `getFilmDetail` (`lib/films.ts`) attaching `.status` to the error it throws on a non-OK response, mirroring the backend's own `fetchJSON`/`err.status` convention (`backend/src/lib/*` / `lib/watchlist.ts`) — so callers can tell "doesn't exist" (404) apart from "backend unreachable" (anything else) instead of string-matching `error.message`.
 - `await getFilmDetail(...)` + `notFound()` at the top of the page component, before the `<Suspense>` it returns — this is the part that actually only works once `loading.tsx` is gone.
 - `generateMetadata` also checking the same condition (it runs independently of the page component — confirmed via debug logs showing both catch blocks fire) and falling back to `robots: { index: false }` for any *other* error, rather than a plain, indexable generic title.
 - A dedicated `app/films/[id]/not-found.tsx` with its own `noindex` metadata — previously there was only a client-side `error.tsx` string-matching `error.message.includes('404')`, which could get the *words* right but, per the above, never the status.
@@ -831,7 +831,7 @@ Impact if left alone:
   - Rio passes explicit ISO offsets, so it is not affected.
 
 Unrelated bug found at the same time: `formatLocal()` in
-`frontend/app/lib/watchlist.ts` formatted in the *visitor's* zone. It was
+`frontend/lib/watchlist.ts` formatted in the *visitor's* zone. It was
 unused, and has been deleted.
 
 ### Fix
@@ -845,7 +845,7 @@ per language:
 
 | Layer | File |
 |---|---|
-| Frontend display | `frontend/app/lib/formatDate.ts` (`displayTimeZoneFor`), constants in `frontend/app/lib/constants.ts` |
+| Frontend display | `frontend/lib/formatDate.ts` (`displayTimeZoneFor`), constants in `frontend/lib/constants.ts` |
 | Backend day → UTC range | `backend/src/utils/time.js` (`localMidnightToUtc`) |
 | Pipeline local → UTC | `database/scripts/vancouver_time.py`, used by `load_json.py` |
 

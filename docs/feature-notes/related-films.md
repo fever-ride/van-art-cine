@@ -104,7 +104,7 @@ checking first, even though it will stay rare.
    `NowPlayingStructuredData` already handle an empty list elsewhere in
    this codebase.
 5. **Reuse the existing structured data helpers**
-   (`frontend/app/lib/structuredData.tsx`'s `buildItemListSchema`/
+   (`frontend/lib/structuredData.tsx`'s `buildItemListSchema`/
    `buildMovieEntity`, built for SEO-13) for the related films list,
    rather than inventing a parallel schema. This is additive to the film
    detail page's own existing `Movie`/`ScreeningEvent` JSON-LD, not a
@@ -139,7 +139,7 @@ checking first, even though it will stay rare.
    ranked per the Design decisions above. Reuse the `where`-building
    patterns already established in `backend/src/models/screenings.js`
    rather than writing a parallel query style.
-2. Expose it from `frontend/app/lib/films.ts`, following the same
+2. Expose it from `frontend/lib/films.ts`, following the same
    pattern `getFilmDetail` already uses (absolute URL fetch, `cache()`
    wrapped).
 3. ~~Extract the pure ranking/bucketing logic into its own testable

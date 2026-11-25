@@ -149,7 +149,7 @@ Goal: answer "when and where can I see it" above the fold, and match the homepag
   - A small eyebrow line at the top of the dark film hero (it was first a separate grey band under the nav, which made the top feel fragmented), reusing the homepage headline: "Vancouver's indie screenings, all in one place. See what's on →", linking to `/`.
   - Shown only to visitors arriving from outside the site (external Referer, or none), until they dismiss it.
   - Decided server-side from the Referer and the `intro_dismissed` cookie, so there's no flash or layout shift. The page is already per-request.
-  - The cookie name lives in `app/lib/siteIntro.ts`, not the client file: a server component importing a constant from a `'use client'` module gets a reference, not the string.
+  - The cookie name lives in `lib/siteIntro.ts`, not the client file: a server component importing a constant from a `'use client'` module gets a reference, not the string.
 - Next bounce ideas, not done yet:
   - Track Get tickets / Watchlist clicks; check whether the Vercel plan supports custom events.
   - Clickable genre / cinema / "more on this date" links into homepage filters.

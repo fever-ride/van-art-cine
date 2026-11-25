@@ -53,7 +53,7 @@ and give that response proper metadata and structured data.
 - The server side fetch function planned in `url-driven-filters.md`
   already solves the relative URL problem `getScreenings()` has today,
   following the same absolute URL pattern `getFilmDetail` uses in
-  `frontend/app/lib/films.ts`. This spec reuses that function rather than
+  `frontend/lib/films.ts`. This spec reuses that function rather than
   writing its own.
 
 ## Acceptance criteria
@@ -91,7 +91,7 @@ and give that response proper metadata and structured data.
    through to the root layout's static title/description for the plain
    default view; builds a dynamic title/description naming the active
    filter otherwise (a named cinema via a new `getCinemasServerSide` in
-   `frontend/app/lib/cinemas.ts`, a search term, a date/range, or a page
+   `frontend/lib/cinemas.ts`, a search term, a date/range, or a page
    number beyond 1), so a bookmarked or shared filtered URL isn't a
    duplicate title of every other one. Also sets `noindex` (`shouldNoindex`)
    for a search term or a date/date-range filter: unlike a named cinema,
@@ -127,7 +127,7 @@ and give that response proper metadata and structured data.
    already marked `noindex` (see task 2) — Google doesn't process
    structured data on a page it isn't indexing, so emitting it there would
    just be dead weight.
-4. Confirmed: `getScreeningsServerSide` (`frontend/app/lib/screenings.ts`)
+4. Confirmed: `getScreeningsServerSide` (`frontend/lib/screenings.ts`)
    already sets `cache: 'no-store'`, from the original FE-1 work.
 5. Verified manually with `curl` against a local dev server: default view,
    a single-cinema filter, a search term, `page=2`, and an invalid date

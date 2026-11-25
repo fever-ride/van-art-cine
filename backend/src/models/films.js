@@ -114,7 +114,7 @@ export async function getUpcomingForFilm(id, opts = {}) {
 
 /** Splits a raw, comma separated OMDb-style string (genre/country/language)
  * into clean, lowercased tokens, dropping placeholders like "N/A". Mirrors
- * frontend/app/lib/formatGenre.ts's filtering, kept separate since this
+ * frontend/lib/formatGenre.ts's filtering, kept separate since this
  * runs server side for similarity scoring, not display text. */
 function splitCsvTokens(value) {
   if (!value) return [];
