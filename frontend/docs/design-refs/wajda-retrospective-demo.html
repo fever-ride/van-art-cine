@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Andrzej Wajda Retrospective: 17 Films at VIFF Centre | The Cinephile's Van</title>
+<meta name="description" content="A complete Andrzej Wajda retrospective in Vancouver, screening at VIFF Centre Nov 19 to Dec 27, 2026, from his War Trilogy to his final film, Katyn." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "Andrzej Wajda Retrospective at VIFF Centre",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "url": "/films/2318", "item": { "@type": "Movie", "name": "Ashes and Diamonds", "datePublished": "1958" } },
+    { "@type": "ListItem", "position": 2, "url": "/films/2334", "item": { "@type": "Movie", "name": "Katyn", "datePublished": "2007" } }
+  ]
+}
+</script>
+<style>
+  :root {
+    --primary: #111111;
+    --background: #FFFFFF;
+    --accent: #F2A65A;
+    --accent-hover: #EC9440;
+    --accent-ink: #1A1A1A;
+    --accent-strong: #94500F;
+    --highlight: #F2DCB0;
+    --hero-bg: #101010;
+    --surface: #FFFFFF;
+    --surface-subtle: #F5F5F5;
+    --border: #E3E3E3;
+    --muted: #6F6F6F;
+    --imdb: #F5C518;
+    --rt: #FA320A;
+    --font-sans: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    color: var(--primary);
+    background: var(--background);
+  }
+  h1, h2, h3 { font-family: var(--font-display); margin: 0; }
+  a { color: inherit; text-decoration: none; }
+  img { display: block; max-width: 100%; }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    background: var(--hero-bg);
+    color: #fff;
+    overflow: hidden;
+    padding: 72px 0 56px;
+  }
+  .hero-backdrop {
+    position: absolute;
+    inset: 0;
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/3/34/Andrzej_Wajda_1974.jpg');
+    background-size: cover;
+    background-position: center 35%;
+    opacity: 0.6;
+    filter: blur(1px);
+    transform: scale(1.08);
+  }
+  .hero-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(16,16,16,0.25) 0%, rgba(16,16,16,0.75) 65%, #101010 100%);
+  }
+  .hero-inner { position: relative; z-index: 1; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(242,166,90,0.5);
+    border-radius: 3px;
+    padding: 5px 10px;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1.05;
+    max-width: 14ch;
+  }
+  .hero .dek {
+    margin-top: 16px;
+    max-width: 52ch;
+    font-size: 17px;
+    line-height: 1.55;
+    color: rgba(255,255,255,0.82);
+  }
+  /* ---------- Intro ---------- */
+  .intro {
+    padding: 48px 0 8px;
+    font-size: 17px;
+    line-height: 1.7;
+    color: #2b2b2b;
+    max-width: 72ch;
+  }
+  .intro strong { color: var(--primary); }
+
+  /* ---------- Sticky era nav ---------- */
+  .era-nav {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--border);
+    margin-top: 40px;
+  }
+  .era-nav-inner {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 12px 0;
+  }
+  .era-nav a {
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .era-nav a:hover { border-color: var(--accent); color: var(--accent-strong); }
+
+  /* ---------- Era sections ---------- */
+  .era {
+    padding: 56px 0 8px;
+    scroll-margin-top: 64px;
+  }
+  .era-head { max-width: 62ch; margin-bottom: 24px; }
+  .era-head .years {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent-strong);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .era-head h2 { font-size: 26px; margin-top: 4px; }
+  .era-head p { margin-top: 10px; font-size: 15.5px; line-height: 1.65; color: var(--muted); }
+
+  .poster-strip {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding: 4px 4px 16px;
+    scroll-snap-type: x mandatory;
+  }
+  .poster-card {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+    width: 150px;
+    cursor: pointer;
+  }
+  .poster-art {
+    position: relative;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    background: var(--surface-subtle);
+    aspect-ratio: 2 / 3;
+  }
+  .poster-art img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s; }
+  .poster-card:hover .poster-art img { transform: scale(1.03); }
+  .poster-no-art {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: var(--muted); text-align: center; padding: 8px;
+  }
+  .badge-rating {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(0,0,0,0.78); color: #fff;
+    font-size: 11px; font-weight: 700;
+    border-radius: 999px; padding: 2px 7px;
+  }
+  .badge-year {
+    position: absolute; top: 8px; left: 8px;
+    background: rgba(255,255,255,0.9); color: var(--primary);
+    font-size: 11px; font-weight: 700;
+    border-radius: 999px; padding: 2px 7px;
+  }
+  .poster-title { margin-top: 8px; font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+  .poster-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+  /* ---------- Schedule ---------- */
+  .schedule { padding: 56px 0 64px; }
+  .schedule h2 { font-size: 26px; margin-bottom: 6px; }
+  .schedule > .wrap > p { color: var(--muted); font-size: 14.5px; margin-bottom: 20px; }
+  .sched-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .sched-table thead th {
+    text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--muted); font-weight: 700; padding: 8px 10px; border-bottom: 2px solid var(--primary);
+  }
+  .sched-table td { padding: 11px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .sched-table tr:hover td { background: var(--surface-subtle); }
+  .sched-film { font-weight: 600; }
+  .sched-cinema { color: var(--muted); font-size: 13px; }
+  .watch-btn {
+    font-size: 12px; font-weight: 600; border: 1px solid var(--border);
+    border-radius: 999px; padding: 4px 11px; color: var(--primary);
+    display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+  }
+  .watch-btn:hover { border-color: var(--accent); background: var(--highlight); }
+  .row-past td { color: var(--muted); }
+  .status-past { font-size: 12px; color: var(--muted); }
+  .badge-soon {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  /* ---------- Footer CTA ---------- */
+  .cta-band {
+    background: var(--surface-subtle);
+    border-top: 1px solid var(--border);
+    padding: 48px 0;
+    text-align: center;
+  }
+  .cta-band h3 { font-size: 22px; }
+  .cta-band p { color: var(--muted); margin-top: 8px; font-size: 15px; }
+  .cta-links { margin-top: 20px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .cta-links a {
+    font-size: 14px; font-weight: 700; padding: 10px 20px; border-radius: 4px;
+  }
+  .cta-primary { background: var(--accent); color: var(--accent-ink); }
+  .cta-secondary { border: 1px solid var(--border); color: var(--primary); }
+
+  @media (max-width: 640px) {
+    .hero { padding: 56px 0 40px; }
+    .intro, .era, .schedule { padding-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-backdrop"></div>
+  <div class="hero-scrim"></div>
+  <div class="wrap hero-inner">
+    <span class="eyebrow">VIFF Centre · Nov 19 – Dec 27, 2026</span>
+    <h1>Andrzej Wajda: A Retrospective</h1>
+    <p class="dek">Seventeen films screening in Vancouver this winter, from Wajda's earliest work in the 1950s to his final film in 2007.</p>
+  </div>
+</section>
+
+<div class="wrap">
+  <p class="intro">
+    Andrzej Wajda was one of Poland's most important directors. He led the Polish Film School, the movement
+    that brought Polish cinema to international attention in the mid-1950s. His first three features,
+    <em>A Generation</em>, <em>Kanal</em>, and <em>Ashes and Diamonds</em>, are known as his War Trilogy,
+    among the most studied films of postwar Europe. He kept working for five decades, through communist
+    rule and its collapse. <em>Man of Iron</em> won the Palme d'Or at Cannes in 1981. In 2000, he received
+    an honorary Academy Award for his career. This winter, VIFF Centre in Vancouver presents seventeen of
+    his films, from <em>A Generation</em> in 1955 to <em>Katyn</em>, made in 2007 about the massacre that
+    killed his own father. It is a rare chance to see this much of one director's work on one screen.
+  </p>
+</div>
+
+<nav class="era-nav">
+  <div class="wrap era-nav-inner">
+    <a href="#era-1">1955–65 · Polish Film School</a>
+    <a href="#era-2">1969–82 · Working Under Censorship</a>
+    <a href="#era-3">1990–2007 · Reckoning with History</a>
+    <a href="#schedule">Full schedule</a>
+  </div>
+</nav>
+
+<section class="era" id="era-1">
+  <div class="wrap">
+    <div class="era-head">
+      <div class="years">1955 – 1965</div>
+      <h2>The Polish Film School</h2>
+      <p><em>A Generation</em>, <em>Kanal</em>, and <em>Ashes and Diamonds</em> are Wajda's War Trilogy,
+      made as the Polish Film School took shape in the mid-1950s. All three deal with the German occupation
+      of Poland, and together made Wajda internationally known. <em>Innocent Sorcerers</em> is a smaller,
+      contemporary story about a young doctor in Warsaw. <em>The Ashes</em> is an earlier epic, following
+      Polish soldiers under Napoleon.</p>
+    </div>
+    <div class="poster-strip">
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/zUQKN61bjCxSgubchybgzExMCNR.jpg" alt="A Generation poster" />
+          <span class="badge-year">1955</span>
+          <span class="badge-rating">7.1</span>
+        </div>
+        <div class="poster-title">A Generation</div>
+        <div class="poster-sub">Screened Nov 22 &amp; 23</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/mUxZNNmvX3MwIJ9LTcuw76ZdtN6.jpg" alt="Kanal poster" />
+          <span class="badge-year">1957</span>
+          <span class="badge-rating">7.9</span>
+        </div>
+        <div class="poster-title">Kanal</div>
+        <div class="poster-sub">Screened Nov 22 &amp; 23</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/nE8aqRvVnRQEqskiarnFhdJdk8g.jpg" alt="Ashes and Diamonds poster" />
+          <span class="badge-year">1958</span>
+          <span class="badge-rating">7.7</span>
+        </div>
+        <div class="poster-title">Ashes and Diamonds</div>
+        <div class="poster-sub">Wed Nov 25, 8:40 PM</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/t8fadEnUuIczqDZVcWaVQECUVRh.jpg" alt="Innocent Sorcerers poster" />
+          <span class="badge-year">1960</span>
+          <span class="badge-rating">7.3</span>
+        </div>
+        <div class="poster-title">Innocent Sorcerers</div>
+        <div class="poster-sub">Fri Nov 27, 6:00 PM</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/oDqpOIknr3EG4TRLhf7eDdF9dbs.jpg" alt="The Ashes poster" />
+          <span class="badge-year">1965</span>
+          <span class="badge-rating">7.1</span>
+        </div>
+        <div class="poster-title">The Ashes</div>
+        <div class="poster-sub">Sat Nov 28 &amp; Mon Nov 30</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="era" id="era-2">
+  <div class="wrap">
+    <div class="era-head">
+      <div class="years">1969 – 1982</div>
+      <h2>Working Under Censorship</h2>
+      <p>This was Wajda's most prolific period, and the one Polish censors watched most closely.
+      <em>Man of Marble</em>, about a bricklayer turned propaganda hero, was held back by censors for
+      years. Its sequel, <em>Man of Iron</em>, followed the 1980 shipyard strikes that led to Solidarity
+      and won the Palme d'Or at Cannes in 1981. After martial law was declared that year, Wajda had
+      trouble working in Poland and made some films abroad, including <em>Danton</em>, shot in France.</p>
+    </div>
+    <div class="poster-strip">
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/oPTIKRNJ2rexJS93AjIdBbr2lcA.jpg" alt="Everything For Sale poster" />
+          <span class="badge-year">1969</span>
+          <span class="badge-rating">6.8</span>
+        </div>
+        <div class="poster-title">Everything For Sale</div>
+        <div class="poster-sub">Sat Nov 28 &amp; Fri Dec 4</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/lFsScY7HSj3PRsflDextkvrtxcq.jpg" alt="Landscape After The Battle poster" />
+          <span class="badge-year">1970</span>
+        </div>
+        <div class="poster-title">Landscape After The Battle</div>
+        <div class="poster-sub">Sat Nov 28 &amp; Sun Nov 29</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/nZWaiNDaY6fWUh8KE9nCKFQXQ00.jpg" alt="The Birch Wood poster" />
+          <span class="badge-year">1970</span>
+          <span class="badge-rating">6.9</span>
+        </div>
+        <div class="poster-title">The Birch Wood</div>
+        <div class="poster-sub">Sun Nov 29 &amp; Wed Dec 2</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <div class="poster-no-art">No poster available</div>
+          <span class="badge-year">1972</span>
+        </div>
+        <div class="poster-title">The Wedding</div>
+        <div class="poster-sub">Thu Dec 3 &amp; Fri Dec 4</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/pjk8K5MpQJX0XczTC2KOVWNj0lC.jpg" alt="The Promised Land poster" />
+          <span class="badge-year">1975</span>
+          <span class="badge-rating">7.8</span>
+        </div>
+        <div class="poster-title">The Promised Land</div>
+        <div class="poster-sub">Sat Dec 5 &amp; Sun Dec 6</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/dQWfBHQmdQbcUAeyr0VS1j19uto.jpg" alt="Man of Marble poster" />
+          <span class="badge-year">1977</span>
+          <span class="badge-rating">7.6</span>
+        </div>
+        <div class="poster-title">Man of Marble</div>
+        <div class="poster-sub">Mon Dec 7 &amp; Wed Dec 9</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/bxS0z1Ji4VVWZthMZpooi0Fcviu.jpg" alt="Rough Treatment poster" />
+          <span class="badge-year">1978</span>
+          <span class="badge-rating">7.3</span>
+        </div>
+        <div class="poster-title">Rough Treatment</div>
+        <div class="poster-sub">Sun Dec 13 &amp; Tue Dec 15</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/3C5lc2b4jhoNciDiK80v5gX6wkv.jpg" alt="The Maids of Wilko poster" />
+          <span class="badge-year">1979</span>
+          <span class="badge-rating">7.4</span>
+        </div>
+        <div class="poster-title">The Maids of Wilko</div>
+        <div class="poster-sub">Tue Dec 15, 2:00 PM</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/22wNUqKyz2m6wzAt31f26H8Y433.jpg" alt="Man of Iron poster" />
+          <span class="badge-year">1981</span>
+          <span class="badge-rating">7.3</span>
+        </div>
+        <div class="poster-title">Man of Iron</div>
+        <div class="poster-sub">Mon Dec 14 &amp; Wed Dec 16</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/az5XParmpea0fxAjwEgHpUrXzw0.jpg" alt="Danton poster" />
+          <span class="badge-year">1982</span>
+          <span class="badge-rating">7.4</span>
+        </div>
+        <div class="poster-title">Danton</div>
+        <div class="poster-sub">Sun Dec 20 &amp; Wed Dec 23</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="era" id="era-3">
+  <div class="wrap">
+    <div class="era-head">
+      <div class="years">1990 – 2007</div>
+      <h2>Reckoning with History</h2>
+      <p>Wajda's later films turn toward history Poland was not allowed to discuss for decades.
+      <em>Korczak</em> tells the true story of a doctor who stayed with the Jewish orphans in his care
+      rather than leave them in the Warsaw Ghetto. <em>Katyn</em>, made in his eighties, is personal. His
+      father was one of about 22,000 Polish officers killed by Soviet forces at Katyn in 1940. Wajda did
+      not learn the full truth until communism fell.</p>
+    </div>
+    <div class="poster-strip">
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/blBFDoyRWlmtbsaCwEOoqsUI7lP.jpg" alt="Korczak poster" />
+          <span class="badge-year">1990</span>
+          <span class="badge-rating">7.4</span>
+        </div>
+        <div class="poster-title">Korczak</div>
+        <div class="poster-sub">Mon Dec 21 &amp; Tue Dec 22</div>
+      </div>
+
+      <div class="poster-card">
+        <div class="poster-art">
+          <img src="https://image.tmdb.org/t/p/w342/g9yyF5zC2pel0gG6vxlVpkDgZgC.jpg" alt="Katyn poster" />
+          <span class="badge-year">2007</span>
+          <span class="badge-rating">7.0</span>
+        </div>
+        <div class="poster-title">Katyn</div>
+        <div class="poster-sub">Sun Dec 27, 1:30 PM, final screening</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="schedule" id="schedule">
+  <div class="wrap">
+    <h2>Full schedule</h2>
+    <p>All 33 screenings, both VIFF Centre screens, in order. Screenings already played are marked below.</p>
+    <table class="sched-table">
+      <thead>
+        <tr><th>Date</th><th>Film</th><th>Time</th><th>Cinema</th><th></th></tr>
+      </thead>
+      <tbody>
+        <tr class="row-past" data-date="2026-11-19"><td>Thu Nov 19</td><td class="sched-film">Ashes and Diamonds</td><td>7:30 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="status-past">Already screened</span></td></tr>
+        <tr class="row-past" data-date="2026-11-22"><td>Sun Nov 22</td><td class="sched-film">A Generation</td><td>1:00 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="status-past">Already screened</span></td></tr>
+        <tr class="row-past" data-date="2026-11-22"><td>Sun Nov 22</td><td class="sched-film">Kanal</td><td>3:00 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="status-past">Already screened</span></td></tr>
+        <tr class="row-past" data-date="2026-11-22"><td>Sun Nov 22</td><td class="sched-film">Ashes and Diamonds</td><td>6:30 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="status-past">Already screened</span></td></tr>
+        <tr class="row-past" data-date="2026-11-23"><td>Mon Nov 23</td><td class="sched-film">A Generation</td><td>2:00 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="status-past">Already screened</span></td></tr>
+        <tr class="row-past" data-date="2026-11-23"><td>Mon Nov 23</td><td class="sched-film">Kanal</td><td>3:50 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="status-past">Already screened</span></td></tr>
+        <tr class="row-past" data-date="2026-11-24"><td>Tue Nov 24</td><td class="sched-film">Innocent Sorcerers</td><td>8:30 PM</td><td class="sched-cinema">Lochmaddy Studio</td><td><span class="status-past">Already screened</span></td></tr>
+        <tr data-date="2026-11-25"><td>Wed Nov 25</td><td class="sched-film">Ashes and Diamonds</td><td>8:40 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-11-27"><td>Fri Nov 27</td><td class="sched-film">Innocent Sorcerers</td><td>6:00 PM</td><td class="sched-cinema">Lochmaddy Studio</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-11-28"><td>Sat Nov 28</td><td class="sched-film">The Ashes</td><td>11:00 AM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-11-28"><td>Sat Nov 28</td><td class="sched-film">Everything For Sale</td><td>6:00 PM</td><td class="sched-cinema">Lochmaddy Studio</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-11-28"><td>Sat Nov 28</td><td class="sched-film">Landscape After The Battle</td><td>8:15 PM</td><td class="sched-cinema">Lochmaddy Studio</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-11-29"><td>Sun Nov 29</td><td class="sched-film">The Birch Wood</td><td>1:00 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-11-29"><td>Sun Nov 29</td><td class="sched-film">Landscape After The Battle</td><td>8:45 PM</td><td class="sched-cinema">Lochmaddy Studio</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-11-30"><td>Mon Nov 30</td><td class="sched-film">The Ashes</td><td>2:00 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-02"><td>Wed Dec 2</td><td class="sched-film">The Birch Wood</td><td>8:20 PM</td><td class="sched-cinema">Lochmaddy Studio</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-03"><td>Thu Dec 3</td><td class="sched-film">The Wedding</td><td>6:30 PM</td><td class="sched-cinema">Lochmaddy Studio</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-04"><td>Fri Dec 4</td><td class="sched-film">Everything For Sale</td><td>6:00 PM</td><td class="sched-cinema">Lochmaddy Studio</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-04"><td>Fri Dec 4</td><td class="sched-film">The Wedding</td><td>8:15 PM</td><td class="sched-cinema">Lochmaddy Studio</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-05"><td>Sat Dec 5</td><td class="sched-film">The Promised Land</td><td>11:00 AM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-06"><td>Sun Dec 6</td><td class="sched-film">The Promised Land</td><td>2:15 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-07"><td>Mon Dec 7</td><td class="sched-film">Man of Marble</td><td>8:10 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-09"><td>Wed Dec 9</td><td class="sched-film">Man of Marble</td><td>7:30 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-13"><td>Sun Dec 13</td><td class="sched-film">Rough Treatment</td><td>5:30 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-14"><td>Mon Dec 14</td><td class="sched-film">Man of Iron</td><td>8:20 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-15"><td>Tue Dec 15</td><td class="sched-film">The Maids of Wilko</td><td>2:00 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-15"><td>Tue Dec 15</td><td class="sched-film">Rough Treatment</td><td>4:30 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-16"><td>Wed Dec 16</td><td class="sched-film">Man of Iron</td><td>7:30 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-20"><td>Sun Dec 20</td><td class="sched-film">Danton</td><td>8:00 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-21"><td>Mon Dec 21</td><td class="sched-film">Korczak</td><td>5:30 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-22"><td>Tue Dec 22</td><td class="sched-film">Korczak</td><td>2:20 PM</td><td class="sched-cinema">Lochmaddy Studio</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-23"><td>Wed Dec 23</td><td class="sched-film">Danton</td><td>3:00 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+        <tr data-date="2026-12-27"><td>Sun Dec 27</td><td class="sched-film">Katyn</td><td>1:30 PM</td><td class="sched-cinema">VIFF Cinema</td><td><span class="watch-btn">+ Watchlist</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="wrap">
+    <h3>Looking for more?</h3>
+    <p>Browse the highest-rated screenings in Vancouver, or see what's on this week.</p>
+    <div class="cta-links">
+      <a class="cta-primary" href="/whats-on/top-rated">Top rated screenings →</a>
+      <a class="cta-secondary" href="/">See what's on this week</a>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  function toISODate(d) {
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+  var now = new Date();
+  var todayStr = toISODate(now);
+  var tomorrowStr = toISODate(new Date(now.getTime() + 86400000));
+
+  document.querySelectorAll('.sched-table tbody tr[data-date]').forEach(function (row) {
+    var d = row.getAttribute('data-date');
+    var label = d === todayStr ? 'Today' : d === tomorrowStr ? 'Tomorrow' : null;
+    if (label) {
+      var cell = row.querySelector('td');
+      var badge = document.createElement('span');
+      badge.className = 'badge-soon';
+      badge.textContent = label;
+      cell.appendChild(badge);
+    }
+  });
+})();
+</script>
+</body>
+</html>

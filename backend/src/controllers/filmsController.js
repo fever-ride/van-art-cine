@@ -15,7 +15,7 @@ function splitCsvParam(raw) {
 
 /**
  * GET /api/films
- * @query {{ date?, from?, to?, cinema_ids?, q?, genre?, language?, limit?, offset? }}
+ * @query {{ date?, from?, to?, cinema_ids?, q?, genre?, language?, director?, limit?, offset? }}
  * @returns {200} {{ items: FilmGroup[], total: number }} — `total` is the
  *   count of distinct matching films, not screenings (see `fetchFilms`).
  */
@@ -39,6 +39,7 @@ export async function listHandler(req, res, next) {
     const genres    = splitCsvParam(req.query.genre);
     const languages = splitCsvParam(req.query.language);
     const eras      = splitCsvParam(req.query.era);
+    const director  = req.query.director?.trim() || null;
     const q       = (req.query.q || '').toString().trim().toLowerCase();
     const limit   = req.query.limit  ?? 20;
     const offset  = req.query.offset ?? 0;
@@ -51,7 +52,7 @@ export async function listHandler(req, res, next) {
     const { items, total } = await fetchFilms({
       date, from, to,
       cinemaIds,
-      q, genres, languages, eras, minImdbRating, minRtRating, limit, offset,
+      q, genres, languages, eras, minImdbRating, minRtRating, director, limit, offset,
       tz: DEFAULT_TZ,
     });
 

@@ -31,6 +31,7 @@ import { IMDB_RATING_THRESHOLDS, RT_RATING_THRESHOLDS } from '../utils/ratingThr
  * @param {string[]} [opts.eras]       Restrict to films whose year falls in any of these era buckets (OR) — see `yearEras.js`
  * @param {number} [opts.minImdbRating]  Restrict to films with imdb_rating >= this
  * @param {number} [opts.minRtRating]    Restrict to films with rt_rating_pct >= this
+ * @param {string} [opts.director]     Restrict to films with a director whose name contains this (e.g. a retrospective/spotlight page — not a user-facing facet, so a single substring rather than genres/languages' OR-list shape)
  * @param {string} [opts.tz]           IANA zone for date/range → UTC (default America/Vancouver)
  * @returns {object} Prisma `where` for `screening`
  */
@@ -45,6 +46,7 @@ function buildScreeningWhere(opts = {}) {
     eras,
     minImdbRating,
     minRtRating,
+    director,
     tz = 'America/Vancouver',
   } = opts;
 
@@ -114,6 +116,16 @@ function buildScreeningWhere(opts = {}) {
     ...(q ? { normalized_title: { contains: q } } : {}),
     ...(Number.isFinite(minImdbRating) ? { imdb_rating: { gte: minImdbRating } } : {}),
     ...(Number.isFinite(minRtRating) ? { rt_rating_pct: { gte: minRtRating } } : {}),
+    ...(director
+      ? {
+          film_person: {
+            some: {
+              role: 'director',
+              person: { name: { contains: director, mode: 'insensitive' } },
+            },
+          },
+        }
+      : {}),
   };
 
   return {
@@ -143,6 +155,7 @@ function buildScreeningWhere(opts = {}) {
  * @param {string[]} [opts.eras]       Restrict to films whose year falls in any of these era buckets (OR)
  * @param {number} [opts.minImdbRating]  Restrict to films with imdb_rating >= this
  * @param {number} [opts.minRtRating]    Restrict to films with rt_rating_pct >= this
+ * @param {string} [opts.director]     Restrict to films with a director whose name contains this
  * @param {string} [opts.sort]         time | title | imdb | rt | votes | year
  * @param {string} [opts.order]        ASC | DESC
  * @param {number} [opts.limit]
@@ -163,6 +176,7 @@ export async function fetchScreenings(opts = {}) {
     eras,
     minImdbRating,
     minRtRating,
+    director,
     sort = 'time',
     order = 'ASC',
     limit = 50,
@@ -172,7 +186,7 @@ export async function fetchScreenings(opts = {}) {
 
   const safeOrder = (String(order).toLowerCase() === 'desc') ? 'desc' : 'asc';
   const where = buildScreeningWhere({
-    date, from, to, cinemaIds, filmId, q, genres, languages, eras, minImdbRating, minRtRating, tz,
+    date, from, to, cinemaIds, filmId, q, genres, languages, eras, minImdbRating, minRtRating, director, tz,
   });
 
   let orderBy;
@@ -251,8 +265,8 @@ export async function fetchScreenings(opts = {}) {
  *      after it reaches the client.
  *
  * @param {object} opts  Same filter fields as `fetchScreenings` (date/from/to,
- *   cinemaIds, q, genres, languages, tz), plus `limit`/`offset` — here counted
- *   in films, not screenings.
+ *   cinemaIds, q, genres, languages, director, tz), plus `limit`/`offset` —
+ *   here counted in films, not screenings.
  * @returns {Promise<{items: object[], total: number}>} `total` is the count of
  *   distinct matching films, not screenings.
  */
@@ -266,13 +280,14 @@ export async function fetchFilms(opts = {}) {
     eras,
     minImdbRating,
     minRtRating,
+    director,
     limit = 20,
     offset = 0,
     tz = 'America/Vancouver',
   } = opts;
 
   const where = buildScreeningWhere({
-    date, from, to, cinemaIds, q, genres, languages, eras, minImdbRating, minRtRating, tz,
+    date, from, to, cinemaIds, q, genres, languages, eras, minImdbRating, minRtRating, director, tz,
   });
 
   const grouped = await prisma.screening.groupBy({

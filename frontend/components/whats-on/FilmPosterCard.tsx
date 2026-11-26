@@ -1,14 +1,26 @@
 import Link from 'next/link';
 import { parseImdbRating } from '@/lib/displayText';
-import type { Screening } from '@/lib/screenings';
 
 const FALLBACK_POSTER =
   'https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?q=80&w=600&auto=format&fit=crop';
 
+/** The fields this card actually needs — satisfied structurally by both
+ * `Screening` (a row-per-showtime shape, Table view / Top Rated) and
+ * `FilmListItem` (a row-per-film shape, Film view / retrospective pages),
+ * so the same card works for either without converting one into the other.
+ * Mirrors `MovieEntitySource` in `lib/structuredData.tsx` for the same reason. */
+export interface PosterCardFilm {
+  film_id: number;
+  title: string;
+  year?: number | null;
+  imdb_rating?: number | string | null;
+  poster_url?: string | null;
+}
+
 /** A film poster + title + rating, linking to its detail page. Shared by
  * the carousel and the full grid on the Top Rated hub page — same card,
  * just arranged differently by the parent. */
-export default function FilmPosterCard({ screening }: { screening: Screening }) {
+export default function FilmPosterCard({ screening }: { screening: PosterCardFilm }) {
   const rating = parseImdbRating(screening.imdb_rating);
   const poster =
     screening.poster_url && screening.poster_url.trim() !== ''

@@ -13,7 +13,7 @@ function splitCsvParam(raw) {
 
 /**
  * GET /api/screenings
- * @query {{ date?, from?, to?, cinema_ids?, film_id?, q?, genre?, language?, sort?, order?, limit?, offset? }}
+ * @query {{ date?, from?, to?, cinema_ids?, film_id?, q?, genre?, language?, director?, sort?, order?, limit?, offset? }}
  * @returns {200} {{ items: Screening[], total: number }}
  */
 export async function listHandler(req, res, next) {
@@ -36,6 +36,7 @@ export async function listHandler(req, res, next) {
     const genres    = splitCsvParam(req.query.genre);
     const languages = splitCsvParam(req.query.language);
     const eras      = splitCsvParam(req.query.era);
+    const director  = req.query.director?.trim() || null;
 
     // Same express-validator sanitizer caveat as min_imdb/min_rt below —
     // req.query.film_id is still a string here despite the validator's
@@ -57,7 +58,7 @@ export async function listHandler(req, res, next) {
       date, from, to,
       cinemaIds,
       filmId,
-      q, genres, languages, eras, minImdbRating, minRtRating, sort, order, limit, offset,
+      q, genres, languages, eras, minImdbRating, minRtRating, director, sort, order, limit, offset,
       tz: DEFAULT_TZ,
     });
 
