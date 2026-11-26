@@ -23,6 +23,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.8,
     },
+    {
+      // Time-bound retrospective (real run: Nov 19 - Dec 27, 2026) — weekly
+      // rather than daily since, unlike Top Rated, its contents don't
+      // change from one day to the next.
+      url: `${SITE_URL}/whats-on/andrzej-wajda`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
   ];
 
   try {

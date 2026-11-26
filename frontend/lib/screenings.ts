@@ -62,6 +62,7 @@ export interface ScreeningsQuery {
   genre?: string[];
   language?: string[];
   era?: string[];
+  director?: string;
   min_imdb?: number;
   min_rt?: number;
   sort?: SortKey;

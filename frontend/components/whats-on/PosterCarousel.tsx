@@ -1,5 +1,4 @@
-import type { Screening } from '@/lib/screenings';
-import FilmPosterCard from './FilmPosterCard';
+import FilmPosterCard, { type PosterCardFilm } from './FilmPosterCard';
 
 /**
  * A horizontally scrollable strip of poster cards ("this week's" highlight
@@ -11,7 +10,7 @@ import FilmPosterCard from './FilmPosterCard';
  * build and the safer UX default. CSS-only, no JS: still fully usable and
  * crawlable with JavaScript disabled.
  */
-export default function PosterCarousel({ films }: { films: Screening[] }) {
+export default function PosterCarousel({ films }: { films: PosterCardFilm[] }) {
   if (films.length === 0) return null;
 
   return (

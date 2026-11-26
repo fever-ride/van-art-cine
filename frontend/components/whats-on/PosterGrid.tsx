@@ -1,10 +1,9 @@
-import type { Screening } from '@/lib/screenings';
-import FilmPosterCard from './FilmPosterCard';
+import FilmPosterCard, { type PosterCardFilm } from './FilmPosterCard';
 
 /** A wrapping grid of poster cards ("this month's" full list on the Top
  * Rated hub page) — same card component as the carousel, just laid out to
  * fill the width instead of scrolling. */
-export default function PosterGrid({ films }: { films: Screening[] }) {
+export default function PosterGrid({ films }: { films: PosterCardFilm[] }) {
   if (films.length === 0) return null;
 
   return (

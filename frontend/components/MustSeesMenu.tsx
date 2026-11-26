@@ -7,7 +7,10 @@ import { NavigationMenu } from '@base-ui/react/navigation-menu';
 // portal-rendered popup inherits them even though it mounts in document.body.
 
 /** Add more `/whats-on/*` hub pages here as they ship. */
-const ENTRIES = [{ href: '/whats-on/top-rated', label: 'Top Rated' }];
+const ENTRIES = [
+  { href: '/whats-on/top-rated', label: 'Top Rated' },
+  { href: '/whats-on/andrzej-wajda', label: 'Andrzej Wajda Retrospective' },
+];
 
 // Exactly NavBar.tsx's own `pill` style, including the lack of a
 // rounded-* class — this trigger sits in the same pill row as "My
