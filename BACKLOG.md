@@ -827,6 +827,72 @@ watchlist activity for a ranking to be meaningful.
 
 **Priority:** Blocked. Depends on user growth, not on engineering work.
 
+---
+
+#### SEO-15. App icon is a placeholder rectangle, not the real logo
+
+**Problem:** `frontend/app/icon.svg` (Next.js's file-based convention for
+the site's favicon/app icon) is just a bare unfilled rectangle outline:
+```svg
+<rect x="10" y="25" width="80" height="50" fill="none" stroke="#5C8EA7" stroke-width="5.25"/>
+```
+This is what actually renders in browser tabs and in Google's own search
+result page next to the site title — confirmed live in a real Google
+search for "cinephilesvan.com". The real brand logo (a van/truck icon)
+already exists at `frontend/public/logo-no-title.svg` and is used in
+`NavBar.tsx`, but was never wired up as the favicon/app icon.
+
+**Impact:** Low effort, but visible everywhere a browser or search engine
+shows a small site icon — tab bar, bookmarks, and the Google SERP favicon
+next to the brand result. A blank rectangle looks unfinished and does
+nothing for brand recognition the way the real logo would.
+
+**Approach:** Replace `frontend/app/icon.svg`'s contents with (or base it
+on) the existing `frontend/public/logo-no-title.svg` artwork, simplified
+as needed for a small icon size. Check whether `favicon.ico` needs the
+same swap — it's a separate generated multi-resolution file, not
+automatically derived from `icon.svg`.
+
+**Priority:** Low effort, visible impact — easy pickup.
+
+---
+
+#### SEO-16. Internal link structure dilutes Google's sitelinks away from content pages
+
+**Problem:** Noticed while checking how `cinephilesvan.com` renders in a
+real Google brand-name search: Google picked `/about` as a secondary
+sitelink under the main result. `/about` is linked from both the global
+`NavBar.tsx` and the global `Footer.tsx` — present on literally every
+page, twice — the same link weight as the homepage and `/watchlist`.
+Meanwhile `/whats-on/top-rated` and `/whats-on/andrzej-wajda` (the
+higher-value content pages for a search visitor) are only reachable from
+the `MustSeesMenu.tsx` dropdown, once per page, and aren't in the footer
+at all.
+
+**Impact:** Google has no official "pick my sitelinks" control — Search
+Console's old sitelink-demotion tool was removed years ago, so site
+structure, internal link weight, and click-through data are the only real
+levers left. Right now those levers make a low-content page (`/about`)
+look as structurally important as the homepage, while the actual hub
+pages this project wants people to click into from search get a weaker
+internal-linking signal. `sitemap.ts` already sets `/about` to the lowest
+`priority` (0.5, below every hub page), but that alone isn't enough when
+page-level internal linking says the opposite.
+
+**Approach:** Not yet designed — worth a real look, not a quick guess:
+- Consider removing the `/about` link from `Footer.tsx` (keep it in
+  `NavBar.tsx` only), so it stops getting double global exposure.
+- Consider adding `/whats-on/top-rated` (and future hub pages) to
+  `Footer.tsx`, so they get the same baseline internal-link exposure
+  `/about`/`/watchlist` already enjoy.
+- This is a structural, sitewide internal-linking decision, not a
+  one-line fix — worth checking what else links where before changing
+  anything, and there's no guarantee Google's sitelink algorithm reacts
+  quickly or predictably even after a change.
+
+**Priority:** Low-Medium. No urgency — sitelinks aren't broken, just not
+optimally aimed — but cheap context to capture now while fresh.
+
 ## Performance
 
 Scope: `frontend/` and `backend/`. Items here are about load time, request
