@@ -1081,3 +1081,70 @@ signs the user back in.
 - Sign in with items in the guest watchlist. The Watchlist buttons show the
   merged marks without a refresh. Sign out: they go back to guest marks. The
   watchlist and profile pages switch too.
+
+## Scheduled pipeline run failed right after the `database/scripts/` reorg
+
+### Symptom
+
+The next scheduled GitHub Actions pipeline run after merging the
+`database/scripts/pipeline/`/`manual_fixes/` reorg (BACKLOG.md ORG-4) failed
+in the enrichment step with exit code `1`:
+
+```
+Data directory not found: /home/runner/work/.../van-art-cine/database/data/latest
+```
+
+All three scrapers had completed successfully and written their JSON to the
+real location, `data/latest/` at the repo root — `load_json.py` was looking
+one directory too deep, under `database/`.
+
+### Cause
+
+`load_json.py` computed its own project-root path independently of the
+`sys.path` bootstrap added at the top of the file for the reorg:
+
+```python
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+DATA_DIR = os.path.join(PROJECT_ROOT, "data", "latest")
+```
+
+This redefined `SCRIPT_DIR` (shadowing the `pathlib`-based one already set a
+few lines above for the `sys.path` fix) and walked up two directories from
+the file's own location. That was correct while the file lived at
+`database/scripts/load_json.py` (two levels under the repo root), but after
+ORG-4 moved it one level deeper, to `database/scripts/pipeline/load_json.py`,
+the same two-`dirname` walk landed on `database/` instead of the repo root.
+Every other script moved in that same reorg pass was checked for exactly
+this class of bug (see ORG-4's entry in BACKLOG.md) — this one was missed
+because the broken calculation lived in a separate `Config` block further
+down the file, not next to the `sys.path` fix the other scripts' review was
+focused on.
+
+### Fix
+
+Removed the shadowing `SCRIPT_DIR` redefinition and the `os.path`-based
+walk. `load_json.py` now derives `DATA_DIR` from the same `PROJECT_ROOT`
+`Path` object the top-of-file bootstrap already computes:
+
+```python
+PIPELINE_DIR = Path(__file__).resolve().parent
+SCRIPTS_DIR = PIPELINE_DIR.parent
+DB_DIR = SCRIPTS_DIR.parent
+PROJECT_ROOT = DB_DIR.parent
+...
+DATA_DIR = str(PROJECT_ROOT / "data" / "latest")
+```
+
+Verified by importing the module (not running it) and checking
+`DATA_DIR` resolves to the real repo-root `data/latest`, then calling
+`find_latest_files(DATA_DIR)` directly against the real local scrape
+output — it found the three expected files, with no database connection
+opened.
+
+### Prevention
+
+When a script moves to a new directory depth, grep it for *every* place it
+computes a path from its own location, not just the one tied to the
+`sys.path` fix — a file can have more than one independent "walk up to the
+project root" calculation, and they can drift out of sync with each other.

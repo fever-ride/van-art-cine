@@ -30,10 +30,19 @@ from pathlib import Path
 
 # vancouver_time/aliases/db_helper/ai_cleaning/log_setup live one level up,
 # in database/scripts/ (this file is nested under pipeline/) -- same
-# sys.path-patching pattern run_all.py uses.
-SCRIPT_DIR = Path(__file__).resolve().parent.parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+# sys.path-patching pattern run_all.py uses. PIPELINE_DIR/SCRIPTS_DIR/DB_DIR/
+# PROJECT_ROOT are kept as separate names (not reused as a single ambiguous
+# SCRIPT_DIR) specifically because a prior version of this file redefined
+# SCRIPT_DIR further down for a different directory, and the project-root
+# calculation that depended on it silently pointed one level too shallow
+# (database/data/latest instead of data/latest) after this file moved under
+# pipeline/ -- see TROUBLESHOOTING.md.
+PIPELINE_DIR = Path(__file__).resolve().parent
+SCRIPTS_DIR = PIPELINE_DIR.parent
+DB_DIR = SCRIPTS_DIR.parent
+PROJECT_ROOT = DB_DIR.parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 from vancouver_time import to_utc_naive, vancouver_now  # noqa: E402
 from aliases import resolve_cinema_alias  # noqa: E402
@@ -57,10 +66,8 @@ log = get_logger("load_json")
 # Config
 # =========================
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
-DATA_DIR = os.path.join(PROJECT_ROOT, "data", "latest")
-# DATA_DIR = os.path.join(PROJECT_ROOT, "data", "test")
+DATA_DIR = str(PROJECT_ROOT / "data" / "latest")
+# DATA_DIR = str(PROJECT_ROOT / "data" / "test")
 
 # Vancouver time is handled by vancouver_time.py (pins BC's permanent UTC-7;
 # do not use ZoneInfo("America/Vancouver") directly — host tzdata may be stale).
