@@ -19,8 +19,16 @@ export interface PosterCardFilm {
 
 /** A film poster + title + rating, linking to its detail page. Shared by
  * the carousel and the full grid on the Top Rated hub page — same card,
- * just arranged differently by the parent. */
-export default function FilmPosterCard({ screening }: { screening: PosterCardFilm }) {
+ * just arranged differently by the parent. `showYear` is opt-in: useful on
+ * a retrospective spanning decades (so a reader can place each poster in
+ * time at a glance), but noise on Top Rated, where every film is current. */
+export default function FilmPosterCard({
+  screening,
+  showYear = false,
+}: {
+  screening: PosterCardFilm;
+  showYear?: boolean;
+}) {
   const rating = parseImdbRating(screening.imdb_rating);
   const poster =
     screening.poster_url && screening.poster_url.trim() !== ''
@@ -42,6 +50,11 @@ export default function FilmPosterCard({ screening }: { screening: PosterCardFil
           loading="lazy"
           className="aspect-[2/3] w-full object-cover transition-transform motion-safe:group-hover:scale-[1.03]"
         />
+        {showYear && screening.year != null && (
+          <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-bold text-primary">
+            {screening.year}
+          </span>
+        )}
         <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
           {isNew && (
             <span className="rounded-full bg-highlight px-2 py-0.5 text-xs font-semibold text-primary">

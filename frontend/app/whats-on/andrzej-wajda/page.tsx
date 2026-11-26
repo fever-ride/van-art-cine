@@ -35,9 +35,17 @@ const DIRECTOR_NAME = 'Andrzej Wajda';
 const RETRO_FROM = '2026-11-19';
 const RETRO_TO = '2026-12-27';
 
-function eraOf(year: number | null): 1 | 2 | 3 {
-  if (year != null && year <= 1965) return 1;
-  if (year != null && year <= 1982) return 2;
+/** Buckets a film into one of this retrospective's three eras by release
+ * year. Returns `null` for a missing year rather than defaulting into the
+ * last era — every real Wajda film here has a known year, so a missing one
+ * only happens if the backend's director filter let something unrelated
+ * through, and that film should disappear from the era sections (it still
+ * shows up, correctly, in the Full schedule table below, which isn't
+ * era-grouped) rather than get mislabeled as 1990–2007 work. */
+function eraOf(year: number | null): 1 | 2 | 3 | null {
+  if (year == null) return null;
+  if (year <= 1965) return 1;
+  if (year <= 1982) return 2;
   return 3;
 }
 
@@ -125,13 +133,13 @@ export default async function AndrzejWajdaPage() {
         <p className="max-w-[72ch] py-12 text-lg leading-relaxed text-primary">
           Andrzej Wajda was one of Poland&apos;s most important directors. He led the Polish Film School,
           the movement that brought Polish cinema to international attention in the mid-1950s. His first
-          three features, <em>A Generation</em>, <em>Kanal</em>, and <em>Ashes and Diamonds</em>, are known
-          as his War Trilogy, among the most studied films of postwar Europe. He kept working for five
-          decades, through communist rule and its collapse. <em>Man of Iron</em> won the Palme d&apos;Or at
-          Cannes in 1981. In 2000, he received an honorary Academy Award for his career. This winter, VIFF
-          Centre in Vancouver presents seventeen of his films, from <em>A Generation</em> in 1955 to{' '}
-          <em>Katyn</em>, made in 2007 about the massacre that killed his own father. It is a rare chance to
-          see this much of one director&apos;s work on one screen.
+          three features were <em>A Generation</em>, <em>Kanal</em>, and <em>Ashes and Diamonds</em>.
+          Together they are known as his War Trilogy, among the most studied films of postwar Europe. He
+          kept working for five decades, through communist rule and its collapse. <em>Man of Iron</em> won
+          the Palme d&apos;Or at Cannes in 1981. In 2000, he received an honorary Academy Award for his
+          career. This winter, VIFF Centre in Vancouver presents seventeen of his films. The series runs
+          from <em>A Generation</em> in 1955 to <em>Katyn</em>, made in 2007 about the massacre that killed
+          his own father. It is a rare chance to see this much of one director&apos;s work on one screen.
         </p>
       </div>
 
@@ -167,17 +175,18 @@ export default async function AndrzejWajdaPage() {
       <EraSection id="era-1" years="1955 – 1965" title="The Polish Film School" films={era1} now={now}>
         <em>A Generation</em>, <em>Kanal</em>, and <em>Ashes and Diamonds</em> are Wajda&apos;s War
         Trilogy, made as the Polish Film School took shape in the mid-1950s. All three deal with the
-        German occupation of Poland, and together made Wajda internationally known.{' '}
+        German occupation of Poland. Together, they made Wajda internationally known.{' '}
         <em>Innocent Sorcerers</em> is a smaller, contemporary story about a young doctor in Warsaw.{' '}
         <em>The Ashes</em> is an earlier epic, following Polish soldiers under Napoleon.
       </EraSection>
 
       <EraSection id="era-2" years="1969 – 1982" title="Working Under Censorship" films={era2} now={now}>
-        This was Wajda&apos;s most prolific period, and the one Polish censors watched most closely.{' '}
-        <em>Man of Marble</em>, about a bricklayer turned propaganda hero, was held back by censors for
-        years. Its sequel, <em>Man of Iron</em>, followed the 1980 shipyard strikes that led to Solidarity
-        and won the Palme d&apos;Or at Cannes in 1981. After martial law was declared that year, Wajda had
-        trouble working in Poland and made some films abroad, including <em>Danton</em>, shot in France.
+        This was Wajda&apos;s most prolific period. It was also the period Polish censors watched most
+        closely. <em>Man of Marble</em>, about a bricklayer turned propaganda hero, was held back by
+        censors for years. Its sequel, <em>Man of Iron</em>, followed the 1980 shipyard strikes that led
+        to Solidarity. It won the Palme d&apos;Or at Cannes in 1981. Martial law was declared that year,
+        and Wajda had trouble working in Poland. He made some films abroad instead, including{' '}
+        <em>Danton</em>, shot in France.
       </EraSection>
 
       <EraSection id="era-3" years="1990 – 2007" title="Reckoning with History" films={era3} now={now}>
@@ -191,8 +200,7 @@ export default async function AndrzejWajdaPage() {
       <section id="schedule" className="mx-auto max-w-[1100px] scroll-mt-(--scroll-offset) px-4 py-14">
         <h2 className="text-2xl font-bold text-primary">Full schedule</h2>
         <p className="mt-1.5 text-sm text-muted">
-          All {scheduleRows.length} screenings, both VIFF Centre screens, in order. Screenings already
-          played are marked below.
+          All {scheduleRows.length} screenings across VIFF Centre&apos;s two screens.
         </p>
         <div className="mt-5">
           <ScheduleTable rows={scheduleRows} />
@@ -210,13 +218,13 @@ export default async function AndrzejWajdaPage() {
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <Link
               href="/whats-on/top-rated"
-              className="rounded-btn bg-accent px-5 py-2.5 text-sm font-bold text-accent-ink hover:bg-accent-hover"
+              className="rounded-btn border border-border px-5 py-2.5 text-sm font-bold text-primary hover:bg-surface-hover"
             >
               Top rated screenings →
             </Link>
             <Link
               href="/"
-              className="rounded-btn border border-border px-5 py-2.5 text-sm font-bold text-primary hover:bg-surface-hover"
+              className="rounded-btn bg-accent px-5 py-2.5 text-sm font-bold text-accent-ink hover:bg-accent-hover"
             >
               See what&apos;s on this week
             </Link>
@@ -252,7 +260,7 @@ function EraSection({
       <div className="mt-6 flex gap-4 overflow-x-auto pb-2 [scroll-snap-type:x_mandatory]">
         {films.map((film) => (
           <div key={film.film_id} className="shrink-0 [scroll-snap-align:start]">
-            <FilmPosterCard screening={film} />
+            <FilmPosterCard screening={film} showYear />
             <p className="mt-1.5 w-[140px] text-xs text-muted sm:w-[160px]">
               {posterCaption(film, now)}
             </p>

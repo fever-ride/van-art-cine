@@ -50,7 +50,7 @@ export default function ScheduleTable({ rows }: { rows: ScheduleRow[] }) {
             return (
               <tr
                 key={row.screeningId}
-                className={`border-b border-border ${isPast ? 'text-muted' : ''}`}
+                className={`border-b border-border transition-colors hover:bg-surface-subtle ${isPast ? 'text-muted' : ''}`}
               >
                 <td className="whitespace-nowrap px-2.5 py-2.5">
                   {formatScreeningDate(start)}
